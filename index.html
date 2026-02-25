@@ -100,40 +100,38 @@
         };
 
         function attemptLogin() {
-            const token = document.getElementById('tokenInput').value;
-            const btn = document.getElementById('btnLogin');
-            const errorMsg = document.getElementById('loginError');
+    const token = document.getElementById('tokenInput').value;
+    const btn = document.getElementById('btnLogin');
+    const errorMsg = document.getElementById('loginError');
 
-            if(!token) return alert("Ingresa un token");
+    if(!token) return alert("Por favor, ingresa un token");
 
-            btn.disabled = true;
-            btn.innerText = "Conectando...";
+    btn.disabled = true;
+    btn.innerText = "Conectando...";
+    console.log("Intentando conectar con token:", token.substring(0,5) + "...");
 
-            sess.initSession("https://hst-api.wialon.com");
-            sess.loginToken(token, "", (code) => {
-                if (code) {
-                    btn.disabled = false;
-                    btn.innerText = "Entrar al Sistema";
-                    errorMsg.style.display = "block";
-                    return;
-                }
-
-                // Si el usuario marcó "Recordar", guardamos el token
-                if(document.getElementById('rememberMe').checked) {
-                    localStorage.setItem('wialon_token', token);
-                } else {
-                    localStorage.removeItem('wialon_token');
-                }
-
-                document.getElementById('loginOverlay').style.display = "none";
-                document.getElementById('dashboard').style.display = "block";
-                
-                const user = sess.getCurrUser();
-                document.getElementById('userDisplay').innerText = "Usuario: " + (user ? user.getName() : "Conectado");
-                
-                initData();
-            });
+    sess.initSession("https://hst-api.wialon.com");
+    sess.loginToken(token, "", (code) => {
+        // Si el código es distinto de 0, hay un error
+        if (code) {
+            btn.disabled = false;
+            btn.innerText = "Entrar al Sistema";
+            errorMsg.style.display = "block";
+            errorMsg.innerText = "Error Wialon: " + wialon.core.Errors.getErrorText(code) + " (Código: " + code + ")";
+            console.error("Error de login:", code);
+            return;
         }
+
+        console.log("¡Conexión exitosa!");
+        // ... resto del código original ...
+        if(document.getElementById('rememberMe').checked) {
+            localStorage.setItem('wialon_token', token);
+        }
+        document.getElementById('loginOverlay').style.display = "none";
+        document.getElementById('dashboard').style.display = "block";
+        initData();
+    });
+}
 
         function initData() {
             sess.loadLibrary("itemUnit");
@@ -206,4 +204,5 @@
         }
     </script>
 </body>
+
 </html>
