@@ -24,11 +24,13 @@
         .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .card { background: var(--bg-card); border: 1px solid var(--border-col); }
         
-        .workspace-container { display: flex; height: calc(100vh - 70px); width: 100%; overflow: hidden; }
-        .table-panel { width: 100%; transition: width 0.4s ease; overflow-y: auto; padding: 15px; }
-        .map-panel { width: 0%; transition: width 0.4s ease; border-left: 3px solid var(--header-bg); display: none; position: relative;}
-        .workspace-container.show-map .table-panel { width: 70%; }
-        .workspace-container.show-map .map-panel { width: 30%; display: block; }
+        /* PANTALLA DIVIDIDA (MAPA ARRIBA, TABLA ABAJO) */
+        .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 70px); width: 100%; overflow: hidden; }
+        .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; display: block; position: relative; z-index: 10;}
+        .table-panel { height: 100%; width: 100%; transition: height 0.4s ease; overflow-y: auto; padding: 15px; }
+        
+        .workspace-container.show-map .map-panel { height: 40%; border-bottom: 4px solid var(--header-bg); }
+        .workspace-container.show-map .table-panel { height: 60%; }
         #map { width: 100%; height: 100%; z-index: 1;}
         
         .table-input { border: 1px solid var(--border-col); padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; text-align: center; font-weight: 600; background: var(--table-bg); color: var(--text-main); text-transform: uppercase;}
@@ -41,13 +43,14 @@
         .status-select { border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.70rem; padding: 2px;}
         .maps-link { color: #0d6efd; font-weight: bold; text-decoration: none; }
         .audit-log { font-size: 0.7rem; background: #e9ecef; padding: 4px; border-radius: 4px; border-left: 3px solid #0d6efd; margin-bottom: 2px; text-align: left; line-height: 1.1; color: #333;}
-        .time-input { font-size: 10px !important; text-align: center; font-weight: bold; cursor: pointer;}
         
-        @keyframes blink-warning { 0% { background-color: rgba(220, 53, 69, 0.1); } 50% { background-color: rgba(220, 53, 69, 0.4); } 100% { background-color: rgba(220, 53, 69, 0.1); } }
-        .inactive-row { animation: blink-warning 2.5s infinite; }
-        .dark-mode .modal-content { background-color: var(--bg-card); color: var(--text-main); }
-        .dark-mode .list-group-item { background-color: var(--table-bg); color: var(--text-main); border-color: var(--border-col); }
+        /* FILA ROJA PÉRDIDA DE CONEXIÓN > 10 MINUTOS */
+        .lost-connection-row td { background-color: #ffe6e6 !important; color: #990000 !important; }
+        .dark-mode .lost-connection-row td { background-color: #4a1515 !important; color: #ffcccc !important; }
+        .lost-connection-row .table-input { background-color: rgba(255,255,255,0.5); color: #990000; }
+        
         .unit-name { cursor: pointer; text-decoration: underline; color: #0d6efd; }
+        .dark-mode .unit-name { color: #66b2ff; }
     </style>
 </head>
 <body>
@@ -73,7 +76,7 @@
             </div>
         </div>
         <div>
-            <button class="btn btn-info btn-sm fw-bold me-2 text-dark" onclick="toggleMap()" id="btnMapToggle"><i class="fa-solid fa-map"></i> Ver Mapa</button>
+            <button class="btn btn-info btn-sm fw-bold me-2 text-dark" onclick="toggleMap()"><i class="fa-solid fa-map"></i> Ver Mapa</button>
             <button class="btn btn-dark btn-sm fw-bold me-2" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
             <button class="btn btn-outline-primary btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-truck-fast"></i> Registrar Viaje</button>
             <button class="btn btn-outline-warning btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalHistorial" onclick="cargarHistorial()"><i class="fa-solid fa-clock-rotate-left"></i> Historial</button>
@@ -83,6 +86,8 @@
     </div>
 
     <div class="workspace-container" id="mainWorkspace">
+        <div class="map-panel"><div id="map"></div></div>
+        
         <div class="table-panel">
             <div class="row mb-2 align-items-center">
                 <div class="col-md-4"><input type="text" id="buscador" class="form-control form-control-sm shadow-sm" placeholder="🔍 Buscar unidad, destino..." onkeyup="filtrarTabla()"></div>
@@ -92,13 +97,12 @@
             </div>
             <div class="card shadow border-0 h-100">
                 <div class="table-responsive h-100">
-                    <table class="table table-bordered table-hover align-middle text-center mb-0" id="tablaViajes">
+                    <table class="table table-bordered align-middle text-center mb-0" id="tablaViajes">
                         <tbody id="units-body"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-        <div class="map-panel"><div id="map"></div></div>
     </div>
 </div>
 
@@ -118,7 +122,6 @@
                   </div>
                   <ul class="list-group list-group-sm" id="listaTokens" style="font-size:10px;"></ul>
               </div>
-              
               <div class="col-md-3 border-end">
                   <h6 class="fw-bold text-primary"><i class="fa-solid fa-id-card"></i> Asignar Operador (Forzar)</h6>
                   <div class="p-2 bg-light border rounded mb-2 text-dark">
@@ -128,7 +131,6 @@
                   </div>
                   <ul class="list-group list-group-sm" id="listaOperadoresAdmin" style="font-size:10px; max-height: 250px; overflow-y: auto;"></ul>
               </div>
-
               <div class="col-md-3 border-end">
                   <h6 class="fw-bold text-primary"><i class="fa-solid fa-building"></i> Clientes (Grupos)</h6>
                   <div class="p-2 bg-light border rounded mb-2 text-dark">
@@ -143,7 +145,6 @@
                   </div>
                   <ul class="list-group list-group-sm" id="listaClientesAdmin"></ul>
               </div>
-              
               <div class="col-md-3">
                   <h6 class="fw-bold text-primary"><i class="fa-solid fa-sitemap"></i> Subclientes y Usuarios</h6>
                   <div class="p-2 bg-light border rounded mb-2 text-dark">
@@ -169,24 +170,14 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold"><i class="fa-solid fa-truck-fast"></i> Registrar Nuevo Viaje</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
             <div class="modal-body small">
-                
-                <label class="fw-bold">Buscar Unidad:</label>
+                <label class="fw-bold">Buscar Unidad (Múltiples Plataformas):</label>
                 <input type="text" class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" style="text-transform: uppercase;" placeholder="Selecciona o escribe la unidad..." autocomplete="off">
-                
                 <label class="fw-bold text-primary"><i class="fa-solid fa-id-card"></i> Operador:</label>
-                <input type="text" id="nv_operador" class="form-control form-control-sm mb-2 border-primary" list="listaConductores" style="text-transform: uppercase;" placeholder="Se detectará automáticamente..." autocomplete="off">
-
+                <input type="text" id="nv_operador" class="form-control form-control-sm mb-2 border-primary" list="listaConductores" style="text-transform: uppercase;" placeholder="Se detectará o selecciona uno..." autocomplete="off">
                 <div class="row mb-2">
-                    <div class="col-6">
-                        <label class="fw-bold">Cliente Principal:</label>
-                        <select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select>
-                    </div>
-                    <div class="col-6">
-                        <label class="fw-bold">Subcliente:</label>
-                        <select id="nv_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select>
-                    </div>
+                    <div class="col-6"><label class="fw-bold">Cliente Principal:</label><select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div>
+                    <div class="col-6"><label class="fw-bold">Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select></div>
                 </div>
-
                 <div class="row">
                     <div class="col-6"><label class="fw-bold">Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" style="text-transform: uppercase;" list="listaGeocercas" placeholder="Salida..." autocomplete="off"></div>
                     <div class="col-6"><label class="fw-bold">Destino (Auto-Arribo):</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" style="text-transform: uppercase;" list="listaGeocercas" placeholder="Llegada..." autocomplete="off"></div>
@@ -216,13 +207,9 @@
     let currentUser = null; let configSistema = { tokens: [], usuarios: {} };
     let dataClientes = {}; let viajesActivos = {}; let historialGlobal = {}; let dbOperadores = {}; 
     
-    // SISTEMA PURO JSONP MULTI-TOKEN
-    let unidadesGlobales = {}; 
-    let mapUnidades = {}; // Diccionario Nombre -> ID
-    let ramDrivers = {}; // Memoria RAM viva de conductores
-    let geocercasNativas = []; // Coordenadas de Geocercas
-    let activeSIDs = {}; 
-    let pollingInterval = null;
+    // MOTOR JSONP
+    let unidadesGlobales = {}; let mapUnidades = {}; let ramDrivers = {}; let geocercasNativas = []; 
+    let activeSIDs = {}; let pollingInterval = null;
     
     // Mapa
     let lmap = null; let mapMarkers = {}; let geofenceLayer = null; let mapVisible = false; let geocodeCache = {};
@@ -230,79 +217,55 @@
     const estatusData = { "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"1.2 RETEN",col:"#7D3F00"}, "s4":{nombre:"1.3 Resguardo",col:"#5C338A"}, "s5":{nombre:"2. Incidencia",col:"#FFCCCC"}, "s6":{nombre:"3. Cargando",col:"#EAEAEA"}, "s7":{nombre:"4. Descargando",col:"#D0F0C0"}, "s8":{nombre:"5. Patio GDL",col:"#BCE3F9"}, "s9":{nombre:"6. Patio Reynosa",col:"#C2DEDB"}, "s10":{nombre:"7. Taller",col:"#B5A6A6"}, "s11":{nombre:"8. Finalizado",col:"#0055A5"} };
 
     function formatDateForInput(ms) { if (!ms) return ""; const d = new Date(ms); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
+    function formatTimeFriendly(unixSecs) {
+        if(!unixSecs) return "--:--"; let d = new Date(unixSecs * 1000); 
+        return d.toLocaleDateString('es-MX', {day:'2-digit', month:'2-digit'}) + " " + d.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+    }
+    
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('tms_dark_mode', document.body.classList.contains('dark-mode')); }
 
-    // MAPA CON CAPA DE GEOCERCAS
     function initMap() { 
         lmap = L.map('map').setView([23.6345, -102.5528], 5); 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(lmap); 
         geofenceLayer = L.layerGroup().addTo(lmap);
     }
-    
     function toggleMap() { 
         const ws = document.getElementById("mainWorkspace"); mapVisible = !mapVisible; 
         if(mapVisible) { ws.classList.add("show-map"); if(!lmap) initMap(); setTimeout(() => { lmap.invalidateSize(); actualizarMarcadoresMapa(); dibujarGeocercasEnMapa(); }, 400); } 
         else { ws.classList.remove("show-map"); } 
     }
-    
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => { lmap.flyTo([lat, lng], 14, { animate: true, duration: 1.5 }); }, 400); }
 
     function dibujarGeocercasEnMapa() {
-        if(!lmap || !geofenceLayer) return;
-        geofenceLayer.clearLayers();
+        if(!lmap || !geofenceLayer) return; geofenceLayer.clearLayers();
         geocercasNativas.forEach(z => {
             if(!z.p || z.p.length === 0) return;
-            let hexColor = "#" + (z.c & 0xFFFFFF).toString(16).padStart(6, '0');
-            let latlngs = z.p.map(pt => [pt.y, pt.x]);
-            
-            if(z.t === 2) { // Polígono
-                L.polygon(latlngs, {color: hexColor, weight: 2, fillOpacity: 0.3}).bindPopup(`<b>Geocerca:</b> ${z.n}`).addTo(geofenceLayer);
-            } else if (z.t === 1) { // Línea
-                L.polyline(latlngs, {color: hexColor, weight: 4}).bindPopup(`<b>Ruta:</b> ${z.n}`).addTo(geofenceLayer);
-            } else if (z.t === 3) { // Círculo
-                let rad = z.p[0].r || 100; // Radio en metros
-                L.circle(latlngs[0], {radius: rad, color: hexColor, weight: 2, fillOpacity: 0.3}).bindPopup(`<b>Base:</b> ${z.n}`).addTo(geofenceLayer);
-            }
+            let hexColor = "#" + (z.c & 0xFFFFFF).toString(16).padStart(6, '0'); let latlngs = z.p.map(pt => [pt.y, pt.x]);
+            if(z.t === 2) { L.polygon(latlngs, {color: hexColor, weight: 2, fillOpacity: 0.3}).bindPopup(`<b>${z.n}</b>`).addTo(geofenceLayer); } 
+            else if (z.t === 1) { L.polyline(latlngs, {color: hexColor, weight: 4}).bindPopup(`<b>Ruta:</b> ${z.n}`).addTo(geofenceLayer); } 
+            else if (z.t === 3) { L.circle(latlngs[0], {radius: z.p[0].r || 100, color: hexColor, weight: 2, fillOpacity: 0.3}).bindPopup(`<b>${z.n}</b>`).addTo(geofenceLayer); }
         });
     }
 
-    function actualizarMarcadoresMapa() {
-        if(!mapVisible || !lmap) return;
-        Object.keys(unidadesGlobales).forEach(id => {
-            if(viajesActivos[id]) {
-                const u = unidadesGlobales[id];
-                if(u.pos && u.pos.x) {
-                    let text = `<b>${u.name}</b><br>Velocidad: ${u.pos.s} km/h`;
-                    if(!mapMarkers[id]) { mapMarkers[id] = L.marker([u.pos.y, u.pos.x]).addTo(lmap).bindPopup(text); } 
-                    else { mapMarkers[id].setLatLng([u.pos.y, u.pos.x]).setPopupContent(text); }
-                }
-            } else { if(mapMarkers[id]) { lmap.removeLayer(mapMarkers[id]); delete mapMarkers[id]; } }
-        });
+    function shareWA(unit, loc, orig, dest) {
+        let text = `🚛 *Estatus de Viaje*\n*Unidad:* ${unit}\n*Ruta:* ${orig} ➔ ${dest}\n*Ubicación Actual:* ${loc}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
 
     window.onload = function () {
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
-        
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
         db.ref('operadores').on('value', s => { dbOperadores = s.val() || {}; renderizarAdmin(); });
         db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); actualizarDatalists(); actualizarMarcadoresMapa(); });
         db.ref('historial').on('value', s => { historialGlobal = s.val() || {}; });
-        
-        db.ref('sistema/tokens').on('value', s => {
-            configSistema.tokens = s.val() || [];
-            if(currentUser) { if(currentUser.rol === 'admin') renderizarAdmin(); arranqueMotorPropio(); }
-        });
+        db.ref('sistema/tokens').on('value', s => { configSistema.tokens = s.val() || []; if(currentUser) { if(currentUser.rol === 'admin') renderizarAdmin(); arranqueMotorPropio(); } });
 
         document.getElementById("logPass").addEventListener("keyup", function(e) { if (e.key === "Enter") autenticarUsuario(); });
         document.getElementById("logUser").addEventListener("keyup", function(e) { if (event.key === "Enter") document.getElementById("logPass").focus(); });
 
-        // AUTO-OPERADOR MÁGICO (Cruza RAM en Vivo y DB Manual)
         document.getElementById("nv_unidad_input").addEventListener("input", function() {
             let val = this.value.trim().toUpperCase(); let opInput = document.getElementById("nv_operador");
-            // Prioridad: 1. Conductor vivo en Wialon RAM. 2. Base de datos Firebase manual.
-            if(ramDrivers[val]) { opInput.value = ramDrivers[val]; }
-            else if(dbOperadores[val]) { opInput.value = dbOperadores[val]; } 
-            else { opInput.value = ""; }
+            if(ramDrivers[val]) { opInput.value = ramDrivers[val]; } else if(dbOperadores[val]) { opInput.value = dbOperadores[val]; } else { opInput.value = ""; }
         });
 
         let savedUser = localStorage.getItem("tms_user"); let savedPass = localStorage.getItem("tms_pass");
@@ -328,7 +291,7 @@
     function cerrarSesion() { localStorage.removeItem("tms_user"); localStorage.removeItem("tms_pass"); location.reload(); }
 
     // =========================================================================
-    // 3. MOTOR JSONP + GEOCERCAS NATIVAS Y OPERADORES
+    // 3. MOTOR JSONP + GEOCERCAS Y OPERADORES REPARADO
     // =========================================================================
     function peticionWialon(url, svc, params, sid=null) {
         return new Promise(resolve => {
@@ -337,8 +300,7 @@
             window[cbName] = function(data) { delete window[cbName]; if(script.parentNode) script.parentNode.removeChild(script); resolve(data); };
             let fullUrl = `${url.replace(/\/$/, '')}/wialon/ajax.html?svc=${svc}&params=${encodeURIComponent(JSON.stringify(params))}&callback=${cbName}`;
             if(sid) fullUrl += `&sid=${sid}`;
-            script.src = fullUrl;
-            script.onerror = function() { delete window[cbName]; if(script.parentNode) script.parentNode.removeChild(script); resolve(null); };
+            script.src = fullUrl; script.onerror = function() { delete window[cbName]; if(script.parentNode) script.parentNode.removeChild(script); resolve(null); };
             document.head.appendChild(script);
         });
     }
@@ -352,7 +314,6 @@
     async function sincronizarFlotas() {
         let ind = document.getElementById("syncIndicator");
         if(Object.keys(unidadesGlobales).length === 0) ind.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Abriendo Plataformas...";
-        
         if(!configSistema.tokens || configSistema.tokens.length === 0) { ind.className = "badge bg-danger"; ind.innerHTML = "Sin Tokens"; return; }
 
         let successCount = 0; let tempUnidades = {}; let setGeocercas = new Set(); let listConductores = new Set();
@@ -360,50 +321,22 @@
 
         for(let tkObj of configSistema.tokens) {
             let url = tkObj.url || "https://hst-api.wialon.com"; let tkStr = tkObj.token || tkObj; let tkName = tkObj.nombre || "Token";
-            
-            if(!activeSIDs[tkStr]) {
-                let login = await peticionWialon(url, "token/login", {token: tkStr});
-                if(login && login.eid) activeSIDs[tkStr] = login.eid;
-            }
-            
+            if(!activeSIDs[tkStr]) { let login = await peticionWialon(url, "token/login", {token: tkStr}); if(login && login.eid) activeSIDs[tkStr] = login.eid; }
             let sid = activeSIDs[tkStr];
             if(sid) {
-                // Descarga Unidades (1025)
+                // 1. Bajar Unidades (1025)
                 let reqU = await peticionWialon(url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025, from: 0, to: 0 }, sid);
-                
-                if(reqU && reqU.error) {
-                    delete activeSIDs[tkStr]; 
-                } else if(reqU && reqU.items) {
-                    successCount++;
-                    let localMap = {};
-                    reqU.items.forEach(u => {
-                        let uName = u.nm.toUpperCase();
-                        tempUnidades[u.id] = { id: u.id, name: uName, pos: u.pos, tkName: tkName };
-                        localMap[u.id] = uName;
-                        mapUnidades[uName] = u.id; 
-                    });
+                if(reqU && reqU.error) { delete activeSIDs[tkStr]; } 
+                else if(reqU && reqU.items) {
+                    successCount++; let localMap = {};
+                    reqU.items.forEach(u => { let uName = u.nm.toUpperCase(); tempUnidades[u.id] = { id: u.id, name: uName, pos: u.pos, tkName: tkName }; localMap[u.id] = uName; mapUnidades[uName] = u.id; });
 
-                    // Extraer Recursos (Geocercas 4096 + Operadores 256 = 4352)
-                    let reqR = await peticionWialon(url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4352, from: 0, to: 0 }, sid);
+                    // 2. Bajar Recursos: 4353 (1 = Base + 4096 = Zonas + 256 = Conductores)
+                    let reqR = await peticionWialon(url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 0 }, sid);
                     if(reqR && reqR.items) {
                         reqR.items.forEach(r => {
-                            // Extraer Conductores
-                            if(r.drv) {
-                                Object.values(r.drv).forEach(d => {
-                                    let dName = d.n.toUpperCase();
-                                    listConductores.add(dName);
-                                    if(d.bu && localMap[d.bu]) {
-                                        ramDrivers[localMap[d.bu]] = dName; // Cruce perfecto en RAM
-                                    }
-                                });
-                            }
-                            // Extraer Geocercas (Polígonos completos)
-                            if(r.zl) {
-                                Object.values(r.zl).forEach(z => {
-                                    setGeocercas.add(z.n.toUpperCase());
-                                    geocercasNativas.push(z); // Guardamos la info geométrica para el mapa
-                                });
-                            }
+                            if(r.drv) { Object.values(r.drv).forEach(d => { let dName = d.n.toUpperCase(); listConductores.add(dName); if(d.bu && localMap[d.bu]) ramDrivers[localMap[d.bu]] = dName; }); }
+                            if(r.zl) { Object.values(r.zl).forEach(z => { setGeocercas.add(z.n.toUpperCase()); geocercasNativas.push(z); }); }
                         });
                     }
                 }
@@ -411,13 +344,8 @@
         }
 
         unidadesGlobales = tempUnidades;
-        
-        // Alimentar los Datalists HTML
-        let dlG = document.getElementById("listaGeocercas"); dlG.innerHTML = "";
-        setGeocercas.forEach(z => { let o = document.createElement("option"); o.value = z; dlG.appendChild(o); });
-        
-        let dlC = document.getElementById("listaConductores"); dlC.innerHTML = "";
-        listConductores.forEach(c => { let o = document.createElement("option"); o.value = c; dlC.appendChild(o); });
+        let dlG = document.getElementById("listaGeocercas"); dlG.innerHTML = ""; setGeocercas.forEach(z => { let o = document.createElement("option"); o.value = z; dlG.appendChild(o); });
+        let dlC = document.getElementById("listaConductores"); dlC.innerHTML = ""; listConductores.forEach(c => { let o = document.createElement("option"); o.value = c; dlC.appendChild(o); });
 
         if(successCount > 0) { ind.className = "badge bg-success"; ind.innerHTML = `<i class='fa-solid fa-satellite-dish'></i> ${Object.keys(unidadesGlobales).length} Camiones En Vivo`; } 
         else { ind.className = "badge bg-danger"; ind.innerHTML = "Problema de Red"; }
@@ -427,12 +355,9 @@
 
     function actualizarDatalists() {
         const dl = document.getElementById("listaUnidadesTotales"); dl.innerHTML = ""; 
-        Object.values(unidadesGlobales).forEach(u => {
-            if(!viajesActivos[u.id]) { let opt = document.createElement("option"); opt.value = u.name; dl.appendChild(opt); }
-        });
+        Object.values(unidadesGlobales).forEach(u => { if(!viajesActivos[u.id]) { let opt = document.createElement("option"); opt.value = u.name; dl.appendChild(opt); } });
     }
 
-    // 4. DIRECCIONES AL VUELO
     function updateAddressesBackground() {
         Object.keys(viajesActivos).forEach(id => {
             let u = unidadesGlobales[id];
@@ -452,7 +377,21 @@
         if(v.destino && !v.t_arribo && dirStr.toUpperCase().includes(v.destino.toUpperCase())) { registrarTiempo(id, 't_arribo'); auditoria(id, `AUTO-ARRIBO: Localizado en ${v.destino}`); }
     }
 
-    // 5. RENDERIZADO VISUAL
+    function actualizarMarcadoresMapa() {
+        if(!mapVisible || !lmap) return;
+        Object.keys(unidadesGlobales).forEach(id => {
+            if(viajesActivos[id]) {
+                const u = unidadesGlobales[id];
+                if(u.pos && u.pos.x) {
+                    let text = `<b>${u.name}</b><br>Velocidad: ${u.pos.s} km/h`;
+                    if(!mapMarkers[id]) { mapMarkers[id] = L.marker([u.pos.y, u.pos.x]).addTo(lmap).bindPopup(text); } 
+                    else { mapMarkers[id].setLatLng([u.pos.y, u.pos.x]).setPopupContent(text); }
+                }
+            } else { if(mapMarkers[id]) { lmap.removeLayer(mapMarkers[id]); delete mapMarkers[id]; } }
+        });
+    }
+
+    // 5. RENDERIZADO VISUAL CON ALERTAS DE TIEMPO Y VELOCIDAD
     function renderizarBitacora() {
         if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return; 
         const tbody = document.getElementById('units-body'); let html = "";
@@ -461,14 +400,13 @@
         Object.keys(dataClientes).forEach(cId => { tree[cId] = { "__n/a__": [] }; if(dataClientes[cId].subclientes) { Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []); } });
 
         Object.keys(viajesActivos).forEach(id => {
-            let v = viajesActivos[id]; 
-            let u = unidadesGlobales[id] || { id: id, name: v.unidadFallback || "...", pos: null }; 
+            let v = viajesActivos[id]; let u = unidadesGlobales[id] || { id: id, name: v.unidadFallback || "...", pos: null }; 
             let cId = v.cliente || "Sin_Cliente"; let sId = v.subcliente || "__n/a__";
             if(!tree[cId]) tree[cId] = {"__n/a__": []}; if(!tree[cId][sId]) tree[cId][sId] = [];
             tree[cId][sId].push({u: u, v: v});
         });
 
-        const headerColumnasHTML = `<tr class="header-columnas"><th width="10%">UNIDAD</th><th width="10%">OPERADOR</th><th width="15%">RUTA (O ➔ D)</th><th width="9%">CONTENEDORES</th><th width="11%">HORARIOS</th><th width="10%">ESTATUS</th><th width="15%">GPS & UBICACIÓN</th><th width="8%">ALERTAS</th><th width="8%">AUDITORÍA</th><th width="4%">ACCIÓN</th></tr>`;
+        const headerColumnasHTML = `<tr class="header-columnas"><th width="10%">UNIDAD</th><th width="10%">OPERADOR</th><th width="15%">RUTA (O ➔ D)</th><th width="9%">CONTENEDORES</th><th width="11%">HORARIOS</th><th width="10%">ESTATUS</th><th width="15%">UBICACIÓN & VELOCIDAD</th><th width="8%">ALERTAS</th><th width="8%">AUDITORÍA</th><th width="4%">ACCIÓN</th></tr>`;
 
         for(let cId in tree) {
             let hasUnitsClient = false; let cliHtml = ""; let cliData = dataClientes[cId] || {nombre: "SIN CLIENTE ASIGNADO", icono: "❓"};
@@ -479,12 +417,20 @@
 
                 tree[cId][sId].forEach(item => {
                     const u = item.u; const v = item.v; const id = u.id; const pos = u.pos;
-                    const rowClass = (pos && pos.t && ((Date.now()/1000 - pos.t) > 1800)) ? "inactive-row" : "";
-                    const speed = pos ? pos.s : 0; const iconMotor = speed > 0 ? `<i class="fa-solid fa-bolt text-success"></i>` : `<i class="fa-regular fa-circle text-danger"></i>`;
                     
-                    // Lógica del Operador: Preferir lo que ya está guardado en viaje, sino intentar sacar de RAM Wialon, y como último el Manual DB
+                    // LÓGICA DE TIEMPOS Y VELOCIDAD
+                    let isLost = false; let speed = 0; let timeStr = "Sin Datos GPS"; let speedBadge = "bg-secondary";
+                    if(pos && pos.t) {
+                        speed = pos.s;
+                        let diffSecs = (Date.now() / 1000) - pos.t;
+                        isLost = diffSecs > 600; // Mayor a 10 min = Alerta Roja Completa
+                        timeStr = formatTimeFriendly(pos.t);
+                        speedBadge = speed === 0 ? "bg-secondary" : (speed < 100 ? "bg-success" : "bg-danger"); // Rojo si rebasa 100 km/h
+                    }
+                    
+                    const rowClass = isLost ? "lost-connection-row" : "";
+                    
                     let currentDriver = v.operador || ramDrivers[u.name] || dbOperadores[u.name] || ''; 
-                    
                     const tSal = v.t_salida ? `<div class="input-group input-group-sm mb-1"><span class="input-group-text bg-success text-white py-0 px-1" style="font-size:9px;">S</span><input type="datetime-local" class="form-control time-input py-0 px-1" value="${formatDateForInput(v.t_salida)}" onchange="modificarTiempo('${id}','t_salida',this.value)"></div>` : `<button class="btn btn-outline-success btn-sm py-0 mb-1 w-100 fw-bold" style="font-size:9px;" onclick="registrarTiempo('${id}','t_salida')">Salida</button>`;
                     const tArr = v.t_arribo ? `<div class="input-group input-group-sm"><span class="input-group-text bg-danger text-white py-0 px-1" style="font-size:9px;">A</span><input type="datetime-local" class="form-control time-input py-0 px-1" value="${formatDateForInput(v.t_arribo)}" onchange="modificarTiempo('${id}','t_arribo',this.value)"></div>` : `<button class="btn btn-outline-danger btn-sm py-0 w-100 fw-bold" style="font-size:9px;" onclick="registrarTiempo('${id}','t_arribo')">Arribo</button>`;
 
@@ -497,16 +443,28 @@
                     let keyDir = pos ? (pos.y.toFixed(3) + "," + pos.x.toFixed(3)) : ""; let dirActual = geocodeCache[keyDir] || (pos ? "Buscando..." : "Sin Red Wialon");
 
                     cliHtml += `<tr class="${rowClass}">
-                        <td class="fw-bold fs-6 unit-name" ${clickMap} title="Ver en el mapa">${u.name}</td>
-                        <td><input class="table-input" list="listaConductores" value="${currentDriver}" onblur="db.ref('viajes_activos/${id}/operador').set(this.value.toUpperCase())"></td>
-                        <td><div class="input-group input-group-sm mb-1"><span class="input-group-text p-1 bg-light">O</span><input class="form-control p-1 fw-bold text-center" style="text-transform:uppercase;" list="listaGeocercas" value="${v.origen||''}" onblur="db.ref('viajes_activos/${id}/origen').set(this.value.toUpperCase())"></div><div class="input-group input-group-sm"><span class="input-group-text p-1 bg-light">D</span><input class="form-control p-1 fw-bold text-center" style="text-transform:uppercase;" list="listaGeocercas" value="${v.destino||''}" onblur="db.ref('viajes_activos/${id}/destino').set(this.value.toUpperCase())"></div></td>
-                        <td><textarea class="table-input" rows="2" placeholder="CMAU..." style="text-transform:uppercase;" onblur="db.ref('viajes_activos/${id}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
+                        <td class="fw-bold fs-6 unit-name align-middle" ${clickMap} title="Ver en el mapa">${u.name}</td>
+                        <td class="align-middle"><input class="table-input" list="listaConductores" value="${currentDriver}" onblur="db.ref('viajes_activos/${id}/operador').set(this.value.toUpperCase())"></td>
+                        <td class="align-middle"><div class="input-group input-group-sm mb-1"><span class="input-group-text p-1 bg-light">O</span><input class="form-control p-1 fw-bold text-center" style="text-transform:uppercase;" list="listaGeocercas" value="${v.origen||''}" onblur="db.ref('viajes_activos/${id}/origen').set(this.value.toUpperCase())"></div><div class="input-group input-group-sm"><span class="input-group-text p-1 bg-light">D</span><input class="form-control p-1 fw-bold text-center" style="text-transform:uppercase;" list="listaGeocercas" value="${v.destino||''}" onblur="db.ref('viajes_activos/${id}/destino').set(this.value.toUpperCase())"></div></td>
+                        <td class="align-middle"><textarea class="table-input" rows="2" placeholder="CMAU..." style="text-transform:uppercase;" onblur="db.ref('viajes_activos/${id}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
                         <td class="align-middle">${tSal}${tArr}</td>
-                        <td><select class="form-select status-select" style="background:${bgSt}; color:${fgSt};" onchange="db.ref('viajes_activos/${id}/estatus').set(this.value); auditoria('${id}','Estatus a: '+this.options[this.selectedIndex].text)">${Object.keys(estatusData).map(k => `<option value="${k}" ${v.estatus===k?'selected':''} style="background:#fff;color:#000">${estatusData[k].nombre}</option>`).join('')}</select></td>
-                        <td><div class="d-flex align-items-center justify-content-center gap-2 mb-1"><span class="fs-5">${iconMotor}</span><span class="badge ${speed>0?'bg-danger':'bg-dark'} fs-6">${speed} km/h</span></div><a href="${mapLink}" target="_blank" class="maps-link d-block" title="Maps"><i class="fa-solid fa-map-location-dot"></i> <span id="addr_${id}" style="font-size:10px; color:var(--text-main);">${dirActual}</span></a></td>
-                        <td>${alertaUI}<button class="btn btn-sm btn-outline-danger p-0 px-2 fw-bold mt-1 w-100" onclick="abrirAuditoria('${id}', '${u.name}', 'Alerta')"><i class="fa-solid fa-reply"></i> Atender</button></td>
-                        <td>${ultLog}<button class="btn btn-sm btn-primary p-0 px-2 fw-bold w-100" onclick="abrirAuditoria('${id}', '${u.name}', '')"><i class="fa-solid fa-plus"></i> Nota</button></td>
-                        <td class="align-middle"><div class="d-flex flex-column gap-1"><button onclick="abrirEditarViaje('${id}', '${cId}', '${sId}')" class="btn btn-outline-primary btn-sm p-1" title="Modificar Cliente/Grupo"><i class="fa-solid fa-pen"></i></button><button onclick="finalizarViaje('${id}', '${u.name}')" class="btn btn-outline-danger btn-sm p-1" title="Archivar"><i class="fa-solid fa-box-archive"></i></button></div></td>
+                        <td class="align-middle"><select class="form-select status-select" style="background:${bgSt}; color:${fgSt};" onchange="db.ref('viajes_activos/${id}/estatus').set(this.value); auditoria('${id}','Estatus a: '+this.options[this.selectedIndex].text)">${Object.keys(estatusData).map(k => `<option value="${k}" ${v.estatus===k?'selected':''} style="background:#fff;color:#000">${estatusData[k].nombre}</option>`).join('')}</select></td>
+                        <td class="align-middle">
+                            <div class="d-flex flex-column align-items-center justify-content-center gap-1 mb-1">
+                                <span class="badge ${speedBadge} fs-6">${speed} km/h</span>
+                                <span style="font-size: 9px; font-weight: bold;"><i class="fa-regular fa-clock"></i> ${timeStr}</span>
+                            </div>
+                            <a href="${mapLink}" target="_blank" class="maps-link d-block" title="Maps"><i class="fa-solid fa-map-location-dot"></i> <span id="addr_${id}" style="font-size:10px;">${dirActual}</span></a>
+                        </td>
+                        <td class="align-middle">${alertaUI}<button class="btn btn-sm btn-outline-danger p-0 px-2 fw-bold mt-1 w-100" onclick="abrirAuditoria('${id}', '${u.name}', 'Alerta')"><i class="fa-solid fa-reply"></i> Atender</button></td>
+                        <td class="align-middle">${ultLog}<button class="btn btn-sm btn-primary p-0 px-2 fw-bold w-100" onclick="abrirAuditoria('${id}', '${u.name}', '')"><i class="fa-solid fa-plus"></i> Nota</button></td>
+                        <td class="align-middle">
+                            <div class="d-flex flex-column gap-1">
+                                <button onclick="shareWA('${u.name}', '${dirActual}', '${v.origen||'S/N'}', '${v.destino||'S/N'}')" class="btn btn-outline-success btn-sm p-1" title="Compartir WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                                <button onclick="abrirEditarViaje('${id}', '${cId}', '${sId}')" class="btn btn-outline-primary btn-sm p-1" title="Modificar Cliente/Grupo"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="finalizarViaje('${id}', '${u.name}')" class="btn btn-outline-danger btn-sm p-1" title="Archivar"><i class="fa-solid fa-box-archive"></i></button>
+                            </div>
+                        </td>
                     </tr>`;
                 });
             }
