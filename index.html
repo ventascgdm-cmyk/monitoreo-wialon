@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>GRUDICOM TI & GPS | C4 - GOLDEN MASTER</title>
+    <title>GRUDICOM TI & GPS | C4 - LIVE</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -24,7 +24,6 @@
         .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .card { background: var(--bg-card); border: 1px solid var(--border-col); }
         
-        /* PANTALLA DIVIDIDA */
         .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 70px); width: 100%; overflow: hidden; }
         .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--header-bg); }
         .workspace-container.show-map .map-panel { height: 40%; border-bottom: 4px solid var(--header-bg); }
@@ -41,7 +40,6 @@
         .status-select { border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.70rem; padding: 2px;}
         .lost-connection-row td { background-color: #ffe6e6 !important; color: #990000 !important; }
         .dark-mode .lost-connection-row td { background-color: #4a1515 !important; color: #ffcccc !important; }
-        
         .unit-name { cursor: pointer; text-decoration: underline; color: #0d6efd; font-weight: bold; }
     </style>
 </head>
@@ -54,7 +52,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario" value="admin">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña" value="admin123">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Wialon API Activado</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host Wialon API</div>
     </div>
 </div>
 
@@ -106,7 +104,7 @@
 <div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
     <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">NUEVO VIAJE</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
     <div class="modal-body small">
-        <label>Unidad GPS:</label><input type="text" class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off">
+        <label>Unidad GPS:</label><input type="text" class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off" placeholder="Selecciona o escribe el número...">
         <label>Operador:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2 border-primary" list="listaConductores" autocomplete="off">
         <div class="row mb-2">
             <div class="col-6"><label>Cliente:</label><select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div>
@@ -150,7 +148,7 @@
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
         db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); });
         
-        // CORRECCIÓN FIREBASE TOKENS: Convertimos el objeto a un arreglo iterable
+        // CORRECCIÓN FIREBASE TOKENS
         db.ref('sistema/tokens').on('value', s => { 
             let tks = s.val();
             configSistema.tokens = tks ? Object.values(tks) : []; 
@@ -186,44 +184,80 @@
         });
     }
 
+    // EL MOTOR JSONP REPARADO CON ERROR HANDLING Y PARÁMETROS SDK
     function peticionWialon(url, svc, params, sid=null) {
         return new Promise(resolve => {
-            let script = document.createElement("script"), cb = "wialon_cb_" + Date.now() + Math.floor(Math.random()*1000);
+            let script = document.createElement("script");
+            let cb = "wialon_cb_" + Date.now() + Math.floor(Math.random()*1000);
             window[cb] = d => { delete window[cb]; script.remove(); resolve(d); };
+            script.onerror = () => { delete window[cb]; script.remove(); resolve(null); }; // Evita bloqueos si el host cae
             script.src = `${url.replace(/\/$/, '')}/wialon/ajax.html?svc=${svc}&params=${encodeURIComponent(JSON.stringify(params))}&callback=${cb}${sid?'&sid='+sid:''}`;
             document.head.appendChild(script);
         });
     }
 
-    async function arranqueMotor() { if(pollingInterval) clearInterval(pollingInterval); await sincronizarFlotas(); pollingInterval = setInterval(sincronizarFlotas, 20000); }
+    async function arranqueMotor() { 
+        if(pollingInterval) clearInterval(pollingInterval); 
+        await sincronizarFlotas(); 
+        pollingInterval = setInterval(sincronizarFlotas, 20000); 
+    }
 
     async function sincronizarFlotas() {
-        let ind = document.getElementById("syncIndicator"); ind.innerText = "Sincronizando flotas...";
+        let ind = document.getElementById("syncIndicator"); 
+        ind.innerText = "Sincronizando flotas..."; 
+        ind.className = "badge bg-warning text-dark";
+
         let tempUnits = {}, tempGeo = [], listDrv = new Set(), listUni = new Set();
         
         for(let tk of configSistema.tokens) {
-            if(!activeSIDs[tk.token]) { let l = await peticionWialon(tk.url, "token/login", {token: tk.token}); if(l && l.eid) activeSIDs[tk.token] = l.eid; }
-            let sid = activeSIDs[tk.token]; if(!sid) continue;
+            if(!tk.url || !tk.token) continue;
+
+            if(!activeSIDs[tk.token]) { 
+                let l = await peticionWialon(tk.url, "token/login", {token: tk.token}); 
+                if(l && l.eid) activeSIDs[tk.token] = l.eid; 
+            }
+            let sid = activeSIDs[tk.token]; 
+            if(!sid) continue;
             
-            let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025 }, sid);
+            // LA CLAVE ESTÁ AQUÍ: Agregamos from:0 y to:0 que exige el SDK de Wialon
+            let reqU = await peticionWialon(tk.url, "core/search_items", { 
+                spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, 
+                force: 1, flags: 1025, from: 0, to: 0 
+            }, sid);
+            
             if(reqU && reqU.items) {
                 let localMap = {};
-                reqU.items.forEach(u => { let n = u.nm.toUpperCase(); tempUnits[u.id] = { id: u.id, name: n, pos: u.pos }; localMap[u.id] = n; listUni.add(n); });
+                reqU.items.forEach(u => { 
+                    let n = u.nm.toUpperCase(); 
+                    tempUnits[u.id] = { id: u.id, name: n, pos: u.pos }; 
+                    localMap[u.id] = n; 
+                    listUni.add(n); 
+                });
                 
-                let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353 }, sid);
+                // Mismos parámetros (from:0, to:0) para Geocercas y Operadores
+                let reqR = await peticionWialon(tk.url, "core/search_items", { 
+                    spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, 
+                    force: 1, flags: 4353, from: 0, to: 0 
+                }, sid);
+                
                 if(reqR && reqR.items) reqR.items.forEach(r => {
                     if(r.drv) Object.values(r.drv).forEach(d => { let dn = d.n.toUpperCase(); listDrv.add(dn); if(d.bu && localMap[d.bu]) ramDrivers[localMap[d.bu]] = dn; });
                     if(r.zl) Object.values(r.zl).forEach(z => tempGeo.push(z));
                 });
             }
         }
+        
         unidadesGlobales = tempUnits; geocercasNativas = tempGeo;
+        
         document.getElementById("listaUnidadesTotales").innerHTML = Array.from(listUni).map(n => `<option value="${n}">`).join('');
         document.getElementById("listaConductores").innerHTML = Array.from(listDrv).map(n => `<option value="${n}">`).join('');
         document.getElementById("listaGeocercas").innerHTML = tempGeo.map(z => `<option value="${z.n.toUpperCase()}">`).join('');
         
-        ind.className = "badge bg-success"; ind.innerText = Object.keys(unidadesGlobales).length + " Camiones En Vivo";
-        renderizarBitacora(); updateAddresses();
+        ind.className = "badge bg-success"; 
+        ind.innerText = Object.keys(unidadesGlobales).length + " Camiones En Vivo"; // AHORA SÍ MARCARÁ LAS UNIDADES
+        
+        renderizarBitacora(); 
+        updateAddresses();
     }
 
     function renderizarBitacora() {
@@ -282,7 +316,7 @@
     function registrarViaje() {
         let uN = document.getElementById("nv_unidad_input").value.toUpperCase(), uId = null;
         Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === uN) uId = k; });
-        if(!uId) uId = "MANUAL-" + Date.now(); // Soporte para unidades manuales si no están en GPS
+        if(!uId) uId = "MANUAL-" + Date.now(); 
         
         db.ref('viajes_activos/'+uId).set({ 
             cliente: document.getElementById("nv_cliente").value, 
@@ -311,7 +345,8 @@
     function finalizarViaje(id, n) { if(confirm('¿Archivar este viaje?')) { db.ref('viajes_activos/'+id).remove(); } }
     function prepararNuevoViaje() { let s = document.getElementById("nv_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); cargarSubclientesEnSelect('nv_subcliente', s.value); }
     function cargarSubclientesEnSelect(e, c) { let s = document.getElementById(e); s.innerHTML = '<option value="">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k => s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
-    function agregarToken() { db.ref('sistema/tokens').push({nombre:document.getElementById("tk_nom").value.toUpperCase(), token:document.getElementById("tk_val").value, url:document.getElementById("tk_url").value}); alert("Token Guardado"); }
+    
+    function agregarToken() { db.ref('sistema/tokens').push({nombre:document.getElementById("tk_nom").value.toUpperCase(), token:document.getElementById("tk_val").value, url:document.getElementById("tk_url").value}); alert("Token Guardado"); document.getElementById("tk_nom").value=""; document.getElementById("tk_val").value=""; }
     function crearCliente() { db.ref('clientes').push({nombre: document.getElementById("cli_nombre").value.toUpperCase()}); document.getElementById("cli_nombre").value = ""; }
     function crearSubcliente() { db.ref(`clientes/${document.getElementById("sub_clientePadre").value}/subclientes`).push({nombre: document.getElementById("sub_nombre").value.toUpperCase()}); document.getElementById("sub_nombre").value = ""; }
     function actualizarListasAdmin() { let s = document.getElementById("sub_clientePadre"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); }
