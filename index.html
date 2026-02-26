@@ -12,9 +12,8 @@
     <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
 
     <style>
-        /* TEMA CLARO (Por Defecto) */
+        /* TEMA CLARO */
         :root { --bg-main: #f0f4f8; --bg-card: #ffffff; --text-main: #2c3e50; --header-bg: #002a61; --table-bg: rgba(255,255,255,0.85); --border-col: #ced4da; }
-        
         /* TEMA OSCURO */
         body.dark-mode { --bg-main: #121212; --bg-card: #1e1e1e; --text-main: #e0e0e0; --header-bg: #0d1b2a; --table-bg: #2c2c2c; --border-col: #444; }
         
@@ -22,27 +21,25 @@
         .login-bg { background: linear-gradient(135deg, #002a61 0%, #001122 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
         .login-card { background: white; width: 380px; border-radius: 12px; padding: 40px; }
         
-        .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: 0.3s; }
-        .card { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-col); }
-        .table { color: var(--text-main); border-color: var(--border-col); }
+        .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .card { background: var(--bg-card); border: 1px solid var(--border-col); }
+        
         .table-input { border: 1px solid var(--border-col); padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; text-align: center; font-weight: 600; background: var(--table-bg); color: var(--text-main); }
         .table-input:focus { border-color: #002a61; outline: none; }
         .input-upper { text-transform: uppercase; }
         
-        th { background-color: var(--header-bg) !important; color: white !important; font-weight: 600; text-align: center; vertical-align: middle; }
-        
-        /* Estilos de Agrupación (Cliente / Subcliente) */
-        .header-cliente { background-color: #336699 !important; color: white !important; font-size: 0.9rem; font-weight: bold; text-align: left; }
-        .header-subcliente { background-color: #6c757d !important; color: white !important; font-size: 0.8rem; font-weight: bold; text-align: left; padding-left: 30px !important; }
+        /* Estilos de Agrupación (Headers Dinámicos) */
+        .header-cliente { background-color: #336699 !important; color: white !important; font-size: 0.95rem; font-weight: bold; text-align: left; border-top: 3px solid #002a61;}
+        .header-subcliente { background-color: #5c6c7c !important; color: white !important; font-size: 0.85rem; font-weight: bold; text-align: left; padding-left: 20px !important; }
+        .header-columnas th { background-color: var(--header-bg) !important; color: white !important; font-size: 0.7rem; font-weight: 700; text-align: center; vertical-align: middle; padding: 6px; }
         
         .status-select { border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.70rem; padding: 2px;}
         .maps-link { color: #0d6efd; font-weight: bold; text-decoration: none; }
+        .audit-log { font-size: 0.7rem; background: #e9ecef; padding: 4px; border-radius: 4px; border-left: 3px solid #0d6efd; margin-bottom: 2px; text-align: left; line-height: 1.1; color: #333;}
+        .time-input { font-size: 10px !important; text-align: center; font-weight: bold; cursor: pointer;}
         
-        /* SEMÁFORO DE INACTIVIDAD (> 30 min) */
         @keyframes blink-warning { 0% { background-color: rgba(220, 53, 69, 0.1); } 50% { background-color: rgba(220, 53, 69, 0.4); } 100% { background-color: rgba(220, 53, 69, 0.1); } }
         .inactive-row { animation: blink-warning 2.5s infinite; }
-        
-        /* Modales Dark Mode */
         .dark-mode .modal-content { background-color: var(--bg-card); color: var(--text-main); }
         .dark-mode .list-group-item { background-color: var(--table-bg); color: var(--text-main); border-color: var(--border-col); }
     </style>
@@ -56,7 +53,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Identifícate para continuar</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Inicia sesión</div>
     </div>
 </div>
 
@@ -65,13 +62,13 @@
         <div class="d-flex align-items-center">
             <img src="TIGPS HD2.jpg" alt="Logo" style="height: 40px;" class="me-3" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
             <div>
-                <h5 class="fw-bold m-0" style="color: #002a61;"><span class="text-primary">C4</span> - BITÁCORA MAESTRA</h5>
+                <h5 class="fw-bold m-0" style="color: var(--text-main);"><span class="text-primary">C4</span> - BITÁCORA MAESTRA</h5>
                 <small class="text-muted fw-bold" id="lblUsuarioActivo"><i class="fa-solid fa-user-shield"></i> Monitor: </small>
             </div>
         </div>
         <div>
-            <button class="btn btn-dark btn-sm fw-bold me-2" onclick="toggleDarkMode()" title="Modo Nocturno"><i class="fa-solid fa-moon"></i></button>
-            <button class="btn btn-outline-primary btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-truck-fast"></i> Registrar Viaje...</button>
+            <button class="btn btn-dark btn-sm fw-bold me-2" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
+            <button class="btn btn-outline-primary btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-truck-fast"></i> Registrar Viaje</button>
             <button class="btn btn-outline-warning btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalHistorial" onclick="cargarHistorial()"><i class="fa-solid fa-clock-rotate-left"></i> Historial</button>
             <button class="btn btn-danger btn-sm fw-bold me-2" id="btnAdmin" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalAdmin"><i class="fa-solid fa-gears"></i> ADMIN</button>
             <button class="btn btn-secondary btn-sm fw-bold" onclick="cerrarSesion()"><i class="fa-solid fa-power-off"></i> Salir</button>
@@ -82,26 +79,12 @@
         <div class="row mb-2 align-items-center">
             <div class="col-md-3"><input type="text" id="buscador" class="form-control form-control-sm shadow-sm" placeholder="🔍 Buscar unidad, destino..." onkeyup="filtrarTabla()"></div>
             <div class="col-md-9 text-end">
-                <span class="badge bg-warning text-dark"><i class="fa-solid fa-robot"></i> Auto-Arribo Activo</span>
+                <span id="syncIndicator" class="badge bg-success"><i class="fa-solid fa-check-double"></i> Multi-Token Sincronizado</span>
             </div>
         </div>
         <div class="card shadow border-0">
             <div class="table-responsive" style="height: 75vh;">
                 <table class="table table-bordered table-hover align-middle text-center mb-0" id="tablaViajes">
-                    <thead>
-                        <tr>
-                            <th width="10%">UNIDAD</th>
-                            <th width="10%">OPERADOR</th>
-                            <th width="15%">RUTA (O ➔ D)</th>
-                            <th width="9%">CONTENEDORES</th>
-                            <th width="11%">HORARIOS DE RUTA</th>
-                            <th width="10%">ESTATUS</th>
-                            <th width="15%">GPS & UBICACIÓN</th>
-                            <th width="8%">ALERTAS</th>
-                            <th width="8%">AUDITORÍA</th>
-                            <th width="4%">FIN</th>
-                        </tr>
-                    </thead>
                     <tbody id="units-body"></tbody>
                 </table>
             </div>
@@ -112,38 +95,33 @@
 <div class="modal fade" id="modalAdmin" tabindex="-1">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
-      <div class="modal-header bg-danger text-white"><h6 class="modal-title fw-bold"><i class="fa-solid fa-gears"></i> Administrador</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header bg-danger text-white"><h6 class="modal-title fw-bold"><i class="fa-solid fa-gears"></i> Administrador Central</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
           <div class="row">
               <div class="col-md-4 border-end">
-                  <h6 class="fw-bold text-primary"><i class="fa-solid fa-server"></i> Tokens (Multi-Wialon)</h6>
-                  <div class="p-2 bg-light border rounded mb-2">
-                      <input type="text" id="tk_nom" class="form-control form-control-sm mb-1" placeholder="Nombre (Ej. Base MTY)">
+                  <h6 class="fw-bold text-primary"><i class="fa-solid fa-server"></i> Tokens (Wialon API)</h6>
+                  <div class="p-2 bg-light border rounded mb-2 text-dark">
+                      <input type="text" id="tk_nom" class="form-control form-control-sm mb-1" placeholder="Nombre Plataforma">
                       <input type="text" id="tk_url" class="form-control form-control-sm mb-1" placeholder="URL Servidor" value="https://hst-api.wialon.com">
-                      <input type="text" id="tk_val" class="form-control form-control-sm mb-1" placeholder="Token API">
-                      <button class="btn btn-success btn-sm w-100 fw-bold mb-1" onclick="agregarToken()">Añadir Token</button>
-                      <button class="btn btn-primary btn-sm w-100 fw-bold" onclick="iniciarMultiplesSesionesWialon()"><i class="fa-solid fa-rotate"></i> Sincronizar Plataformas</button>
+                      <input type="text" id="tk_val" class="form-control form-control-sm mb-1" placeholder="Token de Acceso">
+                      <button class="btn btn-success btn-sm w-100 fw-bold" onclick="agregarToken()">Añadir Token (Sincroniza Auto)</button>
                   </div>
                   <ul class="list-group list-group-sm" id="listaTokens" style="font-size:10px;"></ul>
               </div>
-              
               <div class="col-md-4 border-end">
                   <h6 class="fw-bold text-primary"><i class="fa-solid fa-building"></i> Clientes (Grupos)</h6>
                   <div class="p-2 bg-light border rounded mb-2">
-                      <input type="text" id="cli_nombre" class="form-control form-control-sm mb-1 input-upper" placeholder="Nombre del Cliente Principal">
+                      <input type="text" id="cli_nombre" class="form-control form-control-sm mb-1 input-upper" placeholder="Nombre Cliente">
                       <div class="mb-1 text-center fs-5">
                           <span style="cursor:pointer;" onclick="document.getElementById('cli_icono').value='🚛'">🚛</span>
                           <span style="cursor:pointer;" onclick="document.getElementById('cli_icono').value='🚚'">🚚</span>
-                          <span style="cursor:pointer;" onclick="document.getElementById('cli_icono').value='🚜'">🚜</span>
-                          <span style="cursor:pointer;" onclick="document.getElementById('cli_icono').value='🚐'">🚐</span>
                           <span style="cursor:pointer;" onclick="document.getElementById('cli_icono').value='🏢'">🏢</span>
                       </div>
-                      <input type="text" id="cli_icono" class="form-control form-control-sm mb-1 text-center" placeholder="Ícono elegido" readonly>
+                      <input type="hidden" id="cli_icono" value="🚛">
                       <button onclick="crearCliente()" class="btn btn-success btn-sm w-100 fw-bold">Guardar Cliente</button>
                   </div>
                   <ul class="list-group list-group-sm" id="listaClientesAdmin"></ul>
               </div>
-
               <div class="col-md-4">
                   <h6 class="fw-bold text-primary"><i class="fa-solid fa-sitemap"></i> Subclientes</h6>
                   <div class="p-2 bg-light border rounded mb-2">
@@ -165,30 +143,46 @@
             <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">Registrar Nuevo Viaje</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
             <div class="modal-body small">
                 <label class="fw-bold">Buscar Unidad (Multi-Token):</label>
-                <input class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" placeholder="Escribe para buscar unidad...">
+                <input class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" placeholder="Escribe el nombre del camión...">
                 
                 <div class="row mb-2">
                     <div class="col-6">
-                        <label class="fw-bold">Cliente:</label>
-                        <select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect()"></select>
+                        <label class="fw-bold">Asignar Cliente:</label>
+                        <select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select>
                     </div>
                     <div class="col-6">
-                        <label class="fw-bold">Subcliente:</label>
+                        <label class="fw-bold">Asignar Subcliente:</label>
                         <select id="nv_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select>
                     </div>
                 </div>
 
                 <div class="row">
-                    <div class="col-6">
-                        <label class="fw-bold">Origen:</label>
-                        <input type="text" id="nv_origen" class="form-control form-control-sm mb-2 input-upper" list="listaGeocercas" placeholder="Buscar...">
-                    </div>
-                    <div class="col-6">
-                        <label class="fw-bold">Destino (Auto-Arribo):</label>
-                        <input type="text" id="nv_destino" class="form-control form-control-sm mb-2 input-upper" list="listaGeocercas" placeholder="Lugar exacto...">
-                    </div>
+                    <div class="col-6"><label class="fw-bold">Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2 input-upper" list="listaGeocercas"></div>
+                    <div class="col-6"><label class="fw-bold">Destino (Auto-Arribo):</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2 input-upper" list="listaGeocercas"></div>
                 </div>
                 <button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2"><i class="fa-solid fa-play"></i> Registrar Viaje</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarViaje" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white"><h6 class="modal-title fw-bold"><i class="fa-solid fa-pen"></i> Modificar Viaje</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body small">
+                <input type="hidden" id="edit_viaje_id">
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <label class="fw-bold">Cambiar Cliente:</label>
+                        <select id="ev_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('ev_subcliente', this.value)"></select>
+                    </div>
+                    <div class="col-6">
+                        <label class="fw-bold">Cambiar Subcliente:</label>
+                        <select id="ev_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select>
+                    </div>
+                </div>
+                <button onclick="guardarEdicionViaje()" class="btn btn-dark btn-sm w-100 fw-bold mt-2">Guardar Cambios</button>
             </div>
         </div>
     </div>
@@ -197,12 +191,12 @@
 <div class="modal fade" id="modalComentarios" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-info text-white"><h6 class="modal-title fw-bold" id="tituloComentarios">Atender / Notas</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header bg-info text-white"><h6 class="modal-title fw-bold" id="tituloComentarios">Centro de Mensajes</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
       <div class="modal-body small">
           <div class="alert alert-warning p-2" id="msgUltimaNotif" style="font-size:11px; display:none;"></div>
           <div id="listaComentarios" class="mb-3" style="max-height: 250px; overflow-y: auto; padding: 5px;"></div>
           <div class="input-group">
-              <input type="text" id="nuevoComentario" class="form-control form-control-sm" placeholder="Escribe nota o atiende alerta...">
+              <input type="text" id="nuevoComentario" class="form-control form-control-sm" placeholder="Registrar anomalía o novedad...">
               <button class="btn btn-primary btn-sm fw-bold" onclick="guardarComentario()">Agregar</button>
           </div>
           <input type="hidden" id="comentario_unidad_id">
@@ -210,6 +204,8 @@
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="modalHistorial" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header bg-warning"><h6 class="modal-title fw-bold">Historial</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body small"><div class="table-responsive"><table class="table table-bordered table-striped text-center text-nowrap"><thead class="table-dark"><tr><th>Unidad</th><th>Cliente</th><th>Inicio</th><th>Fin</th><th>Origen ➔ Destino</th></tr></thead><tbody id="listaHistorial"></tbody></table></div></div></div></div></div>
 
 <datalist id="listaGeocercas"></datalist>
 <datalist id="listaConductores"></datalist>
@@ -221,123 +217,135 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // Variables
     let currentUser = null; 
     let configSistema = { tokens: [], usuarios: {} };
-    let dataClientes = {}; let viajesActivos = {}; let unidadesWialon = []; 
-    let mapUnidades = {}; // Para el buscador global ID -> Unidad
+    let dataClientes = {}; let viajesActivos = {}; let unidadesWialon = []; let historialGlobal = {};
+    let mapUnidades = {}; // Buscador global
     let globalDriversMap = {}; 
+    let activeWialonSessions = []; // Para poder desconectarlas si se agrega un token
 
     const estatusData = { "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"1.2 RETEN",col:"#7D3F00"}, "s4":{nombre:"1.3 Resguardo",col:"#5C338A"}, "s5":{nombre:"2. Incidencia",col:"#FFCCCC"}, "s6":{nombre:"3. Cargando",col:"#EAEAEA"}, "s7":{nombre:"4. Descargando",col:"#D0F0C0"}, "s8":{nombre:"5. Patio GDL",col:"#BCE3F9"}, "s9":{nombre:"6. Patio Reynosa",col:"#C2DEDB"}, "s10":{nombre:"7. Taller",col:"#B5A6A6"}, "s11":{nombre:"8. Finalizado",col:"#0055A5"} };
 
     function formatDateForInput(ms) { if (!ms) return ""; const d = new Date(ms); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
-    
-    // MODO OSCURO (Ergonomía)
-    function toggleDarkMode() {
-        document.body.classList.toggle('dark-mode');
-        const isDark = document.body.classList.contains('dark-mode');
-        localStorage.setItem('tms_dark_mode', isDark);
-    }
+    function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('tms_dark_mode', document.body.classList.contains('dark-mode')); }
 
     window.onload = function () {
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
-        if (typeof wialon !== 'undefined') document.getElementById("status").innerHTML = "SDK Listo ✅";
-        
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); });
         db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; if(unidadesWialon.length>0) renderizarBitacora(); });
+        db.ref('historial').on('value', s => { historialGlobal = s.val() || {}; });
+        
+        // 2. ESCUCHADOR EN TIEMPO REAL PARA TOKENS
+        db.ref('sistema/tokens').on('value', s => {
+            let nuevosTokens = s.val() || [];
+            // Si hay un cambio real en los tokens y hay sesión activa, reconectar
+            if(currentUser && JSON.stringify(nuevosTokens) !== JSON.stringify(configSistema.tokens)) {
+                configSistema.tokens = nuevosTokens;
+                if(currentUser.rol === 'admin') renderizarAdmin();
+                iniciarMultiplesSesionesWialon(); // Sincroniza al instante
+            } else { configSistema.tokens = nuevosTokens; }
+        });
     };
 
-    // 2. AUTENTICACIÓN Y SESIÓN
     function autenticarUsuario() {
         const u = document.getElementById("logUser").value.trim(); const p = document.getElementById("logPass").value.trim();
         if(!u || !p) return;
         document.getElementById("status").innerText = "Autenticando...";
-
         db.ref('sistema').once('value', s => {
             let sys = s.val() || { usuarios: { admin: { pass: "admin123", rol: "admin", nom: "Admin" } }, tokens: [] };
             if(!s.val()) db.ref('sistema').set(sys);
-
             if(sys.usuarios[u] && sys.usuarios[u].pass === p) {
                 currentUser = sys.usuarios[u]; configSistema = sys;
                 document.getElementById("loginOverlay").style.display = "none";
                 document.getElementById("dashboard").style.display = "block";
                 document.getElementById("lblUsuarioActivo").innerHTML += currentUser.nom;
                 if(currentUser.rol === "admin") document.getElementById("btnAdmin").style.display = "inline-block";
-                
                 if(currentUser.rol === "admin") renderizarAdmin();
                 iniciarMultiplesSesionesWialon();
             } else { document.getElementById("status").innerHTML = "<span class='text-danger'>Credenciales incorrectas</span>"; }
         });
     }
 
-    function cerrarSesion() {
-        currentUser = null;
-        document.getElementById("dashboard").style.display = "none";
-        document.getElementById("loginOverlay").style.display = "flex";
-        document.getElementById("logUser").value = ""; document.getElementById("logPass").value = "";
-    }
+    function cerrarSesion() { location.reload(); }
 
-    // 3. WIALON: MÚLTIPLES TOKENS Y AUTO-ARRIBO
+    // 3. SINCRONIZACIÓN MULTI-TOKEN PERFECTA
     async function iniciarMultiplesSesionesWialon() {
-        if(!configSistema.tokens || configSistema.tokens.length === 0) return;
+        let ind = document.getElementById("syncIndicator");
+        ind.className = "badge bg-warning text-dark"; ind.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Sincronizando Flotas...";
+        
+        // Limpieza profunda
         unidadesWialon = []; mapUnidades = {}; globalDriversMap = {};
         document.getElementById("listaGeocercas").innerHTML = ""; document.getElementById("listaConductores").innerHTML = ""; document.getElementById("listaUnidadesTotales").innerHTML = "";
+
+        // Desloguear sesiones viejas para no duplicar datos
+        activeWialonSessions.forEach(sess => { try { sess.logout(); } catch(e){} });
+        activeWialonSessions = [];
+
+        if(!configSistema.tokens || configSistema.tokens.length === 0) { ind.className = "badge bg-danger"; ind.innerHTML = "Sin Tokens"; return; }
 
         const promesas = configSistema.tokens.map((tkObj, idx) => {
             return new Promise((resolve) => {
                 let url = tkObj.url || "https://hst-api.wialon.com"; let tokenStr = tkObj.token || tkObj;
-                let sess = wialon.core.Session.getInstance("WialonSess_" + idx);
+                let sessName = "WialonSess_" + Date.now() + "_" + idx; // Nombre único para evitar colisiones
+                let sess = wialon.core.Session.getInstance(sessName);
                 sess.initSession(url);
                 
                 sess.loginToken(tokenStr, "", (code) => {
                     if(!code) {
+                        activeWialonSessions.push(sess);
                         sess.loadLibrary("itemUnit"); sess.loadLibrary("resourceZones"); sess.loadLibrary("resourceDrivers");
                         
                         sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024 | 4096, mode: 0}, {type: "type", data: "avl_resource", flags: 4096 | 256, mode: 0}], () => {
-                            let units = sess.getItems("avl_unit") || [];
-                            units.forEach(u => {
-                                unidadesWialon.push(u);
-                                mapUnidades[u.getName()] = u.getId(); // Mapa para el Datalist
-                                document.getElementById("listaUnidadesTotales").innerHTML += `<option value="${u.getName()}">`;
-                            });
-                            
-                            let recursos = sess.getItems("avl_resource") || [];
-                            recursos.forEach(r => {
-                                const zones = r.getZones(); for (let z in zones) document.getElementById("listaGeocercas").innerHTML += `<option value="${zones[z].n}">`;
-                                const drivers = r.getDrivers(); 
-                                for (let d in drivers) {
-                                    document.getElementById("listaConductores").innerHTML += `<option value="${drivers[d].n}">`;
-                                    if(drivers[d].bu) globalDriversMap[drivers[d].bu] = drivers[d].n; // Sync conductor asignado
-                                }
-                            });
-
-                            // Alertas nativas de Wialon
-                            sess.addListener("unboundEvents", function (event) {
-                                if (event && event.type === 'notification') {
-                                    let uId = event.data.i;
-                                    db.ref(`viajes_activos/${uId}/alerta`).set({ txt: event.data.t, ts: Date.now() });
-                                }
-                            });
-
-                            sess.addListener("dataUpdated", renderizarBitacora);
-                            resolve(true);
+                            resolve(sess);
                         });
-                    } else resolve(false);
+                    } else resolve(null);
                 });
             });
         });
 
-        await Promise.all(promesas);
+        const sesionesAprobadas = await Promise.all(promesas);
+        
+        // Extraer datos sincrónicamente después de que todas las plataformas respondan
+        sesionesAprobadas.forEach(sess => {
+            if(sess) {
+                let units = sess.getItems("avl_unit") || [];
+                units.forEach(u => {
+                    unidadesWialon.push(u);
+                    mapUnidades[u.getName()] = u.getId();
+                    document.getElementById("listaUnidadesTotales").innerHTML += `<option value="${u.getName()}">`;
+                });
+                
+                let recursos = sess.getItems("avl_resource") || [];
+                recursos.forEach(r => {
+                    const zones = r.getZones(); for (let z in zones) document.getElementById("listaGeocercas").innerHTML += `<option value="${zones[z].n}">`;
+                    const drivers = r.getDrivers(); 
+                    for (let d in drivers) {
+                        document.getElementById("listaConductores").innerHTML += `<option value="${drivers[d].n}">`;
+                        if(drivers[d].bu) globalDriversMap[drivers[d].bu] = drivers[d].n; 
+                    }
+                });
+
+                // Alertas
+                sess.addListener("unboundEvents", function (event) {
+                    if (event && event.type === 'notification') {
+                        let uId = event.data.i; db.ref(`viajes_activos/${uId}/alerta`).set({ txt: event.data.t, ts: Date.now() });
+                    }
+                });
+                sess.addListener("dataUpdated", renderizarBitacora);
+            }
+        });
+
+        ind.className = "badge bg-success"; ind.innerHTML = "<i class='fa-solid fa-check-double'></i> Sincronizado";
         renderizarBitacora();
-        alert("¡Plataformas Wialon Sincronizadas!");
     }
 
-    // 4. RENDERIZADO MAESTRO (Clientes -> Subclientes -> Unidades)
+    // 4. RENDERIZADO MAESTRO (ENCABEZADOS DINÁMICOS)
     function renderizarBitacora() {
         if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return; 
         const tbody = document.getElementById('units-body');
         let html = "";
 
-        // Agrupación de estructura
         let tree = { "Sin_Cliente": { "__n/a__": [] } };
         Object.keys(dataClientes).forEach(cId => {
             tree[cId] = { "__n/a__": [] };
@@ -345,17 +353,21 @@
         });
 
         unidadesWialon.forEach(u => {
-            let id = u.getId();
-            if (!viajesActivos[id]) return;
-            let v = viajesActivos[id];
-            let cId = v.cliente || "Sin_Cliente";
-            let sId = v.subcliente || "__n/a__";
+            let id = u.getId(); if (!viajesActivos[id]) return;
+            let v = viajesActivos[id]; let cId = v.cliente || "Sin_Cliente"; let sId = v.subcliente || "__n/a__";
             if(!tree[cId]) tree[cId] = {"__n/a__": []};
             if(!tree[cId][sId]) tree[cId][sId] = [];
             tree[cId][sId].push({u: u, v: v});
         });
 
-        // Iterar Árbol Visual
+        // HTML del Encabezado de Columnas (Punto 3)
+        const headerColumnasHTML = `
+            <tr class="header-columnas">
+                <th width="10%">UNIDAD</th><th width="10%">OPERADOR</th><th width="15%">RUTA (O ➔ D)</th>
+                <th width="9%">CONTENEDORES</th><th width="11%">HORARIOS DE RUTA</th><th width="10%">ESTATUS</th>
+                <th width="15%">GPS & UBICACIÓN</th><th width="8%">ALERTAS</th><th width="8%">AUDITORÍA</th><th width="4%">ACCIÓN</th>
+            </tr>`;
+
         for(let cId in tree) {
             let hasUnitsClient = false;
             let cliHtml = "";
@@ -365,17 +377,18 @@
                 if(tree[cId][sId].length === 0) continue;
                 hasUnitsClient = true;
                 
-                // Si hay subcliente real, poner encabezado secundario
                 if(sId !== "__n/a__") {
                     let subNom = dataClientes[cId].subclientes[sId].nombre;
                     cliHtml += `<tr><td colspan="10" class="header-subcliente shadow-sm">↳ Subcliente: ${subNom}</td></tr>`;
                 }
+                
+                // INYECTAR ENCABEZADOS DE COLUMNA DESPUÉS DEL GRUPO/SUBGRUPO
+                cliHtml += headerColumnasHTML;
 
                 tree[cId][sId].forEach(item => {
                     const u = item.u; const v = item.v; const id = u.getId();
                     const pos = u.getPosition();
                     
-                    // Semáforo Inactividad (> 30 min)
                     const isInactive = pos && pos.t && ((Date.now()/1000 - pos.t) > 1800);
                     const rowClass = isInactive ? "inactive-row" : "";
 
@@ -383,22 +396,14 @@
                     const motorOn = speed > 0 || (pos && pos.p && (pos.p.ign === 1 || pos.p.engine_ignition === 1));
                     const iconMotor = motorOn ? `<i class="fa-solid fa-bolt text-success"></i>` : `<i class="fa-regular fa-circle text-danger"></i>`;
                     
-                    // Conductor Automático
                     let currentDriver = v.operador || globalDriversMap[id] || '';
-
-                    // Tiempos Editables
                     const tSal = v.t_salida ? `<div class="input-group input-group-sm mb-1"><span class="input-group-text bg-success text-white py-0 px-1" style="font-size:9px;">S</span><input type="datetime-local" class="form-control time-input py-0 px-1" value="${formatDateForInput(v.t_salida)}" onchange="modificarTiempo('${id}','t_salida',this.value)"></div>` : `<button class="btn btn-outline-success btn-sm py-0 mb-1 w-100 fw-bold" style="font-size:9px;" onclick="registrarTiempo('${id}','t_salida')">Salida</button>`;
                     const tArr = v.t_arribo ? `<div class="input-group input-group-sm"><span class="input-group-text bg-danger text-white py-0 px-1" style="font-size:9px;">A</span><input type="datetime-local" class="form-control time-input py-0 px-1" value="${formatDateForInput(v.t_arribo)}" onchange="modificarTiempo('${id}','t_arribo',this.value)"></div>` : `<button class="btn btn-outline-danger btn-sm py-0 w-100 fw-bold" style="font-size:9px;" onclick="registrarTiempo('${id}','t_arribo')">Arribo</button>`;
 
                     const mapLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : '#';
-                    
-                    // Alerta Wialon DB
                     let alertaUI = `<span class="text-muted small">OK</span>`;
-                    if(v.alerta) {
-                        alertaUI = `<div class="text-danger fw-bold" style="font-size:9px; line-height:1;"><i class="fa-solid fa-bell fa-shake"></i> ${new Date(v.alerta.ts).toLocaleTimeString()}<br>${v.alerta.txt}</div>`;
-                    }
-
-                    // Último comentario auditoria
+                    if(v.alerta) alertaUI = `<div class="text-danger fw-bold" style="font-size:9px; line-height:1;"><i class="fa-solid fa-bell fa-shake"></i> ${new Date(v.alerta.ts).toLocaleTimeString()}<br>${v.alerta.txt}</div>`;
+                    
                     let ultLog = "";
                     if(v.bitacora) { let l = Object.values(v.bitacora).pop(); ultLog = `<div class="audit-log"><b class="text-primary">${l.autor}:</b> ${l.txt}</div>`; }
 
@@ -429,19 +434,21 @@
                             ${ultLog}
                             <button class="btn btn-sm btn-primary p-0 px-2 fw-bold w-100" onclick="abrirAuditoria('${id}', '${u.getName()}', '')"><i class="fa-solid fa-plus"></i> Nota</button>
                         </td>
-                        <td class="align-middle"><button onclick="finalizarViaje('${id}', '${u.getName()}')" class="btn btn-outline-danger btn-sm p-1" title="Archivar"><i class="fa-solid fa-box-archive"></i></button></td>
+                        <td class="align-middle">
+                            <div class="d-flex flex-column gap-1">
+                                <button onclick="abrirEditarViaje('${id}', '${cId}', '${sId}')" class="btn btn-outline-primary btn-sm p-1" title="Modificar Cliente/Grupo"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="finalizarViaje('${id}', '${u.getName()}')" class="btn btn-outline-danger btn-sm p-1" title="Archivar"><i class="fa-solid fa-box-archive"></i></button>
+                            </div>
+                        </td>
                     </tr>`;
                     
-                    // Geocoding & Auto-Arribo
                     if (pos) {
                         wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], function(c, addr) { 
                             let el = document.getElementById(`addr_${id}`); 
                             if(el&&addr) {
                                 let dirStr = addr[0]; el.innerText = dirStr;
-                                // Lógica Auto-Arribo: Si la dirección contiene el string del destino y no se ha marcado arribo
                                 if(v.destino && !v.t_arribo && dirStr.toUpperCase().includes(v.destino.toUpperCase())) {
-                                    registrarTiempo(id, 't_arribo');
-                                    auditoria(id, `AUTO-ARRIBO: El sistema detectó entrada a ${v.destino}`);
+                                    registrarTiempo(id, 't_arribo'); auditoria(id, `AUTO-ARRIBO: El sistema detectó entrada a ${v.destino}`);
                                 }
                             }
                         });
@@ -457,19 +464,19 @@
         aplicarFiltroActual();
     }
 
-    // 5. NUEVO VIAJE Y GESTIÓN DE CLIENTES
+    // 5. REGISTRAR Y MODIFICAR VIAJES
     function prepararNuevoViaje() {
         let sel = document.getElementById("nv_cliente"); sel.innerHTML = `<option value="">Seleccione Cliente...</option>`;
         Object.keys(dataClientes).forEach(k => { sel.innerHTML += `<option value="${k}">${dataClientes[k].nombre}</option>`; });
         document.getElementById("nv_unidad_input").value = "";
     }
     
-    function cargarSubclientesEnSelect() {
-        let cId = document.getElementById("nv_cliente").value;
-        let sel = document.getElementById("nv_subcliente"); sel.innerHTML = `<option value="">N/A</option>`;
-        if(cId && dataClientes[cId] && dataClientes[cId].subclientes) {
-            Object.keys(dataClientes[cId].subclientes).forEach(sId => {
-                sel.innerHTML += `<option value="${sId}">${dataClientes[cId].subclientes[sId].nombre}</option>`;
+    function cargarSubclientesEnSelect(elementId, clientId, preselect = "") {
+        let sel = document.getElementById(elementId); sel.innerHTML = `<option value="">N/A</option>`;
+        if(clientId && dataClientes[clientId] && dataClientes[clientId].subclientes) {
+            Object.keys(dataClientes[clientId].subclientes).forEach(sId => {
+                let isSel = (sId === preselect) ? "selected" : "";
+                sel.innerHTML += `<option value="${sId}" ${isSel}>${dataClientes[clientId].subclientes[sId].nombre}</option>`;
             });
         }
     }
@@ -477,83 +484,69 @@
     function registrarViaje() {
         let uNom = document.getElementById("nv_unidad_input").value;
         let uId = mapUnidades[uNom];
-        if (!uId) return alert("Unidad no encontrada. Selecciona de la lista.");
-        
-        let cId = document.getElementById("nv_cliente").value;
-        
+        if (!uId) return alert("Unidad no encontrada. Escriba correctamente el nombre.");
         db.ref('viajes_activos/' + uId).set({ 
-            cliente: cId, 
+            cliente: document.getElementById("nv_cliente").value, 
             subcliente: document.getElementById("nv_subcliente").value, 
             origen: document.getElementById("nv_origen").value.toUpperCase(), 
             destino: document.getElementById("nv_destino").value.toUpperCase(), 
-            estatus: "s1", 
-            // Cargar conductor de Wialon automáticamente si existe
-            operador: globalDriversMap[uId] || "",
+            estatus: "s1", operador: globalDriversMap[uId] || "",
             bitacora: [{autor:"Sistema", fecha: Date.now(), txt: "Registró Viaje"}] 
         });
         bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
     }
 
-    // ADMINISTRACIÓN DE CLIENTES
-    function crearCliente() { 
-        db.ref('clientes').push({ nombre: document.getElementById("cli_nombre").value.toUpperCase(), icono: document.getElementById("cli_icono").value || "🚛" }); 
-        document.getElementById("cli_nombre").value=""; document.getElementById("cli_icono").value="";
+    // EDITAR VIAJE (Cambiar Cliente)
+    function abrirEditarViaje(uId, currentClient, currentSub) {
+        document.getElementById("edit_viaje_id").value = uId;
+        let selC = document.getElementById("ev_cliente"); selC.innerHTML = `<option value="">Sin Cliente</option>`;
+        Object.keys(dataClientes).forEach(k => { 
+            let isSel = (k === currentClient) ? "selected" : "";
+            selC.innerHTML += `<option value="${k}" ${isSel}>${dataClientes[k].nombre}</option>`; 
+        });
+        cargarSubclientesEnSelect("ev_subcliente", currentClient, currentSub);
+        new bootstrap.Modal(document.getElementById('modalEditarViaje')).show();
     }
-    function crearSubcliente() {
-        let cId = document.getElementById("sub_clientePadre").value; let sNom = document.getElementById("sub_nombre").value.toUpperCase();
-        if(!cId || !sNom) return;
-        db.ref(`clientes/${cId}/subclientes`).push({ nombre: sNom });
-        document.getElementById("sub_nombre").value="";
-    }
-    function actualizarListasAdmin() {
-        let lCli = document.getElementById("listaClientesAdmin"); lCli.innerHTML="";
-        let selPadre = document.getElementById("sub_clientePadre"); selPadre.innerHTML=`<option value="">Seleccionar Cliente...</option>`;
-        let lSub = document.getElementById("listaSubclientesAdmin"); lSub.innerHTML="";
 
+    function guardarEdicionViaje() {
+        let id = document.getElementById("edit_viaje_id").value;
+        let nC = document.getElementById("ev_cliente").value; let nS = document.getElementById("ev_subcliente").value;
+        db.ref(`viajes_activos/${id}/cliente`).set(nC); db.ref(`viajes_activos/${id}/subcliente`).set(nS);
+        auditoria(id, "Reasignó cliente/grupo del viaje.");
+        bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide();
+    }
+
+    // DEMÁS FUNCIONES (Admin, Auditoría, Tiempos)
+    function crearCliente() { db.ref('clientes').push({ nombre: document.getElementById("cli_nombre").value.toUpperCase(), icono: document.getElementById("cli_icono").value || "🚛" }); document.getElementById("cli_nombre").value=""; }
+    function crearSubcliente() { let cId = document.getElementById("sub_clientePadre").value; let sNom = document.getElementById("sub_nombre").value.toUpperCase(); if(!cId || !sNom) return; db.ref(`clientes/${cId}/subclientes`).push({ nombre: sNom }); document.getElementById("sub_nombre").value=""; }
+    function actualizarListasAdmin() {
+        let lCli = document.getElementById("listaClientesAdmin"); lCli.innerHTML=""; let selPadre = document.getElementById("sub_clientePadre"); selPadre.innerHTML=`<option value="">Seleccionar Cliente...</option>`; let lSub = document.getElementById("listaSubclientesAdmin"); lSub.innerHTML="";
         Object.keys(dataClientes).forEach(cId => {
             lCli.innerHTML += `<li class="list-group-item d-flex justify-content-between"><span>${dataClientes[cId].icono} ${dataClientes[cId].nombre}</span><button onclick="db.ref('clientes/${cId}').remove()" class="btn btn-sm btn-danger py-0">X</button></li>`;
             selPadre.innerHTML += `<option value="${cId}">${dataClientes[cId].nombre}</option>`;
-            
-            if(dataClientes[cId].subclientes) {
-                Object.keys(dataClientes[cId].subclientes).forEach(sId => {
-                    lSub.innerHTML += `<li class="list-group-item d-flex justify-content-between"><span>[${dataClientes[cId].nombre}] -> ${dataClientes[cId].subclientes[sId].nombre}</span><button onclick="db.ref('clientes/${cId}/subclientes/${sId}').remove()" class="btn btn-sm btn-warning py-0">X</button></li>`;
-                });
-            }
+            if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => { lSub.innerHTML += `<li class="list-group-item d-flex justify-content-between"><span>[${dataClientes[cId].nombre}] -> ${dataClientes[cId].subclientes[sId].nombre}</span><button onclick="db.ref('clientes/${cId}/subclientes/${sId}').remove()" class="btn btn-sm btn-warning py-0">X</button></li>`; });
         });
     }
 
-    // 6. TIEMPOS Y AUDITORÍA
     function registrarTiempo(id, tipo) { db.ref(`viajes_activos/${id}/${tipo}`).set(Date.now()); auditoria(id, `Marcó ${tipo === 't_salida' ? 'Salida' : 'Arribo'}.`); }
-    function modificarTiempo(id, tipo, val) { if(!val) { db.ref(`viajes_activos/${id}/${tipo}`).remove(); return; } db.ref(`viajes_activos/${id}/${tipo}`).set(new Date(val).getTime()); auditoria(id, `Modificó hora de ${tipo==='t_salida'?'Salida':'Arribo'} manualmente.`); }
+    function modificarTiempo(id, tipo, val) { if(!val) { db.ref(`viajes_activos/${id}/${tipo}`).remove(); return; } db.ref(`viajes_activos/${id}/${tipo}`).set(new Date(val).getTime()); auditoria(id, `Modificó hora manualmente.`); }
     function auditoria(idViaje, texto) { db.ref(`viajes_activos/${idViaje}/bitacora`).push({ autor: currentUser.nom, fecha: Date.now(), txt: texto }); }
 
     function abrirAuditoria(id, unidadNom, tipoMsj) {
-        document.getElementById("tituloComentarios").innerText = `Auditoría: ${unidadNom}`;
-        document.getElementById("comentario_unidad_id").value = id;
-        
+        document.getElementById("tituloComentarios").innerText = `Auditoría: ${unidadNom}`; document.getElementById("comentario_unidad_id").value = id;
         let msgEl = document.getElementById("msgUltimaNotif");
-        if(tipoMsj === "Alerta" && viajesActivos[id].alerta) {
-            msgEl.style.display = "block";
-            msgEl.innerHTML = `<b>Atendiendo Alerta:</b> ${viajesActivos[id].alerta.txt}`;
-        } else { msgEl.style.display = "none"; }
-        
+        if(tipoMsj === "Alerta" && viajesActivos[id].alerta) { msgEl.style.display = "block"; msgEl.innerHTML = `<b>Atendiendo Alerta:</b> ${viajesActivos[id].alerta.txt}`; } else { msgEl.style.display = "none"; }
         const bit = viajesActivos[id].bitacora || {}; let html = "";
         Object.values(bit).forEach(b => { html += `<div class="audit-log"><strong class="text-primary">${b.autor}</strong> <span class="text-muted" style="font-size:9px;">[${new Date(b.fecha).toLocaleString()}]</span><br>${b.txt}</div>`; });
-        document.getElementById("listaComentarios").innerHTML = html;
-        new bootstrap.Modal(document.getElementById('modalComentarios')).show();
+        document.getElementById("listaComentarios").innerHTML = html; new bootstrap.Modal(document.getElementById('modalComentarios')).show();
     }
-
     function guardarComentario() {
-        const id = document.getElementById("comentario_unidad_id").value;
-        const txt = document.getElementById("nuevoComentario").value;
-        if(!txt) return;
-        auditoria(id, txt); 
-        document.getElementById("nuevoComentario").value = "";
-        if(viajesActivos[id].alerta) db.ref(`viajes_activos/${id}/alerta`).remove(); // Limpiar alerta en DB
+        const id = document.getElementById("comentario_unidad_id").value; const txt = document.getElementById("nuevoComentario").value; if(!txt) return;
+        auditoria(id, txt); document.getElementById("nuevoComentario").value = "";
+        if(viajesActivos[id].alerta) db.ref(`viajes_activos/${id}/alerta`).remove(); 
         setTimeout(() => abrirAuditoria(id, document.getElementById("tituloComentarios").innerText.replace("Auditoría: ",""), ""), 300);
     }
 
-    // ADMIN TOKENS
     function renderizarAdmin() {
         let ulT = document.getElementById("listaTokens"); ulT.innerHTML = "";
         (configSistema.tokens||[]).forEach((tk, i) => { ulT.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><b>${tk.nombre||'Plataforma'}</b><br><small class="text-muted">${tk.url||'Wialon'}</small></div><button class="btn btn-sm btn-danger py-0" onclick="borrarToken(${i})">X</button></li>`; });
@@ -561,11 +554,13 @@
         Object.keys(configSistema.usuarios).forEach(u => { ulU.innerHTML += `<li class="list-group-item d-flex justify-content-between"><b>${u}</b> (${configSistema.usuarios[u].rol}) <button class="btn btn-sm btn-danger py-0" onclick="db.ref('sistema/usuarios/${u}').remove()">X</button></li>`; });
         actualizarListasAdmin();
     }
-    function agregarToken() { let val = document.getElementById("tk_val").value.trim(); if(!val) return; let tokens = configSistema.tokens || []; tokens.push({ nombre: document.getElementById("tk_nom").value.trim() || "Wialon General", url: document.getElementById("tk_url").value.trim() || "https://hst-api.wialon.com", token: val }); db.ref('sistema/tokens').set(tokens); document.getElementById("tk_nom").value=""; document.getElementById("tk_val").value=""; }
+    function agregarToken() { let val = document.getElementById("tk_val").value.trim(); if(!val) return; let tokens = configSistema.tokens || []; tokens.push({ nombre: document.getElementById("tk_nom").value.trim() || "Local", url: document.getElementById("tk_url").value.trim(), token: val }); db.ref('sistema/tokens').set(tokens); document.getElementById("tk_nom").value=""; document.getElementById("tk_val").value=""; }
     function borrarToken(idx) { let tokens = configSistema.tokens; tokens.splice(idx,1); db.ref('sistema/tokens').set(tokens); }
     function crearMonitor() { let u = document.getElementById("nu_user").value.trim(); let p = document.getElementById("nu_pass").value.trim(); if(!u||!p) return; db.ref(`sistema/usuarios/${u}`).set({ pass: p, rol: "monitor", nom: u.toUpperCase() }); }
-    function finalizarViaje(id, nom) { if(!confirm(`¿Archivar viaje de ${nom}?`)) return; let v = viajesActivos[id]; v.unidad = nom; v.finTs = Date.now(); db.ref('historial').push(v); db.ref('viajes_activos/'+id).remove(); }
-    function filtrarTabla() { const txt = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#units-body tr").forEach(f => { if(f.classList.contains("header-cliente")||f.classList.contains("header-subcliente")) return; let rText = f.innerText.toLowerCase(); f.querySelectorAll('input').forEach(i => rText += " " + i.value.toLowerCase()); f.style.display = rText.includes(txt) ? "" : "none"; }); }
+    function finalizarViaje(id, nom) { if(!confirm(`¿Archivar viaje?`)) return; let v = viajesActivos[id]; v.unidad = nom; v.finTs = Date.now(); db.ref('historial').push(v); db.ref('viajes_activos/'+id).remove(); }
+    
+    function cargarHistorial() { let html = ""; Object.keys(historialGlobal).reverse().forEach(k => { const h = historialGlobal[k]; html += `<tr><td>${h.unidad||''}</td><td>${(dataClientes[h.cliente]||{}).nombre||''}<br><small>${h.subcliente||''}</small></td><td>${h.inicioTs?new Date(h.inicioTs).toLocaleDateString():''}</td><td>${h.finTs?new Date(h.finTs).toLocaleDateString():''}</td><td>${h.origen||''} ➔ ${h.destino||''}</td></tr>`; }); document.getElementById("listaHistorial").innerHTML = html; }
+    function filtrarTabla() { const txt = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#units-body tr").forEach(f => { if(f.classList.contains("header-cliente")||f.classList.contains("header-subcliente")||f.classList.contains("header-columnas")) return; let rText = f.innerText.toLowerCase(); f.querySelectorAll('input').forEach(i => rText += " " + i.value.toLowerCase()); f.style.display = rText.includes(txt) ? "" : "none"; }); }
     function aplicarFiltroActual(){ filtrarTabla(); }
 </script>
 </body>
