@@ -58,9 +58,8 @@
         .unit-name { cursor: pointer; color: #002a61; font-weight: 900; font-size: 1.15rem; letter-spacing: 0.5px; display: block; text-align: center; }
         .unit-name:hover { color: #0d6efd; text-decoration: underline; }
         
-        /* ESTADOS DE DESCONEXIÓN */
         .lost-connection-row td { background-color: #fff5f5 !important; }
-        .external-connection-row td { background-color: #f0f8ff !important; } /* Azul sutil para externas */
+        .external-connection-row td { background-color: #f0f8ff !important; } 
         
         .speed-badge { font-size: 0.95rem; font-weight: 900; border-radius: 6px; padding: 4px 10px; text-align: center; color: white; display: inline-block; margin-bottom: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);}
         .addr-link { font-size: 0.85rem; line-height: 1.2; color: #0d6efd; text-decoration: none; display: block; width: 100%; margin: 0 auto; font-weight: 700; text-align: center; transition: 0.2s;}
@@ -85,7 +84,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v10.5</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v10.6</div>
     </div>
 </div>
 
@@ -188,10 +187,7 @@
     let estadoTokens = {}; 
     let datosAgrupadosGlobal = {}; 
 
-    // SISTEMA GEOCODING NOMINATIM Y CACHÉ
     let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
-    let geoQueue = [];
-    let isGeocoding = false;
 
     let hiddenCols = JSON.parse(localStorage.getItem('tms_hiddenCols')) || {
         'col-operador': false, 'col-ruta': false, 'col-contenedores': false, 'col-horarios': false, 'col-alertas': false, 'col-historial': false
@@ -201,7 +197,7 @@
         "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"1.2 RETEN",col:"#7D3F00"}, "s4":{nombre:"1.3 Resguardo",col:"#5C338A"}, "s5":{nombre:"1.4 REGRESANDO",col:"#D97706"}, "s6":{nombre:"2. Incidencia",col:"#DC2626"}, "s7":{nombre:"3. Cargando",col:"#5c6c7c"}, "s8":{nombre:"4. Descargando",col:"#336699"}, "s9":{nombre:"5. Patio GDL",col:"#17a2b8"}, "s10":{nombre:"6. Patio Reynosa",col:"#20c997"}, "s11":{nombre:"7. Taller",col:"#9CA3AF"}, "s12":{nombre:"8. Finalizado",col:"#0055A5"}, "s13":{nombre:"9. Baja cobertura",col:"#FBBF24"}, "s14":{nombre:"ALIMENTOS",col:"#F59E0B"} 
     };
 
-    // MOTOR MATEMÁTICO DE GEOCERCAS WIALON 
+    // MOTOR GEOCERCAS WIALON
     function isInsidePolygon(point, vs) {
         let x = point[0], y = point[1], inside = false;
         for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -270,20 +266,21 @@
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
 
-    // PLANILLA WHATSAPP EXACTA CONCATENADA
+    // PLANILLA WHATSAPP CÓDIGO CLÁSICO
     function shareWA(u, loc, o, d, est, cont, cli, sub, vel, posY, posX) { 
         let estNombre = window.estatusData[est]?.nombre || "En Trayecto"; 
         let subText = sub !== 'N/A' ? ` -> ${sub}` : '';
-        let mapLink = posY && posX ? `\n📍 *Ubicación:* https://maps.google.com/?q=LAT,LON{posY},${posX}` : `\n📍 *Ubicación:* ${loc}`;
+        let mapLink = posY && posX ? `\n📍 *Ubicación:* https://maps.google.com/?q=${posY},${posX}` : `\n📍 *Ubicación:* ${loc}`;
         
-        let text = `🛰️REPORTE GCOM GPS:🛰️\n` +
-                   `${cli}${subText}\n\n` +
+        let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
+                   `🏢 *Cliente:* ${cli}${subText}\n\n` +
                    `🚛 *Unidad:* ${u}\n` +
                    `📦 *Contenedores:* ${cont||'N/A'}` + 
                    mapLink + `\n` +
                    `⏱️ *Vel:* ${vel} km/h\n` +
                    `🚦 *Estatus:* ${estNombre}\n` +
-                   `🏁 *Ruta:* ${o||'N/A'} -> Destino: ${d||'N/A'}`;
+                   `🏁 *Ruta:* ${o||'N/A'} ➔ ${d||'N/A'}\n\n` +
+                   `_Reporte C4_`;
                    
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); 
     }
@@ -292,21 +289,24 @@
         if(!datosAgrupadosGlobal[cId] || !datosAgrupadosGlobal[cId][sId]) return;
         let arrViajes = datosAgrupadosGlobal[cId][sId];
         
-        let txt = `🛰️REPORTE GCOM GPS:🛰️\n${titulo}\n\n`;
+        let txt = `*GRUDICOM TI & GPS - REPORTE DE FLOTA*\n` +
+                  `🏢 *${titulo}*\n\n`;
                   
-        arrViajes.forEach(({v, u, isExt}) => {
+        arrViajes.forEach(({v, u}) => {
             let name = v.unidadN || "Desconocida";
             let est = window.estatusData[v.estatus]?.nombre || "En Trayecto";
             let pos = u ? u.pos : null; let vel = pos ? pos.s : 0;
-            let mapLink = pos ? `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}` : (v.ubicacion_manual || "Manual");
+            let mapLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : (v.ubicacion_manual || "Manual");
             
             txt += `🚛 *Unidad:* ${name}\n` +
                    `📦 *Contenedores:* ${v.contenedores||'N/A'}\n` +
                    `📍 *Ubicación:* ${mapLink}\n` +
                    `⏱️ *Vel:* ${vel} km/h\n` +
                    `🚦 *Estatus:* ${est}\n` +
-                   `🏁 *Ruta:* ${v.origen||'N/A'} -> Destino: ${v.destino||'N/A'}\n\n`;
+                   `🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n\n`;
         });
+        txt += `_Reporte C4_`;
+        
         window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
     }
 
@@ -325,9 +325,6 @@
         document.getElementById("nv_unidad_input").addEventListener("input", function() { let uN = this.value.toUpperCase(); document.getElementById("nv_operador").value = ramDrivers[uN] || dbOperadores[uN] || ""; });
         
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
-        
-        // MOTOR NOMINATIM SEGURO (Anti-baneo, 1 petición por segundo)
-        setInterval(procesarFilaDirecciones, 1100); 
     };
 
     function autenticarUsuario(aU, aP) {
@@ -411,21 +408,25 @@
         
         if(conexionesExitosas > 0) { ind.className = "badge bg-success"; ind.innerText = Object.keys(unidadesGlobales).length + " Camiones En Vivo"; } 
         else { ind.className = "badge bg-danger"; ind.innerText = "Error GPS - Modo Manual"; }
-        renderStatusTokens(); renderizarBitacora(); desencadenarGeocoding(); if(mapVisible) actualizarMarcadoresMapa();
+        renderStatusTokens(); renderizarBitacora(); actualizarUbicacionesNominatim(); if(mapVisible) actualizarMarcadoresMapa();
     }
 
-    // GEOCODIFICACIÓN (GEOCERCAS LOCALES + NOMINATIM AUTO-ARRIBO)
-    function desencadenarGeocoding() {
+    // TU CÓDIGO CLÁSICO DE NOMINATIM (+ GEOCERCAS NATIVAS) CON STAGGER ANTI-BANEO
+    function actualizarUbicacionesNominatim() {
+        let delay = 0;
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId];
             
-            // EMPAREJAMIENTO PERFECTO (Respeta guiones, solo quita espacios dobles)
+            // EMPAREJAMIENTO EXACTO
             let nombreCamion = (v.unidadN || v.unidadFallback || "").trim().toUpperCase();
             let uIdGps = null;
-            Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name.trim() === nombreCamion) uIdGps = k; });
+            Object.keys(unidadesGlobales).forEach(k => { 
+                if(unidadesGlobales[k].name.trim().toUpperCase() === nombreCamion) uIdGps = k; 
+            });
             
-            let u = unidadesGlobales[uIdGps]; 
-            
+            // INTENTA LEER POR ID DIRECTO (SI SE REGISTRÓ ASI) O POR NOMBRE EXACTO
+            let u = unidadesGlobales[uIdGps] || unidadesGlobales[vId];
+
             if(u && u.pos) {
                 // 1. REVISIÓN INSTANTÁNEA DE GEOCERCAS WIALON
                 let zonaGeo = resolverGeocerca(u.pos.y, u.pos.x);
@@ -436,63 +437,44 @@
                     
                     if(v.destino && !v.t_arribo && zonaGeo.toUpperCase().includes(v.destino.toUpperCase())) {
                         db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now());
-                        registrarLog(vId, 'Arribo Automático (Geocerca GPS)');
+                        registrarLog(vId, 'Arribo Automático (Geocerca)');
                     }
-                    return; 
-                }
+                } else {
+                    // 2. NOMINATIM CLÁSICO (Con espera para no saturar)
+                    let geoKey = `${u.pos.y.toFixed(4)}_${u.pos.x.toFixed(4)}`;
+                    if(geocodeCache[geoKey]) {
+                        let el = document.getElementById("addr_" + vId);
+                        if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
+                        if(v.destino && !v.t_arribo && geocodeCache[geoKey].toUpperCase().includes(v.destino.toUpperCase())) {
+                            db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now());
+                            registrarLog(vId, 'Arribo Automático (GPS)');
+                        }
+                    } else {
+                        setTimeout(() => {
+                            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.pos.y}&lon=${u.pos.x}&zoom=18&addressdetails=1`)
+                                .then(r => r.json())
+                                .then(d => {
+                                    let fullAddr = d.display_name || "Sin dirección";
+                                    let parts = fullAddr.split(",");
+                                    if(parts.length > 4) fullAddr = parts.slice(0, 4).join(",");
+                                    
+                                    geocodeCache[geoKey] = fullAddr;
+                                    localStorage.setItem('tms_geoCache', JSON.stringify(geocodeCache));
+                                    
+                                    let elId = document.getElementById("addr_" + vId);
+                                    if(elId) elId.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${fullAddr}`;
 
-                // 2. NOMINATIM CLÁSICO (Fila de espera de 1 segundo)
-                let geoKey = `${u.pos.y.toFixed(4)}_${u.pos.x.toFixed(4)}`;
-                if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) {
-                    geoQueue.push({ key: geoKey, y: u.pos.y, x: u.pos.x, vId: vId, dest: v.destino });
-                } else if(geocodeCache[geoKey]) {
-                    let el = document.getElementById("addr_" + vId);
-                    if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
-                    
-                    let a = geocodeCache[geoKey];
-                    if(v.destino && !v.t_arribo && a.toUpperCase().includes(v.destino.toUpperCase())) {
-                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now());
-                        registrarLog(vId, 'Arribo Automático (Calle GPS)');
+                                    if(v.destino && !v.t_arribo && fullAddr.toUpperCase().includes(v.destino.toUpperCase())) {
+                                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now());
+                                        registrarLog(vId, 'Arribo Automático (GPS)');
+                                    }
+                                }).catch(e => console.log("Nominatim Erro"));
+                        }, delay);
+                        delay += 1100; // Un segundo de espera entre cada consulta
                     }
                 }
             }
         });
-    }
-
-    function procesarFilaDirecciones() {
-        if(isGeocoding || geoQueue.length === 0) return;
-        isGeocoding = true;
-        let item = geoQueue.shift();
-        
-        // PETICIÓN CLÁSICA A NOMINATIM (1 Petición / segundo = Cero bloqueos)
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=16`)
-            .then(r => r.json())
-            .then(d => {
-                let fullAddr = d.display_name || "Sin dirección";
-                
-                let parts = fullAddr.split(",");
-                if(parts.length > 4) fullAddr = parts.slice(0, 4).join(",");
-                
-                geocodeCache[item.key] = fullAddr;
-                localStorage.setItem('tms_geoCache', JSON.stringify(geocodeCache));
-                
-                let els = document.querySelectorAll(`.addr-span-${item.key}`);
-                els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${fullAddr}`);
-
-                let elId = document.getElementById("addr_" + item.vId);
-                if(elId) elId.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${fullAddr}`;
-
-                // AUTO-ARRIBO INTELIGENTE
-                if(item.dest && fullAddr.toUpperCase().includes(item.dest.toUpperCase())) {
-                    let v = viajesActivos[item.vId];
-                    if(v && !v.t_arribo) {
-                        db.ref('viajes_activos/'+item.vId+'/t_arribo').set(Date.now());
-                        registrarLog(item.vId, 'Arribo Automático (Calle GPS)');
-                    }
-                }
-            })
-            .catch(e => console.log("Geocode Err"))
-            .finally(() => { isGeocoding = false; });
     }
 
     function actualizarMarcadoresMapa() {
@@ -501,8 +483,8 @@
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId];
             let nombreCamion = (v.unidadN || v.unidadFallback || "").trim().toUpperCase();
-            let uIdGps = null; Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name.trim() === nombreCamion) uIdGps = k; });
-            let u = unidadesGlobales[uIdGps];
+            let uIdGps = null; Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name.trim().toUpperCase() === nombreCamion) uIdGps = k; });
+            let u = unidadesGlobales[uIdGps] || unidadesGlobales[vId];
             if(u && u.pos) {
                 let isMoving = u.pos.s > 0;
                 let colorIcon = isMoving ? '#28a745' : '#0d6efd';
@@ -560,28 +542,24 @@
                 tree[cId][sId].forEach(({vId, u, v}) => {
                     let nombreCamion = (v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
                     
-                    // LECTURA DE PLATAFORMA EXTERNA VS WIALON
-                    let uIdGps = null; Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name.trim() === nombreCamion) uIdGps = k; });
-                    let uData = unidadesGlobales[uIdGps];
+                    let uIdGps = null; Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name.trim().toUpperCase() === nombreCamion) uIdGps = k; });
+                    let uData = unidadesGlobales[uIdGps] || unidadesGlobales[vId]; // BUSQUEDA INFALIBLE
                     
-                    let isExternal = !uData; // Si no está en Wialon es Plataforma Externa
+                    let isExternal = !uData; 
                     let pos = uData ? uData.pos : null; 
                     let speed = pos ? pos.s : 0; 
-                    let isLost = uData && !pos; // Si está en Wialon pero apagado
+                    let isLost = uData && !pos; 
                     
-                    let geoKey = pos ? `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}` : 'none';
                     let uText = (isLost || isExternal) ? `<span class="unit-name ${isExternal?'text-info':'text-danger'}" title="Sin señal Wialon">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
                     
                     let speedBg = "#343a40"; if(speed > 0 && speed < 100) speedBg = "#198754"; if(speed >= 100) speedBg = "#dc3545"; 
                     
-                    // ICONOS DE MOVIMIENTO O DESCONEXIÓN
                     let moveIcon = isExternal ? '<i class="fa-solid fa-globe text-info me-1 fs-6" title="Plataforma Externa"></i>' : 
                                    (isLost ? '<i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i>' : 
                                    (speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1 fs-5"></i>' : '<i class="fa-solid fa-truck text-secondary me-1 fs-5"></i>'));
 
                     let drvName = v.operador || ramDrivers[nombreCamion] || dbOperadores[nombreCamion] || "";
-                    let addr = uData ? (geocodeCache[geoKey] || "<i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...") : "---";
-                    let mapsLink = pos ? `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}` : '#';
+                    let mapsLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : '#';
                     let posTextY = pos ? pos.y : null; let posTextX = pos ? pos.x : null;
 
                     let colEstatus = window.estatusData[v.estatus]?.col || '#000'; 
@@ -601,19 +579,21 @@
                                       (pos ? `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:700;">(hace ${timeAgo(pos.t)})</span>` : 
                                       '<span class="text-danger fw-bold">Modo Offline</span>');
                     
-                    // UI DE UBICACIÓN
                     let ubiControl = (isLost || isExternal) ? 
                         `<div class="d-flex align-items-center justify-content-center">
                             <span class="${isExternal?'text-info':'text-danger'} fw-bold" style="font-size:0.75rem;">${isExternal?'<i class="fa-solid fa-globe"></i> GPS EXTERNO':'<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL'}</span>
                             <button class="btn btn-sm btn-link p-0 ms-2 text-primary" title="Editar ubicación manual" onclick="let u = prompt('Escribir ubicación manual para ${nombreCamion}:', '${v.ubicacion_manual||''}'); if(u !== null) { db.ref('viajes_activos/${vId}/ubicacion_manual').set(u.toUpperCase()); registrarLog('${vId}', 'Añadió Ubicación Manual', u.toUpperCase()); }"><i class="fa-solid fa-pencil"></i></button>
                         </div>
                         <div style="font-size:0.85rem; color:#002a61; font-weight:bold; max-width:100%; margin:0 auto;" class="text-truncate">${v.ubicacion_manual||'--'}</div>` 
-                        : `<a href="${mapsLink}" target="_blank" class="addr-link addr-span-${geoKey}" id="addr_${vId}" title="Abrir en Maps">${addr}</a>`;
+                        : `<a href="${mapsLink}" target="_blank" class="addr-link" title="Abrir en Maps"><div id="addr_${vId}"><i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...</div></a>`;
+
+                    // Obtenemos dirección actual del span para WhatsApp
+                    let addrTextDom = document.getElementById("addr_" + vId);
+                    let textWhatsAppAddr = addrTextDom ? addrTextDom.innerText : (v.ubicacion_manual || 'Buscando...');
 
                     let searchData = `${nombreCamion} ${drvName} ${v.origen} ${v.destino} ${v.contenedores} ${cliData.nombre} ${nomSub} ${window.estatusData[v.estatus]?.nombre}`.toLowerCase();
                     let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
-                    // Fila Azul sutil para externos, Fila rojiza sutil para sin señal Wialon
                     let rowClass = isExternal ? 'external-connection-row' : (isLost ? 'lost-connection-row' : '');
 
                     cliHtml += `<tr class="data-row ${rowClass}" data-search="${searchData}">
@@ -662,7 +642,7 @@
                         </td>
                         <td class="col-accion align-middle">
                             <div class="d-flex flex-column gap-2 align-items-center">
-                                <button onclick="shareWA('${nombreCamion}', '${isExternal||isLost ? (v.ubicacion_manual||'Manual') : addr}', '${v.origen}', '${v.destino}', '${v.estatus}', '${v.contenedores}', '${cliData.nombre}', '${nomSub}', '${speed}', '${posTextY}', '${posTextX}')" class="btn btn-outline-success btn-sm p-1 shadow-sm" style="width: 28px; height: 28px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                                <button onclick="shareWA('${nombreCamion}', '${textWhatsAppAddr}', '${v.origen}', '${v.destino}', '${v.estatus}', '${v.contenedores}', '${cliData.nombre}', '${nomSub}', '${speed}', '${posTextY}', '${posTextX}')" class="btn btn-outline-success btn-sm p-1 shadow-sm" style="width: 28px; height: 28px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
                                 <button onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-primary btn-sm p-1 shadow-sm" style="width: 28px; height: 28px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
                                 <button onclick="finalizarViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-danger btn-sm p-1 shadow-sm" style="width: 28px; height: 28px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
                             </div>
