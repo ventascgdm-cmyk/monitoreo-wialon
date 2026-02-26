@@ -32,12 +32,12 @@
         
         .table-input { border: 1px solid var(--border-col); padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; text-align: center; font-weight: 600; background: var(--table-bg); color: var(--text-main); text-transform: uppercase;}
         
-        /* ESTILOS DE ENCABEZADOS */
+        #mainTableHeader { position: sticky; top: 0; z-index: 10; }
         .header-columnas th { background-color: var(--header-bg) !important; color: white !important; font-size: 0.60rem; font-weight: 700; text-align: center; vertical-align: middle; padding: 8px 4px; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); }
         .header-cliente { background-color: #336699 !important; color: white !important; font-size: 0.85rem; font-weight: bold; text-align: left; padding: 6px 15px !important; text-transform: uppercase; }
         .header-subcliente { background-color: #5c6c7c !important; color: white !important; font-size: 0.75rem; font-weight: bold; text-align: left; padding: 4px 25px !important; }
         
-        .status-select { border-radius: 20px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.70rem; padding: 4px 15px; color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; }
+        .status-select { border-radius: 20px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.70rem; padding: 4px 15px; color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; transition: background-color 0.2s;}
         .unit-name { cursor: pointer; text-decoration: underline; color: #2c3e50; font-weight: 900; font-size: 0.8rem; }
         .unit-lost { color: #dc3545; font-weight: bold; font-size: 0.8rem; }
         .lost-connection-row td { background-color: #ffe6e6 !important; }
@@ -50,7 +50,6 @@
         .ruta-input { border-left: none; padding: 2px 5px; font-size: 0.7rem; font-weight: bold; }
         .cp { cursor: pointer; }
 
-        /* Estilo para los tooltips del mapa */
         .leaflet-tooltip.custom-tooltip { background: #2c3e50; color: #fff; border: none; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); font-weight: 500; font-size: 0.75rem; padding: 6px 10px; }
         .leaflet-tooltip.custom-tooltip::before { border-top-color: #2c3e50; }
     </style>
@@ -64,7 +63,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v9.0</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v9.6 (Geocoding Wialon)</div>
     </div>
 </div>
 
@@ -97,6 +96,11 @@
             <div class="card shadow-sm border-0 h-100 bg-transparent">
                 <div class="table-responsive h-100">
                     <table class="table table-bordered table-sm align-middle text-center mb-0 bg-white" id="mainTable">
+                        <thead id="mainTableHeader">
+                            <tr class="header-columnas">
+                                <th>UNIDAD</th><th>OPERADOR</th><th>RUTA (O ➔ D)</th><th>CONTENEDORES</th><th>HORARIOS</th><th>ESTATUS</th><th>GPS & UBICACIÓN</th><th>ALERTAS</th><th>HISTORIAL LOG</th><th>ACCIÓN</th>
+                            </tr>
+                        </thead>
                         <tbody id="units-body"></tbody>
                     </table>
                 </div>
@@ -127,12 +131,11 @@
     let lmap = null, mapVisible = false, mapLayerGroup = null;
     let estadoTokens = {}; 
 
-    // SISTEMA DE CACHÉ Y COLA DE DIRECCIONES (Súper Rápido y Anti-Bloqueo)
-    let geocodeCache = {}; 
-    let geoQueue = [];
-    let isGeocoding = false;
+    // SISTEMA DE CACHÉ EN NAVEGADOR
+    let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
 
-    const estatusData = { 
+    // VARIABLE GLOBAL PARA ESTATUS
+    window.estatusData = { 
         "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"1.2 RETEN",col:"#7D3F00"}, "s4":{nombre:"1.3 Resguardo",col:"#5C338A"}, "s5":{nombre:"1.4 REGRESANDO",col:"#D97706"}, "s6":{nombre:"2. Incidencia",col:"#DC2626"}, "s7":{nombre:"3. Cargando",col:"#EAEAEA"}, "s8":{nombre:"4. Descargando",col:"#D0F0C0"}, "s9":{nombre:"5. Patio GDL",col:"#BCE3F9"}, "s10":{nombre:"6. Patio Reynosa",col:"#C2DEDB"}, "s11":{nombre:"7. Taller",col:"#9CA3AF"}, "s12":{nombre:"8. Finalizado",col:"#0055A5"}, "s13":{nombre:"9. Baja cobertura",col:"#FBBF24"}, "s14":{nombre:"ALIMENTOS",col:"#F59E0B"} 
     };
 
@@ -144,7 +147,6 @@
         return d.toLocaleDateString('es-MX', {day:'2-digit', month:'2-digit'}) + " " + d.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}); 
     }
     
-    // CALCULA "HACE X MINUTOS" PARA EL MAPA
     function timeAgo(unixSecs) {
         if(!unixSecs) return "Desconocido";
         let diff = Math.floor(Date.now()/1000) - unixSecs;
@@ -155,7 +157,6 @@
 
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('tms_dark_mode', document.body.classList.contains('dark-mode')); }
     
-    // INICIALIZACIÓN DEL MAPA CON CAPA DE MARCADORES
     function initMap() { 
         lmap = L.map('map').setView([23.6, -102.5], 5); 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(lmap); 
@@ -164,7 +165,7 @@
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
 
-    function shareWA(u, loc, o, d, est) { let estNombre = estatusData[est]?.nombre || "En Trayecto"; let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n🚛 *Unidad:* ${u}\n🛣️ *Ruta:* ${o||'N/A'} ➔ ${d||'N/A'}\n🚦 *Estatus:* ${estNombre}\n📍 *Ubicación:* ${loc}\n\n_Reporte C4_`; window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); }
+    function shareWA(u, loc, o, d, est) { let estNombre = window.estatusData[est]?.nombre || "En Trayecto"; let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n🚛 *Unidad:* ${u}\n🛣️ *Ruta:* ${o||'N/A'} ➔ ${d||'N/A'}\n🚦 *Estatus:* ${estNombre}\n📍 *Ubicación:* ${loc}\n\n_Reporte C4_`; window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); }
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
 
@@ -176,9 +177,6 @@
         document.getElementById("logPass").addEventListener("keyup", e => e.key === "Enter" && autenticarUsuario());
         document.getElementById("nv_unidad_input").addEventListener("input", function() { let uN = this.value.toUpperCase(); document.getElementById("nv_operador").value = ramDrivers[uN] || ""; });
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
-        
-        // Iniciar procesador de direcciones
-        setInterval(procesarFilaDirecciones, 1100); 
     };
 
     function autenticarUsuario(aU, aP) {
@@ -207,6 +205,40 @@
         });
     }
 
+    // GEOCODIFICACIÓN NATIVA DE WIALON (BATCH)
+    function obtenerDireccionesWialon(url, uid, coordsItems) {
+        if(!coordsItems || coordsItems.length === 0) return;
+        
+        let hostName = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        let isHosting = url.includes("wialon.com") || url.includes("wialon.eu") || url.includes("wialon.us");
+        let gisBase = isHosting ? `https://geocode-maps.wialon.com/${hostName}` : url.replace(/\/$/, '');
+        
+        for(let i = 0; i < coordsItems.length; i += 50) {
+            let chunk = coordsItems.slice(i, i + 50);
+            let coords = chunk.map(item => ({lon: item.x, lat: item.y}));
+            
+            let cb = "wialon_gis_" + Date.now() + Math.floor(Math.random()*1000) + i;
+            let script = document.createElement("script");
+            
+            window[cb] = function(res) {
+                delete window[cb]; script.remove();
+                if(Array.isArray(res)) {
+                    res.forEach((addr, idx) => {
+                        let key = chunk[idx].key;
+                        let finalAddr = typeof addr === 'string' ? addr.split(",").slice(0, 3).join(",") : "Sin dirección";
+                        geocodeCache[key] = finalAddr;
+                        let els = document.querySelectorAll(`.addr-span-${key}`);
+                        els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${finalAddr}`);
+                    });
+                    localStorage.setItem('tms_geoCache', JSON.stringify(geocodeCache));
+                }
+            };
+            script.onerror = () => { delete window[cb]; script.remove(); };
+            script.src = `${gisBase}/gis_geocode?coords=${encodeURIComponent(JSON.stringify(coords))}&flags=1255211008&uid=${uid}&callback=${cb}`;
+            document.head.appendChild(script);
+        }
+    }
+
     async function arranqueMotor() { if(pollingInterval) clearInterval(pollingInterval); await sincronizarFlotas(); pollingInterval = setInterval(sincronizarFlotas, 20000); }
     
     function renderStatusTokens() {
@@ -221,14 +253,36 @@
 
         let promesas = configSistema.tokens.map(async (tk) => {
             if(!tk.url || !tk.token) return;
-            if(!activeSIDs[tk.token]) { let l = await peticionWialon(tk.url, "token/login", {token: tk.token}); if(l && l.eid) activeSIDs[tk.token] = l.eid; }
-            let sid = activeSIDs[tk.token]; if(!sid) { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; return; }
+            // AHORA GUARDAMOS EL UID PARA LAS DIRECCIONES
+            if(!activeSIDs[tk.token]) { 
+                let l = await peticionWialon(tk.url, "token/login", {token: tk.token}); 
+                if(l && l.eid) activeSIDs[tk.token] = { sid: l.eid, uid: (l.user ? l.user.id : 0) }; 
+            }
+            let auth = activeSIDs[tk.token]; 
+            if(!auth || !auth.sid) { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; return; }
 
-            let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025, from: 0, to: 0 }, sid);
+            let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025, from: 0, to: 0 }, auth.sid);
             if(reqU && reqU.items) {
                 conexionesExitosas++; estadoTokens[tk.nombre] = { status: 'OK', count: reqU.items.length };
-                let localMap = {}; reqU.items.forEach(u => { let n = u.nm.toUpperCase(); tempUnits[u.id] = { id: u.id, name: n, pos: u.pos }; localMap[u.id] = n; listUni.add(n); });
-                let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 0 }, sid);
+                let localMap = {}; 
+                let geoBatch = []; // COLA PARA BATCH WIALON GEOCODING
+                
+                reqU.items.forEach(u => { 
+                    let n = u.nm.toUpperCase(); 
+                    tempUnits[u.id] = { id: u.id, name: n, pos: u.pos }; 
+                    localMap[u.id] = n; 
+                    listUni.add(n); 
+                    
+                    if(u.pos) {
+                        let geoKey = `${u.pos.y.toFixed(4)}_${u.pos.x.toFixed(4)}`;
+                        if(!geocodeCache[geoKey]) geoBatch.push({ key: geoKey, y: u.pos.y, x: u.pos.x });
+                    }
+                });
+                
+                // DISPARAR BATCH DE DIRECCIONES INMEDIATAMENTE
+                if(geoBatch.length > 0) obtenerDireccionesWialon(tk.url, auth.uid, geoBatch);
+                
+                let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 0 }, auth.sid);
                 if(reqR && reqR.items) reqR.items.forEach(r => { if(r.drv) Object.values(r.drv).forEach(d => { let dn = d.n.toUpperCase(); listDrv.add(dn); if(d.bu && localMap[d.bu]) ramDrivers[localMap[d.bu]] = dn; }); if(r.zl) Object.values(r.zl).forEach(z => tempGeo.push(z)); });
             } else { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; }
         });
@@ -241,10 +295,9 @@
         
         if(conexionesExitosas > 0) { ind.className = "badge bg-success"; ind.innerText = Object.keys(unidadesGlobales).length + " Camiones En Vivo"; } 
         else { ind.className = "badge bg-danger"; ind.innerText = "Error GPS - Modo Manual"; }
-        renderStatusTokens(); renderizarBitacora(); desencadenarGeocoding(); if(mapVisible) actualizarMarcadoresMapa();
+        renderStatusTokens(); renderizarBitacora(); if(mapVisible) actualizarMarcadoresMapa();
     }
 
-    // DIBUJAR MARCADORES EN EL MAPA CON TOOLTIPS
     function actualizarMarcadoresMapa() {
         if(!lmap || !mapLayerGroup) return;
         mapLayerGroup.clearLayers();
@@ -281,10 +334,7 @@
         
         Object.keys(dataClientes).forEach(cId => { tree[cId] = { "N/A": [] }; if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []); });
         
-        // AQUÍ ESTÁ LA MAGIA DEL VID (Llave Absoluta)
         Object.keys(viajesActivos).forEach(vId => { let v = viajesActivos[vId], u = unidadesGlobales[vId] || null; let cId = v.cliente || "Sin_Cliente", sId = v.subcliente || "N/A"; if(!tree[cId]) tree[cId] = { "N/A": [] }; if(!tree[cId][sId]) tree[cId][sId] = []; tree[cId][sId].push({vId, u, v}); });
-
-        const headerCols = `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA (O ➔ D)</th><th>CONTENEDORES</th><th>HORARIOS</th><th>ESTATUS</th><th>GPS & UBICACIÓN</th><th>ALERTAS</th><th>HISTORIAL LOG</th><th>ACCIÓN</th></tr>`;
         
         for(let cId in tree) {
             let cliData = dataClientes[cId] || {nombre: "SIN CLIENTE ASIGNADO"};
@@ -293,9 +343,7 @@
                 if(tree[cId][sId].length === 0) continue;
                 let nomSub = sId !== "N/A" ? dataClientes[cId].subclientes[sId].nombre : "";
                 if(sId !== "N/A" && dataClientes[cId].subclientes) cliHtml += `<tr class="header-subcliente shadow-sm"><td colspan="10">↳ Subcliente: ${nomSub}</td></tr>`;
-                cliHtml += headerCols;
                 
-                // USAMOS vId EN LUGAR DE v.unidadN PARA CADA ACCIÓN
                 tree[cId][sId].forEach(({vId, u, v}) => {
                     let nombreCamion = v.unidadN || v.unidadFallback || "Desconocida";
                     
@@ -304,25 +352,34 @@
                     let uData = unidadesGlobales[uIdGps];
 
                     let pos = uData ? uData.pos : null; let speed = pos ? pos.s : 0; let isLost = !pos; 
-                    let geoKey = pos ? `${pos.y.toFixed(3)}_${pos.x.toFixed(3)}` : 'none';
+                    let geoKey = pos ? `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}` : 'none';
                     
                     let uText = isLost ? `<span class="unit-name text-danger" title="Sin señal GPS">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
                     let speedBg = "#343a40"; if(speed > 0 && speed < 100) speedBg = "#198754"; if(speed >= 100) speedBg = "#dc3545"; 
                     
                     let drv = v.operador || (uData ? ramDrivers[uData.name] : "") || "";
                     let addr = uData ? (geocodeCache[geoKey] || "Buscando...") : "---";
-                    let mapsLink = pos ? `https://maps.google.com/?q=$${pos.y},${pos.x}` : '#';
-                    let colEstatus = estatusData[v.estatus]?.col || '#fff'; let colText = (v.estatus === "s7" || v.estatus === "s8" || v.estatus === "s9" || v.estatus === "s10") ? "#000" : "#fff";
+                    let mapsLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : '#';
+                    
+                    let colEstatus = window.estatusData[v.estatus]?.col || '#fff'; 
+                    let colText = (v.estatus === "s7" || v.estatus === "s8" || v.estatus === "s9" || v.estatus === "s10") ? "#000" : "#fff";
 
-                    let btnSalida = `<button class="btn btn-outline-success btn-sm w-100 py-0 mb-1 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${vId}', 'INICIÓ VIAJE'); db.ref('viajes_activos/${vId}/t_salida').set(Date.now());">${v.t_salida ? formatTimeFriendly(v.t_salida/1000) : 'Salida'}</button>`;
-                    let btnArribo = `<button class="btn btn-outline-danger btn-sm w-100 py-0 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${vId}', 'Marcó hora de ARRIBO'); db.ref('viajes_activos/${vId}/t_arribo').set(Date.now());">${v.t_arribo ? formatTimeFriendly(v.t_arribo/1000) : 'Arribo'}</button>`;
+                    let btnSalida = `<button class="btn btn-outline-success btn-sm w-100 py-0 mb-1 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${vId}', 'INICIÓ VIAJE'); db.ref('viajes_activos/${vId}/t_salida').set(Date.now());">S: ${v.t_salida ? formatTimeFriendly(v.t_salida/1000) : '--:--'}</button>`;
+                    let btnArribo = `<button class="btn btn-outline-danger btn-sm w-100 py-0 mb-1 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${vId}', 'Marcó hora de ARRIBO'); db.ref('viajes_activos/${vId}/t_arribo').set(Date.now());">A: ${v.t_arribo ? formatTimeFriendly(v.t_arribo/1000) : '--:--'}</button>`;
+                    let btnFin = `<button class="btn btn-outline-dark btn-sm w-100 py-0 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${vId}', 'Marcó hora de FINALIZADO'); db.ref('viajes_activos/${vId}/t_fin').set(Date.now());">F: ${v.t_fin ? formatTimeFriendly(v.t_fin/1000) : '--:--'}</button>`;
                     
                     let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
                     let lastLog = logsArr.length > 0 ? `<div class="text-start mb-1 text-wrap" style="font-size:0.60rem; line-height:1.1; color:#444; max-width: 140px;"><b class="text-primary">${logsArr[0].usr}:</b> ${logsArr[0].act}</div>` : `<div style="font-size:0.6rem; color:#888;">Sin eventos</div>`;
 
                     let ubiControl = isLost ? `<input class="form-control form-control-sm text-center text-uppercase p-0 mt-1 shadow-sm border-danger" style="font-size:0.60rem; height:20px;" value="${v.ubicacion_manual||''}" placeholder="Escribir ubicación..." onblur="if(this.value !== '${v.ubicacion_manual||''}'){ registrarLog('${vId}', 'Ubicación manual', this.value); db.ref('viajes_activos/${vId}/ubicacion_manual').set(this.value.toUpperCase()); }">` : `<a href="${mapsLink}" target="_blank" class="addr-link addr-span-${geoKey}" title="Abrir en Maps"><i class="fa-solid fa-map-location-dot"></i> ${addr}</a>`;
 
-                    let searchData = `${nombreCamion} ${drv} ${v.origen} ${v.destino} ${v.contenedores} ${cliData.nombre} ${nomSub} ${estatusData[v.estatus]?.nombre}`.toLowerCase();
+                    let searchData = `${nombreCamion} ${drv} ${v.origen} ${v.destino} ${v.contenedores} ${cliData.nombre} ${nomSub} ${window.estatusData[v.estatus]?.nombre}`.toLowerCase();
+
+                    let optionsHtml = Object.keys(window.estatusData).map(k=>{
+                        let optBg = window.estatusData[k].col;
+                        let optColor = (k === "s7" || k === "s8" || k === "s9" || k === "s10") ? "#000" : "#fff";
+                        return `<option value="${k}" style="background-color:${optBg}; color:${optColor};" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`;
+                    }).join('');
 
                     cliHtml += `<tr class="data-row ${isLost?'lost-connection-row':''}" data-search="${searchData}">
                         <td style="min-width: 90px; vertical-align: middle;">${uText}</td>
@@ -332,8 +389,12 @@
                             <div class="input-group input-group-sm border rounded"><span class="input-group-text">D</span><input class="form-control ruta-input text-uppercase" value="${v.destino||''}" onblur="db.ref('viajes_activos/${vId}/destino').set(this.value.toUpperCase())"></div>
                         </td>
                         <td style="vertical-align: middle;"><textarea class="table-input border rounded p-1 text-uppercase" style="min-height: 50px;" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
-                        <td style="vertical-align: middle; min-width: 90px;">${btnSalida}${btnArribo}</td>
-                        <td style="vertical-align: middle;"><select class="form-select status-select" style="background:${colEstatus}; color:${colText};" onchange="registrarLog('${vId}', 'Cambió estatus a', this.options[this.selectedIndex].text); db.ref('viajes_activos/${vId}/estatus').set(this.value)">${Object.keys(estatusData).map(k=>`<option value="${k}" ${v.estatus===k?'selected':''}>${estatusData[k].nombre}</option>`).join('')}</select></td>
+                        <td style="vertical-align: middle; min-width: 90px;">${btnSalida}${btnArribo}${btnFin}</td>
+                        <td style="vertical-align: middle;">
+                            <select class="form-select status-select" style="background:${colEstatus}; color:${colText};" onchange="this.style.background = window.estatusData[this.value].col; this.style.color = (this.value === 's7' || this.value === 's8' || this.value === 's9' || this.value === 's10') ? '#000' : '#fff'; registrarLog('${vId}', 'Cambió estatus a', this.options[this.selectedIndex].text); db.ref('viajes_activos/${vId}/estatus').set(this.value)">
+                                ${optionsHtml}
+                            </select>
+                        </td>
                         <td style="vertical-align: middle; min-width: 140px;">
                             <div class="d-flex flex-column align-items-center">
                                 <div><i class="fa-solid fa-signal text-${isLost?'danger':'success'} me-1" style="font-size:10px;"></i><span class="speed-badge" style="background-color:${isLost?'#adb5bd':speedBg};">${speed} km/h</span></div>
@@ -358,10 +419,9 @@
         filtrarTablaInteligente();
     }
 
-    // FILTRO INTELIGENTE INVERSO
     function filtrarTablaInteligente() {
         let t = document.getElementById("buscador").value.toLowerCase();
-        let rows = Array.from(document.querySelectorAll("#mainTable tbody tr"));
+        let rows = Array.from(document.querySelectorAll("#units-body tr"));
         
         rows.forEach(r => {
             if(r.classList.contains("data-row")) {
@@ -375,8 +435,6 @@
             let r = rows[i];
             if (r.classList.contains("data-row")) {
                 if (r.style.display !== "none") { datosVisiblesSub++; datosVisiblesCli++; }
-            } else if (r.classList.contains("header-columnas")) {
-                r.style.display = datosVisiblesSub > 0 ? "" : "none";
             } else if (r.classList.contains("header-subcliente")) {
                 r.style.display = datosVisiblesSub > 0 ? "" : "none";
                 datosVisiblesSub = 0; 
@@ -387,49 +445,6 @@
         }
     }
 
-    // CACHÉ Y COLA DE DIRECCIONES (Anti-Baneo Nominatim)
-    function desencadenarGeocoding() {
-        Object.keys(viajesActivos).forEach(id => {
-            let v = viajesActivos[id];
-            let uIdGps = null;
-            Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === v.unidadN) uIdGps = k; });
-            let u = unidadesGlobales[uIdGps]; 
-            
-            if(u && u.pos) {
-                let geoKey = `${u.pos.y.toFixed(3)}_${u.pos.x.toFixed(3)}`;
-                
-                if(!geocodeCache[geoKey]) {
-                    if(!geoQueue.find(i => i.key === geoKey)) {
-                        geoQueue.push({ key: geoKey, y: u.pos.y, x: u.pos.x });
-                    }
-                } else {
-                    let els = document.querySelectorAll(`.addr-span-${geoKey}`);
-                    els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${geocodeCache[geoKey]}`);
-                }
-            }
-        });
-    }
-
-    function procesarFilaDirecciones() {
-        if(isGeocoding || geoQueue.length === 0) return;
-        isGeocoding = true;
-        let item = geoQueue.shift();
-        
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=16`)
-            .then(r => r.json())
-            .then(d => {
-                let addrFull = d.display_name || "Sin dirección";
-                let shortAddr = addrFull.split(",").slice(0, 3).join(",");
-                geocodeCache[item.key] = shortAddr;
-                
-                let els = document.querySelectorAll(`.addr-span-${item.key}`);
-                els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${shortAddr}`);
-            })
-            .catch(e => console.log("Geocode err"))
-            .finally(() => { isGeocoding = false; });
-    }
-
-    // GESTIÓN DEL MODAL DE HISTORIAL (AUDITORÍA)
     function abrirModalLog(uId, uName) {
         document.getElementById("log_uid").value = uId; document.getElementById("log_uName").innerText = uName; document.getElementById("log_txt").value = "";
         let logsObj = viajesActivos[uId]?.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
@@ -445,13 +460,34 @@
     }
 
     function registrarViaje() {
-        let uN = document.getElementById("nv_unidad_input").value.toUpperCase(), uId = null;
-        Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === uN) uId = k; });
-        if(!uId) uId = uN; 
-        db.ref('viajes_activos/'+uId).set({ cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase(), unidadFallback: uN, unidadN: uN });
-        // AQUÍ ESTÁ LA CORRECCIÓN DE AUDITORÍA (REGISTRÓ VIAJE)
-        registrarLog(uId, "REGISTRÓ VIAJE", "Registró unidad en bitácora");
-        bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); document.getElementById("nv_unidad_input").value = "";
+        let uN = document.getElementById("nv_unidad_input").value.toUpperCase();
+        if(!uN) return;
+        
+        let existe = Object.values(viajesActivos).some(v => v.unidadN === uN);
+        if(existe) {
+            if(!confirm(`La unidad ${uN} ya tiene un viaje en curso en la bitácora. ¿Deseas agregar un segundo viaje simultáneo?`)) {
+                return;
+            }
+        }
+
+        let refPush = db.ref('viajes_activos').push();
+        let uniqueId = refPush.key;
+        
+        refPush.set({ 
+            cliente: document.getElementById("nv_cliente").value, 
+            subcliente: document.getElementById("nv_subcliente").value, 
+            origen: document.getElementById("nv_origen").value.toUpperCase(), 
+            destino: document.getElementById("nv_destino").value.toUpperCase(), 
+            estatus: "s1", 
+            operador: document.getElementById("nv_operador").value.toUpperCase(), 
+            unidadFallback: uN, 
+            unidadN: uN 
+        });
+        
+        registrarLog(uniqueId, "REGISTRÓ VIAJE", "Registró unidad en bitácora");
+        bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); 
+        document.getElementById("nv_unidad_input").value = "";
+        document.getElementById("nv_operador").value = "";
     }
 
     function finalizarViaje(id, n) { if(confirm(`¿Archivar viaje de la unidad ${n}?`)) { registrarLog(id, "FINALIZÓ VIAJE", "Se archiva registro"); setTimeout(()=>db.ref('viajes_activos/'+id).remove(), 1000); } }
@@ -461,7 +497,6 @@
     function guardarEdicionViaje() { let uId = document.getElementById("edU_id").value; registrarLog(uId, "Editó Datos de Viaje", "Modificó rutas/cliente/operador"); db.ref('viajes_activos/' + uId).update({ cliente: document.getElementById("ed_cliente").value, subcliente: document.getElementById("ed_subcliente").value, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide(); }); }
     function cerrarSesion() { localStorage.clear(); location.reload(); }
 
-    // GESTIÓN ADMIN (Con borrado)
     function crearCliente() { db.ref('clientes').push({nombre: document.getElementById("cli_nombre").value.toUpperCase()}); document.getElementById("cli_nombre").value = ""; }
     function crearSubcliente() { db.ref(`clientes/${document.getElementById("sub_clientePadre").value}/subclientes`).push({nombre: document.getElementById("sub_nombre").value.toUpperCase()}); document.getElementById("sub_nombre").value = ""; }
     function crearUsuario() { let id = document.getElementById("usr_id").value.trim().toLowerCase(), nom = document.getElementById("usr_nom").value.trim(), pass = document.getElementById("usr_pass").value.trim(); if(id && nom && pass) { db.ref(`sistema/usuarios/${id}`).set({nom: nom, pass: pass, rol: "monitor"}); document.getElementById("usr_id").value=""; document.getElementById("usr_nom").value=""; document.getElementById("usr_pass").value=""; } }
