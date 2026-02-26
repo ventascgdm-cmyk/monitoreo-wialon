@@ -6,15 +6,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    <script src="https://sdk.wialon.com/library/js/wialon.js" type="text/javascript"></script>
+    
+    <script async src="https://sdk.wialon.com/library/js/wialon.js" type="text/javascript"></script>
 
     <style>
         :root { --blue: #0045a5; --green: #28a745; }
-        body { background: #002a61; font-size: 0.75rem; color: white; }
+        body { background: #001f4d; color: white; font-size: 0.8rem; }
         .card-login { background: white; color: #333; width: 380px; border-radius: 20px; border: none; padding: 30px; }
         #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; z-index:999; }
         #dashboard { display:none; background: #f4f7f6; color: #333; min-height: 100vh; }
-        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; }
+        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; }
     </style>
 </head>
 <body>
@@ -24,17 +25,18 @@
         <h3 class="fw-bold text-primary mb-2">Logística Cloud</h3>
         <p class="text-muted small mb-4">Conexión Segura con Firebase y Wialon</p>
         <input type="password" id="tokenInput" class="form-control mb-3 text-center" placeholder="Ingresa tu API Token">
-        <button onclick="login()" class="btn btn-primary w-100 fw-bold shadow">ENTRAR AL SISTEMA</button>
-        <div id="sdkStatus" class="mt-3 small fw-bold text-warning">Iniciando túnel de datos...</div>
+        <button onclick="login()" class="btn btn-primary w-100 fw-bold shadow py-2">ENTRAR AL SISTEMA</button>
+        <div id="sdkStatus" class="mt-3 small fw-bold text-warning">Verificando Túnel de Datos...</div>
     </div>
 </div>
 
 <div id="dashboard">
-    <div class="p-3 bg-primary text-white text-center shadow-sm">
-        <h4 class="m-0">PANEL MAESTRO LOGÍSTICO</h4>
+    <div class="p-3 bg-primary text-white text-center shadow-sm d-flex justify-content-between align-items-center">
+        <h4 class="m-0 h5">PANEL LOGÍSTICO REAL-TIME</h4>
+        <button onclick="exportarExcel()" class="btn btn-sm btn-success fw-bold">Descargar Reporte</button>
     </div>
-    <div class="p-4">
-        <div class="card shadow-sm border-0">
+    <div class="p-3">
+        <div class="card shadow-sm border-0 rounded-3">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 text-center">
                     <thead class="table-dark">
@@ -51,66 +53,68 @@
 </div>
 
 <script>
-    // 1. CONFIGURACIÓN FIREBASE (Mantener tu URL verificada)
+    // 1. CONFIGURACIÓN FIREBASE (Confirmada en tus capturas)
     const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     let sess = null;
 
-    // 2. FORZAR INICIALIZACIÓN
-    function init() {
+    // 2. TÚNEL DE CONEXIÓN
+    function checkConnection() {
         if (typeof wialon !== 'undefined') {
             sess = wialon.core.Session.getInstance();
             document.getElementById('sdkStatus').innerText = "CONEXIÓN LISTA ✅";
             document.getElementById('sdkStatus').className = "mt-3 small text-success fw-bold";
         } else {
-            setTimeout(init, 1000);
+            // Reintento silencioso cada 2 segundos
+            setTimeout(checkConnection, 2000);
         }
     }
-    window.onload = init;
+    window.onload = checkConnection;
 
     function login() {
         const token = document.getElementById('tokenInput').value;
-        if(!token) return alert("Pega tu token primero");
+        if(!token) return alert("Pega tu token");
 
-        // Si el SDK sigue fallando, usamos una técnica de "By-Pass"
         if(!sess) {
-            alert("El navegador bloqueó el SDK. Intentando forzar entrada...");
-            // Intentamos inyectar el script nuevamente
+            alert("El navegador sigue bloqueando la conexión. Intentando desbloqueo forzado...");
+            // Inyectamos el script de nuevo con una marca de tiempo para evitar caché
             const s = document.createElement('script');
-            s.src = "https://hst-api.wialon.com/wscommon/js/wialon.js";
+            s.src = "https://hst-api.wialon.com/wscommon/js/wialon.js?t=" + Date.now();
             document.head.appendChild(s);
             return;
         }
 
         sess.initSession("https://hst-api.wialon.com");
         sess.loginToken(token, "", (code) => {
-            if (code) return alert("Error: " + code);
+            if (code) return alert("Error: Token inválido o expirado.");
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
-            start();
+            startTracking();
         });
     }
 
-    function start() {
+    function startTracking() {
         sess.loadLibrary("itemUnit");
         sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
-            render();
-            sess.addListener("dataUpdated", render);
+            renderData();
+            sess.addListener("dataUpdated", renderData);
         });
     }
 
-    function render() {
+    function renderData() {
         const units = sess.getItems("avl_unit") || [];
         const tbody = document.getElementById('unitList');
         tbody.innerHTML = "";
+        
         units.forEach(u => {
             const id = u.getId();
             const pos = u.getPosition();
             const speed = pos ? pos.s : 0;
             const mov = speed > 0;
             const row = document.createElement('tr');
+            
             row.innerHTML = `
                 <td class="fw-bold text-primary">${u.getName()}</td>
                 <td><input id="cli_${id}" class="table-input" onchange="save('${id}','cliente',this.value)"></td>
@@ -122,6 +126,7 @@
                         <option value="Disponible">Disponible</option>
                         <option value="En Tránsito">En Tránsito</option>
                         <option value="Cargando">Cargando</option>
+                        <option value="Descargando">Descargando</option>
                     </select>
                 </td>
                 <td><input id="con_${id}" class="table-input" onchange="save('${id}','contenedores',this.value)"></td>
@@ -131,7 +136,7 @@
             `;
             tbody.appendChild(row);
             
-            // Dirección
+            // Cargar dirección (Geocodificación)
             if (pos) {
                 wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], (code, address) => {
                     const el = document.getElementById(`addr_${id}`);
@@ -139,22 +144,38 @@
                 });
             }
 
-            // Datos de Firebase
+            // Cargar datos persistentes de Firebase para ESTA unidad
             db.ref('viajes/' + id).once('value', (s) => {
                 const v = s.val();
                 if (v) {
-                    document.getElementById(`cli_${id}`).value = v.cliente || "";
-                    document.getElementById(`sub_${id}`).value = v.subcliente || "";
-                    document.getElementById(`ori_${id}`).value = v.origen || "";
-                    document.getElementById(`des_${id}`).value = v.destino || "";
-                    document.getElementById(`est_${id}`).value = v.estatus || "Disponible";
-                    document.getElementById(`con_${id}`).value = v.contenedores || "";
+                    if(document.getElementById(`cli_${id}`)) document.getElementById(`cli_${id}`).value = v.cliente || "";
+                    if(document.getElementById(`sub_${id}`)) document.getElementById(`sub_${id}`).value = v.subcliente || "";
+                    if(document.getElementById(`ori_${id}`)) document.getElementById(`ori_${id}`).value = v.origen || "";
+                    if(document.getElementById(`des_${id}`)) document.getElementById(`des_${id}`).value = v.destino || "";
+                    if(document.getElementById(`est_${id}`)) document.getElementById(`est_${id}`).value = v.estatus || "Disponible";
+                    if(document.getElementById(`con_${id}`)) document.getElementById(`con_${id}`).value = v.contenedores || "";
                 }
             });
         });
     }
 
-    function save(id, campo, valor) { db.ref('viajes/' + id).update({ [campo]: valor }); }
+    function save(id, campo, valor) { 
+        db.ref('viajes/' + id).update({ [campo]: valor }); 
+    }
+
+    function exportarExcel() {
+        let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,ORIGEN,DESTINO,ESTATUS,CONTENEDORES,VELOCIDAD,DIRECCIÓN\n";
+        document.querySelectorAll("#unitList tr").forEach(row => {
+            const inputs = row.querySelectorAll("input, select");
+            const addr = row.cells[8].innerText.replace(/,/g, " "); 
+            csv += `${row.cells[0].innerText},${inputs[0].value},${inputs[1].value},${inputs[2].value},${inputs[3].value},${inputs[4].value},${inputs[5].value},${row.cells[7].innerText},${addr}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "Bitacora_Logistica.csv";
+        link.click();
+    }
 </script>
 </body>
 </html>
