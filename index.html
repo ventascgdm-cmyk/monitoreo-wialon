@@ -2,27 +2,19 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>GRUDICOM TI & GPS | C4 - LIVE</title>
+    <title>GRUDICOM TI & GPS | C4 - FIX GPS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
 
     <style>
         :root { --header-bg: #002a61; }
-        body { background: #f0f4f8; font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; margin: 0; overflow: hidden; }
+        body { background: #f0f4f8; font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; margin: 0; }
         .header-bar { background: white; padding: 10px 20px; border-bottom: 4px solid var(--header-bg); display: flex; justify-content: space-between; align-items: center; }
-        .workspace { display: flex; flex-direction: column; height: calc(100vh - 75px); }
-        .map-panel { height: 0%; transition: 0.4s; overflow: hidden; border-bottom: 2px solid var(--header-bg); }
-        .workspace.show-map .map-panel { height: 40%; }
-        .table-panel { height: 100%; overflow-y: auto; padding: 15px; }
-        .workspace.show-map .table-panel { height: 60%; }
         .cliente-row { background: #336699; color: white; font-weight: bold; padding: 10px; text-align: left; }
-        .header-columnas th { background: var(--header-bg); color: white; font-size: 0.7rem; }
-        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; text-align: center; text-transform: uppercase; font-size: 0.7rem; }
+        .badge-gps { font-size: 0.65rem; padding: 4px 8px; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -30,59 +22,53 @@
 <div class="header-bar">
     <div class="d-flex align-items-center">
         <img src="TIGPS HD2.png" alt="Logo" style="height: 40px;" class="me-3">
-        <div><h5 class="fw-bold m-0 text-primary">GRUDICOM TI & GPS</h5><small id="gps-status" class="text-muted">Cargando GPS...</small></div>
+        <h5 class="fw-bold m-0 text-primary">GRUDICOM TI & GPS</h5>
     </div>
     <div class="d-flex align-items-center">
-        <button class="btn btn-info btn-sm fw-bold me-2" onclick="toggleMap()"><i class="fa-solid fa-map"></i> Mapa</button>
+        <div id="status-tokens" class="me-3"></div>
         <button class="btn btn-primary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalViaje"><i class="fa-solid fa-plus"></i> Registrar Viaje</button>
-        <button class="btn btn-danger btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalAdmin">ADMIN</button>
-        <button class="btn btn-secondary btn-sm fw-bold" onclick="location.reload()"><i class="fa-solid fa-power-off"></i></button>
+        <button class="btn btn-secondary btn-sm fw-bold" onclick="location.reload()"><i class="fa-solid fa-rotate"></i></button>
     </div>
 </div>
 
-<div class="workspace" id="ws">
-    <div class="map-panel"><div id="map" style="height: 100%;"></div></div>
-    <div class="table-panel">
-        <div class="card shadow-sm border-0">
-            <table class="table table-bordered align-middle text-center mb-0">
-                <tbody id="main-table"></tbody>
-            </table>
-        </div>
+<div class="container-fluid mt-3">
+    <div class="card shadow-sm border-0">
+        <table class="table table-bordered align-middle text-center mb-0">
+            <tbody id="main-table">
+                <tr><td class="p-5 text-muted">Conectando con satélites...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
 <div class="modal fade" id="modalViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-    <div class="modal-header bg-primary text-white"><h6>REGISTRAR VIAJE</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-header bg-primary text-white"><h6>NUEVO VIAJE</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
     <div class="modal-body small">
         <label>Cliente:</label><select id="v_cli" class="form-select form-select-sm mb-2"></select>
-        <label>Unidad:</label><input type="text" id="v_uni" class="form-control form-control-sm mb-2" placeholder="RACEL-01" list="dl_u">
+        <label>Unidad (Selecciona de la lista):</label>
+        <input type="text" id="v_uni" class="form-control form-control-sm mb-2" list="dl_unidades" placeholder="Escribe para buscar...">
         <label>Operador:</label><input type="text" id="v_ope" class="form-control form-control-sm mb-2">
         <button class="btn btn-primary w-100 fw-bold mt-2" onclick="guardarViaje()">INICIAR RUTA</button>
     </div>
 </div></div></div>
 
-<datalist id="dl_u"></datalist>
-
-<div class="modal fade" id="modalAdmin" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-    <div class="modal-header bg-danger text-white"><h6>GESTIÓN</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body small text-center">Aquí puedes añadir más clientes o tokens si lo necesitas.</div>
-</div></div></div>
+<datalist id="dl_unidades"></datalist>
 
 <script>
     const db = firebase.database({ databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" });
-    let dataClientes = {}, viajesActivos = {}, unidadesGPS = {}, lmap = null;
+    let dataClientes = {}, viajesActivos = {}, unidadesGlobales = {};
 
     function init() {
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; updateUI(); });
         db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; updateUI(); });
         
-        // Carga Wialon Multi-Host
+        // CARGA ASÍNCRONA DE TOKENS
         db.ref('sistema/tokens').once('value', s => {
             const tokens = s.val() ? Object.values(s.val()) : [];
             tokens.forEach(tk => {
                 let sc = document.createElement("script"), cb = "w_"+Math.random().toString(36).substr(2,5);
                 window[cb] = (d) => {
-                    if(d && d.eid) fetchUnits(tk, d.eid);
+                    if(d && d.eid) cargarUnidadesGPS(tk, d.eid);
                     sc.remove();
                 };
                 sc.src = `${tk.url}/wialon/ajax.html?svc=token/login&params={"token":"${tk.token}"}&callback=${cb}`;
@@ -91,12 +77,15 @@
         });
     }
 
-    function fetchUnits(tk, sid) {
+    function cargarUnidadesGPS(tk, sid) {
         let sc = document.createElement("script"), cb = "u_"+Math.random().toString(36).substr(2,5);
         window[cb] = (d) => {
             if(d && d.items) {
-                d.items.forEach(u => { unidadesGPS[u.id] = u; });
-                document.getElementById("dl_u").innerHTML += d.items.map(u => `<option value="${u.nm}">`).join('');
+                const dl = document.getElementById("dl_unidades");
+                d.items.forEach(u => {
+                    unidadesGlobales[u.nm.toUpperCase()] = u; // Guardamos datos del GPS
+                    dl.innerHTML += `<option value="${u.nm.toUpperCase()}">`;
+                });
             }
             updateUI(); sc.remove();
         };
@@ -109,20 +98,23 @@
         let html = "";
         
         Object.keys(dataClientes).forEach(cId => {
-            html += `<tr><td colspan="6" class="cliente-row">📦 CLIENTE: ${dataClientes[cId].nombre}</td></tr>`;
-            html += `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA</th><th>CONTENEDORES</th><th>ESTATUS</th><th>GPS</th></tr>`;
+            html += `<tr><td colspan="5" class="cliente-row">📦 CLIENTE: ${dataClientes[cId].nombre}</td></tr>`;
+            html += `<tr class="bg-light fw-bold" style="font-size:0.65rem"><td>UNIDAD</td><td>OPERADOR</td><td>ESTATUS</td><td>VELOCIDAD</td><td>ÚLTIMO REPORTE</td></tr>`;
             
             Object.keys(viajesActivos).forEach(vId => {
                 const v = viajesActivos[vId];
                 if(v.cliente === cId) {
-                    const u = unidadesGPS[vId] || { pos: {s:0} };
+                    // Buscamos si la unidad existe en el GPS
+                    const gps = unidadesGlobales[v.unidadN.toUpperCase()] || null;
+                    const vel = gps ? gps.pos.s : 0;
+                    const time = gps ? new Date(gps.pos.t * 1000).toLocaleTimeString() : 'Sin señal';
+
                     html += `<tr>
                         <td class="fw-bold text-primary">${v.unidadN}</td>
-                        <td><input class="table-input" value="${v.operador||''}"></td>
-                        <td>${v.origen||''} ➔ ${v.destino||''}</td>
-                        <td><textarea class="table-input">${v.contenedores||''}</textarea></td>
+                        <td>${v.operador || '---'}</td>
                         <td><span class="badge bg-success">En Ruta</span></td>
-                        <td><span class="badge bg-secondary">${u.pos.s} km/h</span></td>
+                        <td><span class="badge-gps ${vel > 0 ? 'bg-success text-white' : 'bg-secondary text-white'}">${vel} km/h</span></td>
+                        <td><small>${time}</small></td>
                     </tr>`;
                 }
             });
@@ -132,18 +124,15 @@
     }
 
     function guardarViaje() {
-        const uN = document.getElementById("v_uni").value;
-        let uId = "M-" + Date.now();
-        Object.keys(unidadesGPS).forEach(id => { if(unidadesGPS[id].nm === uN) uId = id; });
-
-        db.ref('viajes_activos/' + uId).set({
-            unidadN: uN, operador: document.getElementById("v_ope").value,
-            cliente: document.getElementById("v_cli").value, estatus: "s1"
+        const uN = document.getElementById("v_uni").value.toUpperCase();
+        if(!uN) return;
+        db.ref('viajes_activos/' + uN).set({
+            unidadN: uN,
+            operador: document.getElementById("v_ope").value.toUpperCase(),
+            cliente: document.getElementById("v_cli").value
         });
         bootstrap.Modal.getInstance(document.getElementById('modalViaje')).hide();
     }
-
-    function toggleMap() { document.getElementById("ws").classList.toggle("show-map"); if(!lmap) { lmap = L.map('map').setView([23.6, -102.5], 5); L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(lmap); } setTimeout(()=>lmap.invalidateSize(), 400); }
 
     init();
 </script>
