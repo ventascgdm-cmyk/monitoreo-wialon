@@ -5,10 +5,8 @@
     <title>GRUDICOM TI & GPS | C4</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
@@ -17,34 +15,23 @@
     <style>
         :root { --bg-main: #f0f4f8; --bg-card: #ffffff; --text-main: #2c3e50; --header-bg: #002a61; --table-bg: rgba(255,255,255,0.85); --border-col: #ced4da; }
         body.dark-mode { --bg-main: #121212; --bg-card: #1e1e1e; --text-main: #e0e0e0; --header-bg: #0d1b2a; --table-bg: #2c2c2c; --border-col: #444; }
-        
         body { background: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; transition: 0.3s; margin: 0; overflow-x: hidden;}
         .login-bg { background: linear-gradient(135deg, #002a61 0%, #001122 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
-        .login-card { background: var(--bg-card); color: var(--text-main); width: 380px; border-radius: 12px; padding: 40px; box-shadow: 0 15px 35px rgba(0,0,0,0.5);}
-        
+        .login-card { background: var(--bg-card); width: 380px; border-radius: 12px; padding: 40px; box-shadow: 0 15px 35px rgba(0,0,0,0.5);}
         .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .card { background: var(--bg-card); border: 1px solid var(--border-col); }
-        
-        /* PANTALLA DIVIDIDA */
         .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 70px); width: 100%; overflow: hidden; }
         .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--header-bg); }
         .workspace-container.show-map .map-panel { height: 40%; border-bottom: 4px solid var(--header-bg); }
         .table-panel { height: 100%; width: 100%; transition: height 0.4s ease; overflow-y: auto; padding: 15px; }
         .workspace-container.show-map .table-panel { height: 60%; }
-        #map { width: 100%; height: 100%; z-index: 1;}
-        
+        #map { width: 100%; height: 100%; }
         .table-input { border: 1px solid var(--border-col); padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; text-align: center; font-weight: 600; background: var(--table-bg); color: var(--text-main); text-transform: uppercase;}
-        
         .header-cliente { background-color: #336699 !important; color: white !important; font-size: 0.95rem; font-weight: bold; text-align: left; }
         .header-subcliente { background-color: #5c6c7c !important; color: white !important; font-size: 0.85rem; font-weight: bold; text-align: left; padding-left: 20px !important; }
-        .header-columnas th { background-color: var(--header-bg) !important; color: white !important; font-size: 0.7rem; font-weight: 700; text-align: center; vertical-align: middle; padding: 6px; }
-        
-        .status-select { border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.70rem; padding: 2px;}
+        .header-columnas th { background-color: var(--header-bg) !important; color: white !important; font-size: 0.7rem; font-weight: 700; text-align: center; padding: 6px; }
         .lost-connection-row td { background-color: #ffe6e6 !important; color: #990000 !important; }
         .dark-mode .lost-connection-row td { background-color: #4a1515 !important; color: #ffcccc !important; }
-        
         .unit-name { cursor: pointer; text-decoration: underline; color: #0d6efd; font-weight: bold; }
-        .audit-log { font-size: 0.7rem; background: #e9ecef; padding: 4px; border-radius: 4px; border-left: 3px solid #0d6efd; margin-bottom: 2px; text-align: left; color: #333;}
     </style>
 </head>
 <body>
@@ -55,8 +42,8 @@
         <h5 class="text-primary fw-bold mb-4">GRUDICOM TI & GPS</h5>
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
-        <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Identifícate para entrar</div>
+        <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Presiona Enter para entrar</div>
     </div>
 </div>
 
@@ -83,46 +70,44 @@
         <div class="map-panel"><div id="map"></div></div>
         <div class="table-panel">
             <div class="row mb-2 align-items-center">
-                <div class="col-md-4"><input type="text" id="buscador" class="form-control form-control-sm" placeholder="🔍 Buscar por cualquier campo..." onkeyup="filtrarTabla()"></div>
-                <div class="col-md-8 text-end"><span id="syncIndicator" class="badge bg-secondary">Cargando flotas...</span></div>
+                <div class="col-md-4"><input type="text" id="buscador" class="form-control form-control-sm" placeholder="🔍 Buscar unidad, cliente, ruta..." onkeyup="filtrarTabla()"></div>
+                <div class="col-md-8 text-end"><span id="syncIndicator" class="badge bg-secondary">Cargando...</span></div>
             </div>
-            <div class="card shadow border-0 h-100">
-                <div class="table-responsive h-100">
-                    <table class="table table-bordered align-middle text-center mb-0" id="mainTable"><tbody id="units-body"></tbody></table>
-                </div>
-            </div>
+            <div class="card shadow border-0"><div class="table-responsive"><table class="table table-bordered align-middle text-center mb-0"><tbody id="units-body"></tbody></table></div></div>
         </div>
     </div>
 </div>
 
 <div class="modal fade" id="modalAdmin" tabindex="-1">
   <div class="modal-dialog modal-xl"><div class="modal-content">
-      <div class="modal-header bg-danger text-white"><h6 class="modal-title fw-bold">ADMINISTRACIÓN</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header bg-danger text-white"><h6 class="modal-title fw-bold">Administrador</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
       <div class="modal-body"><div class="row">
-          <div class="col-md-3 border-end"><h6>Tokens Wialon</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="tk_nom" class="form-control form-control-sm mb-1" placeholder="Ej. RACEL"><input type="text" id="tk_url" class="form-control form-control-sm mb-1" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-1" placeholder="Token"><button class="btn btn-success btn-sm w-100" onclick="agregarToken()">Guardar</button></div><ul class="list-group list-group-sm" id="listaTokens"></ul></div>
-          <div class="col-md-3 border-end"><h6>Operadores Manuales</h6><div class="p-2 bg-light border rounded mb-2"><input class="form-control form-control-sm mb-1" list="listaUnidadesTotales" id="op_unidad" placeholder="Unidad"><input type="text" id="op_nombre" class="form-control form-control-sm mb-1" placeholder="Nombre Chófer"><button onclick="vincularOperador()" class="btn btn-primary btn-sm w-100">Vincular</button></div><ul class="list-group list-group-sm" id="listaOperadoresAdmin"></ul></div>
-          <div class="col-md-3 border-end"><h6>Clientes</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="cli_nombre" class="form-control form-control-sm mb-1" placeholder="Empresa"><button onclick="crearCliente()" class="btn btn-success btn-sm w-100">Añadir</button></div><ul class="list-group list-group-sm" id="listaClientesAdmin"></ul></div>
-          <div class="col-md-3"><h6>Subclientes</h6><div class="p-2 bg-light border rounded mb-2"><select id="sub_clientePadre" class="form-select form-select-sm mb-1"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-1" placeholder="Sub-empresa"><button onclick="crearSubcliente()" class="btn btn-success btn-sm w-100">Añadir</button></div><ul class="list-group list-group-sm" id="listaSubclientesAdmin"></ul></div>
+          <div class="col-md-3 border-end"><h6>Tokens</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="tk_nom" class="form-control form-control-sm mb-1" placeholder="Nombre"><input type="text" id="tk_url" class="form-control form-control-sm mb-1" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-1" placeholder="Token"><button class="btn btn-success btn-sm w-100" onclick="agregarToken()">Añadir</button></div><ul class="list-group list-group-sm" id="listaTokens"></ul></div>
+          <div class="col-md-3 border-end"><h6>Operadores Manuales</h6><div class="p-2 bg-light border rounded mb-2"><input class="form-control form-control-sm mb-1" list="listaUnidadesTotales" id="op_unidad" placeholder="Unidad"><input type="text" id="op_nombre" class="form-control form-control-sm mb-1" placeholder="Operador"><button onclick="vincularOperador()" class="btn btn-primary btn-sm w-100">Guardar</button></div><ul class="list-group list-group-sm" id="listaOperadoresAdmin"></ul></div>
+          <div class="col-md-3 border-end"><h6>Clientes</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="cli_nombre" class="form-control form-control-sm mb-1" placeholder="Cliente"><button onclick="crearCliente()" class="btn btn-success btn-sm w-100">Guardar</button></div><ul class="list-group list-group-sm" id="listaClientesAdmin"></ul></div>
+          <div class="col-md-3"><h6>Subclientes</h6><div class="p-2 bg-light border rounded mb-2"><select id="sub_clientePadre" class="form-select form-select-sm mb-1"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-1" placeholder="Subcliente"><button onclick="crearSubcliente()" class="btn btn-success btn-sm w-100">Guardar</button></div><ul class="list-group list-group-sm" id="listaSubclientesAdmin"></ul></div>
       </div></div>
   </div></div>
 </div>
 
-<div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-    <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">NUEVO VIAJE</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body small">
-        <label>Unidad GPS:</label><input type="text" class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off">
-        <label>Operador:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2 border-primary" list="listaConductores" autocomplete="off">
-        <div class="row mb-2">
-            <div class="col-6"><label>Cliente:</label><select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div>
-            <div class="col-6"><label>Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select></div>
+<div class="modal fade" id="modalNuevoViaje" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">Registrar Viaje</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body small">
+            <label>Unidad:</label><input type="text" class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" placeholder="Buscar unidad..." autocomplete="off">
+            <label>Operador:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2 border-primary" list="listaConductores" placeholder="Cargando..." autocomplete="off">
+            <div class="row mb-2">
+                <div class="col-6"><label>Cliente:</label><select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div>
+                <div class="col-6"><label>Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select></div>
+            </div>
+            <div class="row">
+                <div class="col-6"><label>Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" list="listaGeocercas" placeholder="SALIDA..."></div>
+                <div class="col-6"><label>Destino:</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" list="listaGeocercas" placeholder="LLEGADA..."></div>
+            </div>
+            <button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2">Registrar Viaje</button>
         </div>
-        <div class="row">
-            <div class="col-6"><label>Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" list="listaGeocercas"></div>
-            <div class="col-6"><label>Destino:</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" list="listaGeocercas"></div>
-        </div>
-        <button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2">REGISTRAR EN BITÁCORA</button>
-    </div>
-</div></div></div>
+    </div></div>
+</div>
 
 <datalist id="listaGeocercas"></datalist><datalist id="listaConductores"></datalist><datalist id="listaUnidadesTotales"></datalist>
 
@@ -135,25 +120,11 @@
     let unidadesGlobales = {}, ramDrivers = {}, geocercasNativas = [], activeSIDs = {}, pollingInterval = null;
     let lmap = null, mapMarkers = {}, geofenceLayer = null, mapVisible = false, geocodeCache = {};
 
-    const estatusData = { "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"1.2 RETEN",col:"#7D3F00"}, "s4":{nombre:"1.3 Resguardo",col:"#5C338A"}, "s5":{nombre:"2. Incidencia",col:"#FFCCCC"}, "s6":{nombre:"3. Cargando",col:"#EAEAEA"}, "s7":{nombre:"4. Descargando",col:"#D0F0C0"}, "s8":{nombre:"5. Patio GDL",col:"#BCE3F9"}, "s9":{nombre:"6. Patio Reynosa",col:"#C2DEDB"}, "s10":{nombre:"7. Taller",col:"#B5A6A6"}, "s11":{nombre:"8. Finalizado",col:"#0055A5"} };
-
     function formatTimeFriendly(unixSecs) { if(!unixSecs) return "--:--"; let d = new Date(unixSecs * 1000); return d.toLocaleDateString('es-MX', {day:'2-digit', month:'2-digit'}) + " " + d.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}); }
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('tms_dark_mode', document.body.classList.contains('dark-mode')); }
     function initMap() { lmap = L.map('map').setView([23.6, -102.5], 5); L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(lmap); geofenceLayer = L.layerGroup().addTo(lmap); }
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) lmap.invalidateSize(); }, 400); }
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 15), 400); }
-
-    // REPORTE WHATSAPP PERSONALIZADO
-    function shareWA(u, loc, o, d, est) {
-        let estNombre = estatusData[est]?.nombre || "En Trayecto";
-        let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
-                   `🚛 *Unidad:* ${u}\n` +
-                   `🛣️ *Ruta:* ${o} ➔ ${d}\n` +
-                   `🚦 *Estatus:* ${estNombre}\n` +
-                   `📍 *Ubicación:* ${loc}\n\n` +
-                   `_Reporte generado por sistema C4_`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-    }
 
     window.onload = function () {
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
@@ -163,7 +134,8 @@
         db.ref('sistema/tokens').on('value', s => { configSistema.tokens = s.val() || []; if(currentUser) arranqueMotor(); });
         document.getElementById("logPass").addEventListener("keyup", e => e.key === "Enter" && autenticarUsuario());
         document.getElementById("nv_unidad_input").addEventListener("input", function() {
-            let uN = this.value.toUpperCase(); document.getElementById("nv_operador").value = ramDrivers[uN] || dbOperadores[uN] || "";
+            let uName = this.value.toUpperCase(); let op = ramDrivers[uName] || dbOperadores[uName] || "";
+            document.getElementById("nv_operador").value = op;
         });
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
     };
@@ -192,10 +164,10 @@
         });
     }
 
-    async function arranqueMotor() { if(pollingInterval) clearInterval(pollingInterval); await sincronizarFlotas(); pollingInterval = setInterval(sincronizarFlotas, 20000); }
+    async function arranqueMotor() { if(pollingInterval) clearInterval(pollingInterval); await sincronizarFlotas(); pollingInterval = setInterval(sincronizarFlotas, 15000); }
 
     async function sincronizarFlotas() {
-        let ind = document.getElementById("syncIndicator"); ind.innerText = "Sincronizando flotas...";
+        let ind = document.getElementById("syncIndicator"); ind.innerText = "Sincronizando...";
         let tempUnits = {}, tempGeo = [], listDrv = new Set(), listUni = new Set();
         for(let tk of configSistema.tokens) {
             if(!activeSIDs[tk.token]) { let l = await peticionWialon(tk.url, "token/login", {token: tk.token}); if(l && l.eid) activeSIDs[tk.token] = l.eid; }
@@ -203,7 +175,10 @@
             let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025 }, sid);
             if(reqU && reqU.items) {
                 let localMap = {};
-                reqU.items.forEach(u => { let n = u.nm.toUpperCase(); tempUnits[u.id] = { id: u.id, name: n, pos: u.pos }; localMap[u.id] = n; listUni.add(n); });
+                reqU.items.forEach(u => { 
+                    let n = u.nm.toUpperCase(); tempUnits[u.id] = { id: u.id, name: n, pos: u.pos }; 
+                    localMap[u.id] = n; listUni.add(n); 
+                });
                 let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353 }, sid);
                 if(reqR && reqR.items) reqR.items.forEach(r => {
                     if(r.drv) Object.values(r.drv).forEach(d => { let dn = d.n.toUpperCase(); listDrv.add(dn); if(d.bu && localMap[d.bu]) ramDrivers[localMap[d.bu]] = dn; });
@@ -215,20 +190,15 @@
         document.getElementById("listaUnidadesTotales").innerHTML = Array.from(listUni).map(n => `<option value="${n}">`).join('');
         document.getElementById("listaConductores").innerHTML = Array.from(listDrv).map(n => `<option value="${n}">`).join('');
         document.getElementById("listaGeocercas").innerHTML = tempGeo.map(z => `<option value="${z.n.toUpperCase()}">`).join('');
-        ind.className = "badge bg-success"; ind.innerText = Object.keys(unidadesGlobales).length + " Camiones En Vivo";
+        ind.className = "badge bg-success"; ind.innerText = Object.keys(unidadesGlobales).length + " Unidades en Vivo";
         renderizarBitacora(); actualizarMarcadoresMapa(); updateAddresses();
     }
 
-    // RENDERIZADO MAESTRO REPARADO (Punto 1 y 2)
     function renderizarBitacora() {
-        if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return;
+        if(document.activeElement.tagName === "INPUT") return;
         const tbody = document.getElementById('units-body'); let html = "";
         let tree = { "Sin_Cliente": { "N/A": [] } };
-        
-        Object.keys(dataClientes).forEach(cId => {
-            tree[cId] = { "N/A": [] };
-            if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []);
-        });
+        Object.keys(dataClientes).forEach(cId => { tree[cId] = { "N/A": [] }; if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []); });
 
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId], u = unidadesGlobales[vId] || { id: vId, name: v.unidadFallback || "...", pos: null };
@@ -237,19 +207,18 @@
             tree[cId][sId].push({u, v});
         });
 
-        const headerCols = `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA</th><th>CONTENEDORES</th><th>HORARIOS</th><th>ESTATUS</th><th>UBICACIÓN & VELOCIDAD</th><th>ALERTAS</th><th>AUDITORÍA</th><th>ACCIÓN</th></tr>`;
-        
+        const headerCols = `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA</th><th>CONTENEDORES</th><th>HORARIOS</th><th>ESTATUS</th><th>UBICACIÓN</th><th>ALERTAS</th><th>AUDITORÍA</th><th>ACCIÓN</th></tr>`;
         for(let cId in tree) {
-            let cliData = dataClientes[cId] || {nombre: "SIN CLIENTE ASIGNADO", icono: "❓"}, hasUnitsCli = false, cliHtml = "";
+            let cliData = dataClientes[cId] || {nombre: "SIN CLIENTE", icono: "❓"}, hasUnits = false;
+            let cliHtml = "";
             for(let sId in tree[cId]) {
-                if(tree[cId][sId].length === 0) continue; hasUnitsCli = true;
-                if(sId !== "N/A") cliHtml += `<tr><td colspan="10" class="header-subcliente shadow-sm">↳ Subcliente: ${dataClientes[cId].subclientes[sId].nombre}</td></tr>`;
+                if(tree[cId][sId].length === 0) continue; hasUnits = true;
+                if(sId !== "N/A") cliHtml += `<tr><td colspan="10" class="header-subcliente">↳ Subcliente: ${dataClientes[cId].subclientes[sId].nombre}</td></tr>`;
                 cliHtml += headerCols;
                 tree[cId][sId].forEach(({u, v}) => {
                     let pos = u.pos, speed = pos ? pos.s : 0, isLost = pos ? (Date.now()/1000 - pos.t > 600) : true;
-                    let speedBadge = speed === 0 ? "bg-secondary" : (speed < 100 ? "bg-success" : "bg-danger");
+                    let speedCol = speed === 0 ? "bg-secondary" : (speed < 100 ? "bg-success" : "bg-danger");
                     let drv = v.operador || ramDrivers[u.name] || dbOperadores[u.name] || "";
-                    let addr = geocodeCache[u.id] || "...";
                     cliHtml += `<tr class="${isLost?'lost-connection-row':''}">
                         <td class="unit-name" onclick="centrarUnidadMapa(${pos?pos.y:0}, ${pos?pos.x:0})">${u.name}</td>
                         <td><input class="table-input" value="${drv}" onblur="db.ref('viajes_activos/${u.id}/operador').set(this.value.toUpperCase())"></td>
@@ -257,14 +226,14 @@
                         <td><textarea class="table-input" onblur="db.ref('viajes_activos/${u.id}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
                         <td><button class="btn btn-outline-success btn-sm py-0 mb-1 w-100" onclick="db.ref('viajes_activos/${u.id}/t_salida').set(Date.now())">${v.t_salida?new Date(v.t_salida).toLocaleTimeString():'Salida'}</button><button class="btn btn-outline-danger btn-sm py-0 w-100" onclick="db.ref('viajes_activos/${u.id}/t_arribo').set(Date.now())">${v.t_arribo?new Date(v.t_arribo).toLocaleTimeString():'Arribo'}</button></td>
                         <td><select class="form-select status-select" style="background:${estatusData[v.estatus]?.col||'#fff'}" onchange="db.ref('viajes_activos/${u.id}/estatus').set(this.value)">${Object.keys(estatusData).map(k=>`<option value="${k}" ${v.estatus===k?'selected':''}>${estatusData[k].nombre}</option>`).join('')}</select></td>
-                        <td><div class="d-flex flex-column"><span class="badge ${speedBadge} mb-1">${speed} km/h</span><span style="font-size:9px; font-weight:bold;">${pos?formatTimeFriendly(pos.t):'Sin reporte'}</span><span id="addr_${u.id}" style="font-size:9px; line-height:1;">${addr}</span></div></td>
+                        <td><span class="badge ${speedCol} mb-1">${speed} km/h</span><br><span id="addr_${u.id}" style="font-size:9px;">...</span></td>
                         <td>${v.alerta?v.alerta.txt:'OK'}</td>
                         <td><button class="btn btn-primary btn-sm p-0 px-2" onclick="abrirAuditoria('${u.id}', '${u.name}')">Nota</button></td>
-                        <td><div class="d-flex flex-column gap-1"><button onclick="shareWA('${u.name}', '${addr}', '${v.origen}', '${v.destino}', '${v.estatus}')" class="btn btn-outline-success btn-sm p-0" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button><button onclick="finalizarViaje('${u.id}', '${u.name}')" class="btn btn-outline-danger btn-sm p-0"><i class="fa-solid fa-box-archive"></i></button></div></td>
+                        <td><div class="d-flex flex-column gap-1"><button onclick="shareWA('${u.name}', '', '${v.origen}', '${v.destino}')" class="btn btn-outline-success btn-sm p-0"><i class="fa-brands fa-whatsapp"></i></button><button onclick="finalizarViaje('${u.id}', '${u.name}')" class="btn btn-outline-danger btn-sm p-0"><i class="fa-solid fa-box-archive"></i></button></div></td>
                     </tr>`;
                 });
             }
-            if(hasUnitsCli) html += `<tr><td colspan="10" class="header-cliente shadow">📦 CLIENTE: ${cliData.nombre}</td></tr>` + cliHtml;
+            if(hasUnits) html += `<tr><td colspan="10" class="header-cliente">📦 CLIENTE: ${cliData.nombre}</td></tr>` + cliHtml;
         }
         tbody.innerHTML = html;
     }
@@ -281,12 +250,13 @@
         Object.keys(viajesActivos).forEach(id => {
             let u = unidadesGlobales[id]; if(!u || !u.pos) return;
             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.pos.y}&lon=${u.pos.x}&zoom=16`).then(r=>r.json()).then(d => {
-                let a = d.display_name || "Sin dirección"; geocodeCache[u.id] = a; document.getElementById("addr_"+id).innerText = a;
+                let a = d.display_name || "Sin dirección"; document.getElementById("addr_"+id).innerText = a;
                 if(viajesActivos[id].destino && a.toUpperCase().includes(viajesActivos[id].destino)) db.ref('viajes_activos/'+id+'/t_arribo').set(Date.now());
             });
         });
     }
 
+    function shareWA(u, l, o, d) { window.open(`https://wa.me/?text=${encodeURIComponent('🚛 *Status:* ' + u + '\n📍 *Loc:* ' + l + '\n🛣️ ' + o + ' ➔ ' + d)}`, '_blank'); }
     function finalizarViaje(id, n) { if(confirm('¿Archivar?')) { db.ref('historial').push({...viajesActivos[id], unidad: n, fin: Date.now()}); db.ref('viajes_activos/'+id).remove(); } }
     function prepararNuevoViaje() { let s = document.getElementById("nv_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); cargarSubclientesEnSelect('nv_subcliente', s.value); }
     function cargarSubclientesEnSelect(e, c) { let s = document.getElementById(e); s.innerHTML = '<option value="">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k => s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
@@ -296,7 +266,7 @@
     function vincularOperador() { db.ref(`operadores/${document.getElementById("op_unidad").value.toUpperCase()}`).set(document.getElementById("op_nombre").value.toUpperCase()); }
     function actualizarListasAdmin() { let s = document.getElementById("sub_clientePadre"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); }
     function cerrarSesion() { localStorage.clear(); location.reload(); }
-    function filtrarTabla() { let t = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#mainTable tbody tr").forEach(r => { if(r.classList.contains("header-cliente") || r.classList.contains("header-subcliente") || r.classList.contains("header-columnas")) return; r.style.display = r.innerText.toLowerCase().includes(t) ? "" : "none"; }); }
+    function filtrarTabla() { let t = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#units-body tr").forEach(r => { if(r.classList.contains("header-cliente") || r.classList.contains("header-subcliente") || r.classList.contains("header-columnas")) return; r.style.display = r.innerText.toLowerCase().includes(t) ? "" : "none"; }); }
 </script>
 </body>
 </html>
