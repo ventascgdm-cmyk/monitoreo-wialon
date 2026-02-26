@@ -2,91 +2,159 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Wialon Playground - Get units</title>
-    <script type="text/javascript" src="//code.jquery.com/jquery-latest.min.js"></script>
-    <script type="text/javascript" src="//hst-api.wialon.com/wsdk/script/wialon.js"></script>
+    <title>Bitácora Logística Inteligente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    
+    <script type="text/javascript" src="https://hst-api.wialon.com/wscommon/js/wialon.js"></script>
+
+    <style>
+        body { background: #003366; color: white; font-family: Arial; }
+        .login-box { background: white; color: #333; width: 400px; padding: 30px; border-radius: 15px; margin: 15vh auto; text-align: center; }
+        #dashboard { display:none; background: #f4f7f6; color: #333; min-height: 100vh; padding: 20px; }
+        .table-input { border: 1px solid #ccc; padding: 3px; width: 100%; font-size: 12px; border-radius: 4px; }
+    </style>
 </head>
 <body>
-<style>
-#log { border: 1px solid #c6c6c6; }
-.icon {float:left; margin:10px;}
-</style>
 
+<div id="loginOverlay">
+    <div class="login-box shadow-lg">
+        <h2 class="text-primary fw-bold">Logística Cloud</h2>
+        <p class="text-muted small">Ingresa tu token para sincronizar la flota</p>
+        <input type="password" id="token" class="form-control mb-3 text-center" placeholder="Wialon API Token">
+        <button onclick="login()" class="btn btn-primary w-100 fw-bold">Entrar al Sistema</button>
+        <div id="log" class="mt-3 small fw-bold text-warning">Esperando SDK...</div>
+    </div>
+</div>
 
-Select unit: <select id="units"><option></option></select>
-<div id="log"></div>
-
+<div id="dashboard">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold text-primary m-0">PANEL DE CONTROL REAL-TIME</h4>
+        <button onclick="exportar()" class="btn btn-success btn-sm fw-bold">Descargar Excel</button>
+    </div>
+    <div class="card shadow-sm border-0">
+        <table class="table table-hover align-middle mb-0 text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>Unidad</th><th>Cliente</th><th>Subcliente</th><th>Origen</th><th>Destino</th>
+                    <th>Estatus</th><th>Contenedores</th><th>Velocidad</th><th>Ubicación</th><th>GPS</th>
+                </tr>
+            </thead>
+            <tbody id="units-body"></tbody>
+        </table>
+    </div>
+</div>
 
 <script type="text/javascript">
-// Print message to log
-function msg(text) { $("#log").prepend(text + "<br/>"); }
+    // CONFIGURACIÓN FIREBASE (Confirmada en tus capturas)
+    const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-function init() { // Execute after login succeed
-	var sess = wialon.core.Session.getInstance(); // get instance of current Session
-	// flags to specify what kind of data should be returned
-	var flags = wialon.item.Item.dataFlag.base | wialon.item.Unit.dataFlag.lastMessage;
+    // Inicialización al estilo Playground
+    window.onload = function () {
+        if (typeof wialon !== 'undefined') {
+            document.getElementById("log").innerHTML = "SDK Listo ✅";
+            document.getElementById("log").className = "mt-3 small fw-bold text-success";
+        } else {
+            document.getElementById("log").innerHTML = "Error: SDK no cargó. Refresca (F5).";
+            document.getElementById("log").className = "mt-3 small fw-bold text-danger";
+        }
+    };
 
-    sess.loadLibrary("itemIcon"); // load Icon Library	
-    sess.updateDataFlags( // load items to current session
-	[{type: "type", data: "avl_unit", flags: flags, mode: 0}], // Items specification
-		function (code) { // updateDataFlags callback
-    		if (code) { msg(wialon.core.Errors.getErrorText(code)); return; } // exit if error code
+    function login() {
+        var token = document.getElementById("token").value;
+        if (!token) { alert("Ingresa tu token"); return; }
 
-            // get loaded 'avl_unit's items  
-	    	var units = sess.getItems("avl_unit");
-    		if (!units || !units.length){ msg("Units not found"); return; } // check if units found
+        var sess = wialon.core.Session.getInstance();
+        sess.initSession("https://hst-api.wialon.com");
+        
+        sess.loginToken(token, "", function (code) {
+            if (code) { alert("Error: " + wialon.core.Errors.getErrorText(code)); return; }
+            
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("dashboard").style.display = "block";
+            
+            // Cargar datos
+            sess.loadLibrary("itemUnit");
+            sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], function () {
+                renderTable();
+                sess.addListener("dataUpdated", renderTable);
+            });
+        });
+    }
 
-		    for (var i = 0; i< units.length; i++){ // construct Select object using found units
-			    var u = units[i]; // current unit in cycle
-			    // append option to select
-			    $("#units").append("<option value='"+ u.getId() +"'>"+ u.getName()+ "</option>");
-			}
-            // bind action to select change event
-		    $("#units").change( getSelectedUnitInfo );
-	    }
-	);
-}
+    function renderTable() {
+        var sess = wialon.core.Session.getInstance();
+        var units = sess.getItems("avl_unit") || [];
+        var html = "";
 
-function getSelectedUnitInfo(){ // print information about selected Unit
+        units.forEach(function(u) {
+            var id = u.getId();
+            var pos = u.getPosition();
+            var speed = pos ? pos.s : 0;
+            var mov = speed > 0;
 
-	var val = $("#units").val(); // get selected unit id
-	if(!val) return; // exit if no unit selected
-	
-	var unit = wialon.core.Session.getInstance().getItem(val); // get unit by id
-	if(!unit){ msg("Unit not found");return; } // exit if unit not found
-	
-	// construct message with unit information
-	var text = "<div>'"+unit.getName()+"' selected. "; // get unit name
-	var icon = unit.getIconUrl(32); // get unit Icon url
-	if(icon) text = "<img class='icon' src='"+ icon +"' alt='icon'/>"+ text; // add icon to message
-	var pos = unit.getPosition(); // get unit position
-	if(pos){ // check if position data exists
-	    var time = wialon.util.DateTime.formatTime(pos.t);
-		text += "<b>Last message</b> "+ time +"<br/>"+ // add last message time
-			"<b>Position</b> "+ pos.x+", "+pos.y +"<br/>"+ // add info about unit position
-			"<b>Speed</b> "+ pos.s; // add info about unit speed
-        // try to find unit location using coordinates 
-		wialon.util.Gis.getLocations([{lon:pos.x, lat:pos.y}], function(code, address){ 
-			if (code) { msg(wialon.core.Errors.getErrorText(code)); return; } // exit if error code
-			msg(text + "<br/><b>Location of unit</b>: "+ address+"</div>"); // print message to log
-		});
-	} else // position data not exists, print message
-		msg(text + "<br/><b>Location of unit</b>: Unknown</div>");
-}
+            html += `<tr>
+                <td class="fw-bold text-primary">${u.getName()}</td>
+                <td><input id="cli_${id}" class="table-input" onchange="save('${id}','cliente',this.value)"></td>
+                <td><input id="sub_${id}" class="table-input" onchange="save('${id}','subcliente',this.value)"></td>
+                <td><input id="ori_${id}" class="table-input" onchange="save('${id}','origen',this.value)"></td>
+                <td><input id="des_${id}" class="table-input" onchange="save('${id}','destino',this.value)"></td>
+                <td>
+                    <select id="est_${id}" class="table-input" onchange="save('${id}','estatus',this.value)">
+                        <option value="Disponible">Disponible</option>
+                        <option value="En Tránsito">En Tránsito</option>
+                        <option value="Cargando">Cargando</option>
+                    </select>
+                </td>
+                <td><input id="con_${id}" class="table-input" onchange="save('${id}','contenedores',this.value)"></td>
+                <td class="fw-bold">${speed} km/h</td>
+                <td id="addr_${id}" style="font-size:10px; color:gray">Obteniendo...</td>
+                <td><span class="badge ${mov?'bg-success':'bg-danger'}">${mov?'MOV':'STOP'}</span></td>
+            </tr>`;
+            
+            // Pedir dirección
+            if (pos) {
+                wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], function (code, addr) {
+                    var el = document.getElementById("addr_" + id);
+                    if (el) el.innerHTML = addr ? addr[0] : "N/D";
+                });
+            }
 
-// execute when DOM ready
-$(document).ready(function () {
-	wialon.core.Session.getInstance().initSession("https://hst-api.wialon.com"); // init session
-    // For more info about how to generate token check
-    // http://sdk.wialon.com/playground/demo/app_auth_token
-	wialon.core.Session.getInstance().loginToken("5dce19710a5e26ab8b7b8986cb3c49e58C291791B7F0A7AEB8AFBFCEED7DC03BC48FF5F8", "", // try to login
-		function (code) { // login callback
-		    // if error code - print error message
-			if (code){ msg(wialon.core.Errors.getErrorText(code)); return; }
-			msg("Logged successfully"); init(); // when login suceed then run init() function
-	});
-});
+            // Cargar desde Firebase
+            db.ref('viajes/' + id).once('value', function(s) {
+                var v = s.val();
+                if (v) {
+                    if(document.getElementById("cli_"+id)) document.getElementById("cli_"+id).value = v.cliente || "";
+                    if(document.getElementById("sub_"+id)) document.getElementById("sub_"+id).value = v.subcliente || "";
+                    if(document.getElementById("ori_"+id)) document.getElementById("ori_"+id).value = v.origen || "";
+                    if(document.getElementById("des_"+id)) document.getElementById("des_"+id).value = v.destino || "";
+                    if(document.getElementById("est_"+id)) document.getElementById("est_"+id).value = v.estatus || "Disponible";
+                    if(document.getElementById("con_"+id)) document.getElementById("con_"+id).value = v.contenedores || "";
+                }
+            });
+        });
+        document.getElementById("units-body").innerHTML = html;
+    }
 
+    function save(id, campo, valor) {
+        db.ref('viajes/' + id).update({ [campo]: valor });
+    }
+
+    function exportar() {
+        let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,ORIGEN,DESTINO,ESTATUS,CONTENEDORES,VELOCIDAD,UBICACIÓN\n";
+        document.querySelectorAll("#units-body tr").forEach(row => {
+            const i = row.querySelectorAll("input, select");
+            csv += `${row.cells[0].innerText},${i[0].value},${i[1].value},${i[2].value},${i[3].value},${i[4].value},${i[5].value},${row.cells[7].innerText},${row.cells[8].innerText.replace(/,/g, " ")}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "Reporte_Logistico.csv";
+        link.click();
+    }
 </script>
 </body>
 </html>
