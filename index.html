@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>GRUDICOM TI & GPS | C4 - DEBUG GPS</title>
+    <title>GRUDICOM TI & GPS | C4 - SISTEMA HÍBRIDO</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -10,13 +10,15 @@
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --header-bg: #002a61; }
-        body { background: #f0f4f8; font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; margin: 0; }
+        :root { --header-bg: #002a61; --bg-main: #f0f4f8; }
+        body { background: var(--bg-main); font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; margin: 0; }
         .header-bar { background: white; padding: 10px 20px; border-bottom: 4px solid var(--header-bg); display: flex; justify-content: space-between; align-items: center; }
-        .diag-pill { font-size: 10px; padding: 3px 10px; border-radius: 12px; margin-right: 5px; font-weight: bold; }
-        .diag-ok { background: #d1e7dd; color: #0f5132; border: 1px solid #0f5132; }
-        .diag-err { background: #f8d7da; color: #842029; border: 1px solid #842029; }
         .cliente-row { background: #336699; color: white; font-weight: bold; padding: 10px; text-align: left; }
+        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; text-align: center; text-transform: uppercase; font-size: 0.75rem; }
+        .diag-pill { font-size: 9px; padding: 2px 8px; border-radius: 10px; margin-right: 5px; font-weight: bold; border: 1px solid transparent; }
+        .diag-ok { background: #d1e7dd; color: #0f5132; border-color: #0f5132; }
+        .diag-err { background: #f8d7da; color: #842029; border-color: #842029; }
+        .badge-speed { font-size: 0.7rem; padding: 5px; width: 100%; }
     </style>
 </head>
 <body>
@@ -25,159 +27,145 @@
     <div class="d-flex align-items-center">
         <img src="TIGPS HD2.png" alt="Logo" style="height: 40px;" class="me-3">
         <div>
-            <h5 class="fw-bold m-0 text-primary">GRUDICOM TI & GPS</h5>
-            <div id="status-servidores" class="mt-1 d-flex"></div>
+            <h5 class="fw-bold m-0 text-primary">GRUDICOM TI & GPS | C4</h5>
+            <div id="diagnostico-gps" class="d-flex mt-1"></div>
         </div>
     </div>
     <div class="d-flex align-items-center">
         <button class="btn btn-danger btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalAdmin">ADMIN</button>
-        <button class="btn btn-primary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalViaje"><i class="fa-solid fa-plus"></i> Registrar Viaje</button>
+        <button class="btn btn-primary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalViaje"><i class="fa-solid fa-plus"></i> NUEVO VIAJE</button>
         <button class="btn btn-secondary btn-sm fw-bold" onclick="location.reload()"><i class="fa-solid fa-rotate"></i></button>
     </div>
 </div>
 
 <div class="container-fluid mt-3">
-    <div class="card shadow-sm border-0">
-        <table class="table table-bordered align-middle text-center mb-0">
-            <tbody id="main-table">
-                <tr><td class="p-5 text-muted">Iniciando conexión con Firebase y Satélites...</td></tr>
-            </tbody>
-        </table>
-    </div>
+    <div id="contenedor-logistica">
+        </div>
 </div>
 
 <div class="modal fade" id="modalViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-    <div class="modal-header bg-primary text-white"><h6>NUEVO VIAJE</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-header bg-primary text-white"><h6>REGISTRAR UNIDAD</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
     <div class="modal-body small">
         <label>Cliente:</label><select id="v_cli" class="form-select form-select-sm mb-2"></select>
-        <label>Unidad (Si la lista está vacía, revisa los nombres en ADMIN):</label>
-        <input type="text" id="v_uni" class="form-control form-control-sm mb-2" list="dl_unidades" placeholder="Buscando unidades...">
+        <label>Económico / Unidad:</label>
+        <input type="text" id="v_uni" class="form-control form-control-sm mb-2" list="lista-gps" placeholder="Ej. RACEL-01 o Económico">
         <label>Operador:</label><input type="text" id="v_ope" class="form-control form-control-sm mb-2">
-        <button class="btn btn-primary w-100 fw-bold mt-2" onclick="guardarViaje()">INICIAR RUTA</button>
+        <button class="btn btn-primary w-100 fw-bold mt-2" onclick="guardarViaje()">AGREGAR A BITÁCORA</button>
     </div>
 </div></div></div>
 
-<datalist id="dl_unidades"></datalist>
+<datalist id="lista-gps"></datalist>
 
-<div class="modal fade" id="modalAdmin" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
+<div class="modal fade" id="modalAdmin" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
     <div class="modal-header bg-danger text-white"><h6>ADMINISTRACIÓN</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body small">
-        <div class="row">
-            <div class="col-6 border-end">
-                <h6>Agregar Cliente</h6>
-                <div class="input-group mb-3"><input type="text" id="c_nom" class="form-control" placeholder="Nombre"><button class="btn btn-success" onclick="addCli()">Añadir</button></div>
-            </div>
-            <div class="col-6">
-                <h6>Configurar Token GPS</h6>
-                <input type="text" id="t_nom" class="form-control mb-1" placeholder="Nombre (Ej. DSG)">
-                <input type="text" id="t_val" class="form-control mb-1" placeholder="Token Largo">
-                <input type="text" id="t_url" class="form-control mb-2" placeholder="URL del Servidor">
-                <button class="btn btn-primary w-100" onclick="addTk()">Guardar Token</button>
-            </div>
-        </div>
+        <h6>1. Crear Cliente</h6>
+        <div class="input-group mb-3"><input type="text" id="c_nom" class="form-control" placeholder="Nombre"><button class="btn btn-success" onclick="addCli()">Añadir</button></div>
+        <hr>
+        <h6>2. Configurar Token GPS</h6>
+        <input type="text" id="t_nom" class="form-control mb-1" placeholder="Nombre (Ej. RACEL)">
+        <input type="text" id="t_val" class="form-control mb-1" placeholder="Token">
+        <input type="text" id="t_url" class="form-control mb-2" placeholder="URL Host">
+        <button class="btn btn-primary w-100" onclick="addTk()">Guardar Token</button>
     </div>
 </div></div></div>
 
 <script>
-    // INICIALIZACIÓN
-    const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let dataClientes = {}, viajesActivos = {}, unidadesGlobales = {};
+    const db = firebase.database({ databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" });
+    let dataClientes = {}, viajesActivos = {}, cacheGPS = {};
 
     function init() {
-        db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; updateUI(); });
-        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; updateUI(); });
+        // 1. Carga Operativa (Firebase)
+        db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; render(); });
+        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; render(); });
         
-        // CONEXIÓN A SATÉLITES
+        // 2. Motor GPS (Lógica 1.9 corregida)
         db.ref('sistema/tokens').on('value', s => {
             const tokens = s.val() ? Object.values(s.val()) : [];
-            const diag = document.getElementById("status-servidores");
-            diag.innerHTML = "";
-            document.getElementById("dl_unidades").innerHTML = ""; // Limpiar lista
+            const diag = document.getElementById("diagnostico-gps");
+            diag.innerHTML = ""; 
 
             tokens.forEach(tk => {
-                let sc = document.createElement("script"), cb = "w_"+Math.random().toString(36).substr(2,5);
+                const cb = "w_"+Math.random().toString(36).substr(2,5);
                 window[cb] = (d) => {
                     if(d && d.eid) {
-                        diag.innerHTML += `<span class="diag-pill diag-ok">${tk.nombre}: CONECTADO</span>`;
-                        fetchUnits(tk, d.eid);
-                    } else {
-                        diag.innerHTML += `<span class="diag-pill diag-err">${tk.nombre}: ERROR TOKEN</span>`;
-                    }
-                    sc.remove();
+                        diag.innerHTML += `<span class="diag-pill diag-ok">${tk.nombre} OK</span>`;
+                        conectarUnidades(tk, d.eid);
+                    } else diag.innerHTML += `<span class="diag-pill diag-err">${tk.nombre} ERR</span>`;
                 };
-                // Forzar URL correcta
-                let baseUrl = tk.url.endsWith('/') ? tk.url.slice(0, -1) : tk.url;
-                sc.src = `${baseUrl}/wialon/ajax.html?svc=token/login&params={"token":"${tk.token}"}&callback=${cb}`;
+                let sc = document.createElement("script");
+                let cleanUrl = tk.url.endsWith('/') ? tk.url.slice(0, -1) : tk.url;
+                sc.src = `${cleanUrl}/wialon/ajax.html?svc=token/login&params={"token":"${tk.token}"}&callback=${cb}`;
                 document.head.appendChild(sc);
             });
         });
     }
 
-    function fetchUnits(tk, sid) {
-        let sc = document.createElement("script"), cb = "u_"+Math.random().toString(36).substr(2,5);
+    function conectarUnidades(tk, sid) {
+        const cb = "u_"+Math.random().toString(36).substr(2,5);
         window[cb] = (d) => {
             if(d && d.items) {
-                const dl = document.getElementById("dl_unidades");
+                const dl = document.getElementById("lista-gps");
                 d.items.forEach(u => {
-                    unidadesGlobales[u.nm.toUpperCase()] = u;
+                    cacheGPS[u.nm.toUpperCase()] = u;
                     dl.innerHTML += `<option value="${u.nm.toUpperCase()}">`;
                 });
-                console.log(`Unidades cargadas de ${tk.nombre}: ${d.items.length}`);
             }
-            updateUI(); sc.remove();
+            render();
         };
-        let baseUrl = tk.url.endsWith('/') ? tk.url.slice(0, -1) : tk.url;
-        sc.src = `${baseUrl}/wialon/ajax.html?svc=core/search_items&params={"spec":{"itemsType":"avl_unit","propName":"sys_name","propValueMask":"*","sortType":"sys_name"},"force":1,"flags":1025}&sid=${sid}&callback=${cb}`;
+        let sc = document.createElement("script");
+        let cleanUrl = tk.url.endsWith('/') ? tk.url.slice(0, -1) : tk.url;
+        sc.src = `${cleanUrl}/wialon/ajax.html?svc=core/search_items&params={"spec":{"itemsType":"avl_unit","propName":"sys_name","propValueMask":"*","sortType":"sys_name"},"force":1,"flags":1025}&sid=${sid}&callback=${cb}`;
         document.head.appendChild(sc);
     }
 
-    function updateUI() {
-        const tbody = document.getElementById("main-table");
+    function render() {
+        const cont = document.getElementById("contenedor-logistica");
         let html = "";
+        
         Object.keys(dataClientes).forEach(cId => {
-            html += `<tr><td colspan="5" class="cliente-row">📦 CLIENTE: ${dataClientes[cId].nombre}</td></tr>`;
-            html += `<tr class="bg-light fw-bold"><td>UNIDAD</td><td>OPERADOR</td><td>ESTATUS</td><td>VELOCIDAD</td><td>ÚLTIMO REPORTE</td></tr>`;
+            html += `<div class="card mb-4 border-0 shadow-sm">
+                <div class="cliente-row">📦 CLIENTE: ${dataClientes[cId].nombre}</div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center mb-0">
+                        <thead class="bg-light small">
+                            <tr><th>UNIDAD</th><th>OPERADOR</th><th>📦 CONTENEDORES / NOTAS</th><th>ESTATUS</th><th>GPS LIVE</th></tr>
+                        </thead>
+                        <tbody>`;
+            
             Object.keys(viajesActivos).forEach(vId => {
                 const v = viajesActivos[vId];
                 if(v.cliente === cId) {
-                    const gps = unidadesGlobales[v.unidadN.toUpperCase()] || null;
+                    const gps = cacheGPS[v.unidadN.toUpperCase()] || null;
+                    const vel = gps ? gps.pos.s : 0;
                     html += `<tr>
                         <td class="fw-bold text-primary">${v.unidadN}</td>
-                        <td>${v.operador || '---'}</td>
+                        <td><input class="table-input" value="${v.operador||''}" onblur="db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase())"></td>
+                        <td><textarea class="table-input" rows="1" onblur="db.ref('viajes_activos/${vId}/notas').set(this.value.toUpperCase())">${v.notas||''}</textarea></td>
                         <td><span class="badge bg-success">En Ruta</span></td>
-                        <td>${gps ? gps.pos.s + ' km/h' : 'Buscando GPS...'}</td>
-                        <td><small>${gps ? new Date(gps.pos.t * 1000).toLocaleTimeString() : '---'}</small></td>
+                        <td>
+                            ${gps ? `<span class="badge ${vel>0?'bg-success':'bg-danger'} badge-speed">${vel} km/h</span><br><small>${new Date(gps.pos.t*1000).toLocaleTimeString()}</small>` : `<span class="text-muted">MANUAL</span>`}
+                        </td>
                     </tr>`;
                 }
             });
+            html += `</tbody></table></div></div>`;
         });
-        tbody.innerHTML = html;
+        cont.innerHTML = html || '<div class="text-center p-5 text-muted">Configura Clientes y Tokens en ADMIN para comenzar.</div>';
         document.getElementById("v_cli").innerHTML = Object.keys(dataClientes).map(id => `<option value="${id}">${dataClientes[id].nombre}</option>`).join('');
     }
 
-    // FUNCIONES ADMIN
-    function addCli() {
-        const n = document.getElementById("c_nom").value.toUpperCase();
-        if(n) db.ref('clientes').push({nombre: n});
-        document.getElementById("c_nom").value = "";
-    }
-    function addTk() {
-        const n = document.getElementById("t_nom").value.toUpperCase();
-        const v = document.getElementById("t_val").value.trim();
-        const u = document.getElementById("t_url").value.trim();
-        if(n && v && u) {
-            db.ref('sistema/tokens').push({nombre: n, token: v, url: u});
-            alert("Token guardado");
-        }
-    }
     function guardarViaje() {
-        const uN = document.getElementById("v_uni").value.toUpperCase();
-        if(!uN) return;
-        db.ref('viajes_activos/' + uN).set({ unidadN: uN, operador: document.getElementById("v_ope").value.toUpperCase(), cliente: document.getElementById("v_cli").value });
+        const u = document.getElementById("v_uni").value.toUpperCase(); if(!u) return;
+        db.ref('viajes_activos/' + u).set({ unidadN: u, operador: document.getElementById("v_ope").value.toUpperCase(), cliente: document.getElementById("v_cli").value });
         bootstrap.Modal.getInstance(document.getElementById('modalViaje')).hide();
+    }
+    
+    function addCli() { const n = document.getElementById("c_nom").value.toUpperCase(); if(n) db.ref('clientes').push({nombre: n}); }
+    function addTk() { 
+        const n = document.getElementById("t_nom").value.toUpperCase(), v = document.getElementById("t_val").value.trim(), u = document.getElementById("t_url").value.trim();
+        if(n && v && u) db.ref('sistema/tokens').push({nombre: n, token: v, url: u});
+        alert("Token Guardado");
     }
 
     init();
