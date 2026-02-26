@@ -2,76 +2,93 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>Logística Cloud - Sistema TMS</title>
+    <title>DSG - CargoQuin | Panel Logístico</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    
     <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
 
     <style>
-        body { background: #f0f2f5; color: #333; font-family: 'Segoe UI', sans-serif; font-size: 0.85rem; }
+        body { background: #f4f6f9; color: #333; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.75rem; }
         .login-bg { background: #002a61; min-height: 100vh; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
-        .login-card { background: white; width: 400px; border-radius: 20px; padding: 40px; }
+        .login-card { background: white; width: 400px; border-radius: 15px; padding: 40px; }
         
-        .header-bar { background: #002a61; color: white; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.8rem; }
-        .table-input:focus { border-color: #0d6efd; outline: none; }
+        /* Branding Header */
+        .header-bar { background: white; padding: 10px 20px; border-bottom: 4px solid #336699; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .logo-img { height: 50px; }
         
-        .group-img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; margin-right: 5px; border: 2px solid #002a61; }
-        .btn-action { font-size: 0.75rem; padding: 3px 8px; font-weight: bold; }
+        /* Tablas y Celdas */
+        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; text-align: center; font-weight: bold;}
+        .table-input:focus { border-color: #336699; outline: none; box-shadow: 0 0 0 0.2rem rgba(51, 102, 153, 0.25); }
+        .group-img { width: 25px; height: 25px; border-radius: 50%; object-fit: cover; margin-right: 5px; border: 2px solid #336699; }
         
-        th { cursor: pointer; user-select: none; }
-        th:hover { background-color: #e9ecef !important; }
+        /* Drag and Drop Columnas */
+        th { cursor: grab; user-select: none; position: relative; background-color: #e9ecef !important; color: #002a61 !important; font-weight: 800;}
+        th:active { cursor: grabbing; }
+        th.dragging { opacity: 0.5; background-color: #ccc; }
+        
+        /* Estatus Badge */
+        .status-select { border-radius: 20px; font-weight: bold; cursor: pointer; color: white;}
+        .log-btn { cursor: pointer; text-decoration: underline; color: #0d6efd; font-weight: bold;}
     </style>
 </head>
 <body>
 
 <div id="loginOverlay" class="login-bg">
     <div class="login-card shadow-lg text-center">
-        <h3 class="text-primary fw-bold mb-3">Logística Cloud 2.0</h3>
-        <p class="text-muted small mb-4">Control de Viajes y Grupos</p>
+        <img src="TIGPS HD2.jpg" alt="Logo" style="height: 60px; margin-bottom: 20px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
+        <h4 class="text-primary fw-bold mb-3">Acceso TMS Wialon</h4>
         <input type="password" id="token" class="form-control mb-4 text-center py-2" placeholder="Wialon API Token">
-        <button onclick="login()" class="btn btn-primary w-100 fw-bold py-2 shadow">Conectar Sistema</button>
-        <div id="status" class="mt-4 small fw-bold text-secondary">Verificando SDK...</div>
+        <button onclick="login()" class="btn btn-primary w-100 fw-bold py-2 shadow">INICIAR SESIÓN</button>
+        <div id="status" class="mt-4 small fw-bold text-secondary">Verificando sistema...</div>
     </div>
 </div>
 
 <div id="dashboard" style="display:none;">
-    <div class="header-bar d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold m-0">BITÁCORA DE VIAJES ACTIVOS</h4>
+    <div class="header-bar d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center">
+            <img src="TIGPS HD2.jpg" alt="Logo" class="logo-img me-3" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
+            <h4 class="fw-bold m-0" style="color: #336699; letter-spacing: 1px;">BITÁCORA DE MONITOREO</h4>
+        </div>
         <div>
-            <button class="btn btn-light btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje">➕ Nuevo Viaje</button>
-            <button class="btn btn-light btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalGrupos">📁 Grupos</button>
-            <button class="btn btn-warning btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalHistorial">📜 Historial</button>
+            <button class="btn btn-outline-primary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje">➕ Nuevo Viaje</button>
+            <button class="btn btn-outline-secondary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalGrupos">📁 Grupos</button>
+            <button class="btn btn-outline-dark btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalEstatus">🎨 Estatus</button>
+            <button class="btn btn-outline-warning btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalHistorial" onclick="cargarHistorial()">📜 Historial</button>
             <button onclick="exportarExcel()" class="btn btn-success btn-sm fw-bold">📥 Excel</button>
         </div>
     </div>
 
-    <div class="container-fluid px-4">
-        <div class="row mb-3">
+    <div class="container-fluid px-3">
+        <div class="row mb-2">
             <div class="col-md-4">
-                <input type="text" id="buscador" class="form-control shadow-sm" placeholder="🔍 Filtrar por unidad, origen, destino..." onkeyup="filtrarTabla()">
+                <input type="text" id="buscador" class="form-control form-control-sm shadow-sm" placeholder="🔍 Buscar unidad, cliente, origen..." onkeyup="filtrarTabla()">
+            </div>
+            <div class="col-md-8 text-end">
+                <span class="small text-muted fst-italic">Ar rastra los encabezados de las columnas para reordenarlos</span>
             </div>
         </div>
 
         <div class="card shadow border-0">
-            <div class="table-responsive" style="min-height: 70vh;">
-                <table class="table table-hover align-middle text-center mb-0" id="tablaViajes">
-                    <thead class="table-dark">
-                        <tr>
-                            <th onclick="ordenar(0)">Unidad ↕</th>
-                            <th onclick="ordenar(1)">Grupo ↕</th>
-                            <th>Origen</th>
-                            <th>Destino</th>
-                            <th>Estatus</th>
-                            <th>Comentarios</th>
-                            <th onclick="ordenar(6)">Vel. ↕</th>
-                            <th onclick="ordenar(7)">Último Msj ↕</th>
-                            <th>Ubicación</th>
-                            <th>Acción</th>
+            <div class="table-responsive" style="min-height: 75vh;">
+                <table class="table table-bordered table-hover align-middle text-center mb-0" id="tablaViajes">
+                    <thead>
+                        <tr id="tableHeaders">
+                            <th draggable="true" data-index="0">GRUPO / OP</th>
+                            <th draggable="true" data-index="1">OPERADOR (TEL)</th>
+                            <th draggable="true" data-index="2">UNIDAD</th>
+                            <th draggable="true" data-index="3">CLIENTE/SUB</th>
+                            <th draggable="true" data-index="4">CONTENEDORES</th>
+                            <th draggable="true" data-index="5">ORIGEN</th>
+                            <th draggable="true" data-index="6">DESTINO</th>
+                            <th draggable="true" data-index="7">SALIDA RUTA</th>
+                            <th draggable="true" data-index="8">ARRIBO / FIN</th>
+                            <th draggable="true" data-index="9">UBICACIÓN GPS</th>
+                            <th draggable="true" data-index="10">ÚLTIMO MSJ</th>
+                            <th draggable="true" data-index="11">ESTATUS</th>
+                            <th draggable="true" data-index="12">BITÁCORA</th>
+                            <th draggable="true" data-index="13">ACCIÓN</th>
                         </tr>
                     </thead>
                     <tbody id="units-body"></tbody>
@@ -81,51 +98,81 @@
     </div>
 </div>
 
+<datalist id="listaGeocercas"></datalist>
+
 <div class="modal fade" id="modalNuevoViaje" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-primary text-white"><h5 class="modal-title fw-bold">Asignar Unidad a Viaje</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-          <label class="fw-bold small">Seleccionar Unidad Disponible:</label>
-          <select id="nv_unidad" class="form-select mb-3"></select>
-          <label class="fw-bold small">Asignar Grupo:</label>
-          <select id="nv_grupo" class="form-select mb-3"></select>
-          <button onclick="iniciarViaje()" class="btn btn-primary w-100 fw-bold">Comenzar Viaje</button>
+      <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">Iniciar Nuevo Viaje</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body small">
+          <label class="fw-bold">Unidad:</label>
+          <select id="nv_unidad" class="form-select form-select-sm mb-2"></select>
+          
+          <label class="fw-bold">Grupo / Operación:</label>
+          <div class="input-group input-group-sm mb-2">
+            <select id="nv_grupo" class="form-select"></select>
+            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#modalGrupos">Nuevo Grupo</button>
+          </div>
+
+          <div class="row">
+              <div class="col-6">
+                  <label class="fw-bold">Origen:</label>
+                  <input type="text" id="nv_origen" class="form-control form-control-sm mb-2" list="listaGeocercas" placeholder="Ej. MZO">
+              </div>
+              <div class="col-6">
+                  <label class="fw-bold">Destino:</label>
+                  <input type="text" id="nv_destino" class="form-control form-control-sm mb-2" list="listaGeocercas" placeholder="Ej. EL SALTO">
+              </div>
+          </div>
+          <button onclick="iniciarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2">Crear Viaje en Bitácora</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalComentarios" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white"><h6 class="modal-title fw-bold" id="tituloComentarios">Bitácora de Notas</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body small">
+          <div id="listaComentarios" class="mb-3" style="max-height: 250px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #dee2e6;"></div>
+          <div class="input-group">
+              <input type="text" id="nuevoComentario" class="form-control form-control-sm" placeholder="Añadir novedad...">
+              <button class="btn btn-primary btn-sm fw-bold" onclick="guardarComentario()">Agregar</button>
+          </div>
+          <input type="hidden" id="comentario_unidad_id">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalEstatus" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white"><h6 class="modal-title fw-bold">Configuración de Estatus</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body small">
+          <div class="d-flex mb-3">
+              <input type="text" id="me_nombre" class="form-control form-control-sm me-2" placeholder="Ej. 1. Ruta">
+              <input type="color" id="me_color" class="form-control form-control-sm form-control-color me-2" value="#0F7D42">
+              <button onclick="crearEstatus()" class="btn btn-success btn-sm fw-bold">Añadir</button>
+          </div>
+          <ul class="list-group" id="listaEstatusConfig"></ul>
       </div>
     </div>
   </div>
 </div>
 
 <div class="modal fade" id="modalGrupos" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-dark text-white"><h5 class="modal-title fw-bold">Administrar Grupos</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-          <div class="d-flex mb-3">
-              <input type="text" id="mg_nombre" class="form-control me-2" placeholder="Nombre (Ej. Ruta Norte)">
-              <input type="text" id="mg_img" class="form-control me-2" placeholder="URL Imagen (opcional)">
-              <button onclick="crearGrupo()" class="btn btn-success fw-bold">Crear</button>
-          </div>
-          <ul class="list-group" id="listaGrupos"></ul>
-      </div>
-    </div>
-  </div>
+  <div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-secondary text-white"><h6 class="modal-title fw-bold">Grupos</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body small"><div class="d-flex mb-3"><input type="text" id="mg_nombre" class="form-control form-control-sm me-2" placeholder="Nombre (Ej. ADALBERTO)"><input type="text" id="mg_img" class="form-control form-control-sm me-2" placeholder="URL Imagen (Opcional)"><button onclick="crearGrupo()" class="btn btn-success btn-sm fw-bold">Crear</button></div><ul class="list-group" id="listaGrupos"></ul></div></div></div>
 </div>
 
 <div class="modal fade" id="modalHistorial" tabindex="-1">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header bg-warning"><h5 class="modal-title fw-bold">Historial de Viajes Finalizados</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-          <div class="table-responsive">
-              <table class="table table-sm table-striped text-center text-nowrap">
-                  <thead class="table-dark"><tr><th>Unidad</th><th>Inicio</th><th>Fin</th><th>Origen</th><th>Destino</th><th>Comentarios</th></tr></thead>
-                  <tbody id="listaHistorial"></tbody>
-              </table>
-          </div>
-      </div>
-    </div>
-  </div>
+  <div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header bg-warning"><h6 class="modal-title fw-bold">Historial de Viajes</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body small">
+      <select id="filtroClienteHistorial" class="form-select form-select-sm mb-3 w-25" onchange="cargarHistorial()"><option value="ALL">Todos los Clientes</option></select>
+      <div class="table-responsive"><table class="table table-bordered table-striped text-center text-nowrap"><thead class="table-dark"><tr><th>Unidad</th><th>Cliente</th><th>Inicio</th><th>Fin</th><th>Origen</th><th>Destino</th><th>Reporte Bitácora</th></tr></thead><tbody id="listaHistorial"></tbody></table></div>
+  </div></div></div>
 </div>
 
 <script type="text/javascript">
@@ -136,135 +183,193 @@
 
     // Variables Globales
     let dataGrupos = {};
+    let dataEstatus = {};
     let viajesActivos = {};
     let unidadesWialon = [];
+    let geocercasWialon = [];
 
-    // 2. ARRANQUE
+    // Estatus por defecto (Basado en tu imagen)
+    const estatusPorDefecto = {
+        "s1": { nombre: "1. Ruta", color: "#0F7D42" },
+        "s2": { nombre: "1.1 PARADO", color: "#B50000" },
+        "s3": { nombre: "1.2 RETEN", color: "#7D3F00" },
+        "s4": { nombre: "1.3 Resguardo", color: "#5C338A" },
+        "s5": { nombre: "2. Incidencia", color: "#FFCCCC" },
+        "s6": { nombre: "3. Cargando", color: "#EAEAEA" },
+        "s7": { nombre: "4. Descargando", color: "#D0F0C0" },
+        "s8": { nombre: "5. Patio GDL", color: "#BCE3F9" },
+        "s9": { nombre: "6. Patio Reynosa", color: "#C2DEDB" },
+        "s10": { nombre: "7. Taller", color: "#B5A6A6" },
+        "s11": { nombre: "8. Finalizado", color: "#0055A5" },
+        "s12": { nombre: "9. Baja cobertura", color: "#4A4A4A" },
+        "s13": { nombre: "1.4 REGRESANDO", color: "#009E73" },
+        "s14": { nombre: "ALIMENTOS", color: "#E1C6F2" }
+    };
+
     window.onload = function () {
         if (typeof wialon !== 'undefined') {
             document.getElementById("status").innerHTML = "SDK Listo ✅";
             document.getElementById("status").className = "mt-4 small fw-bold text-success";
-        } else {
-            document.getElementById("status").innerHTML = "Error: El SDK no cargó.";
-            document.getElementById("status").className = "mt-4 small fw-bold text-danger";
         }
         
-        // Cargar listas de Firebase en tiempo real
+        // Sincronización en tiempo real Firebase
         db.ref('grupos').on('value', s => { dataGrupos = s.val() || {}; actualizarListasGrupos(); });
-        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; });
-        db.ref('historial').on('value', s => { renderizarHistorial(s.val() || {}); });
+        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; if(unidadesWialon.length>0) renderizarBitacora(); });
+        
+        // Cargar/Inicializar Estatus
+        db.ref('config/estatus').on('value', s => { 
+            dataEstatus = s.val();
+            if(!dataEstatus) { dataEstatus = estatusPorDefecto; db.ref('config/estatus').set(estatusPorDefecto); }
+            actualizarListaEstatus(); 
+            if(unidadesWialon.length>0) renderizarBitacora();
+        });
+        
+        iniciarDragAndDrop();
     };
 
     function login() {
         const token = document.getElementById("token").value;
-        if (!token) return alert("Ingresa tu token primero");
-        if (typeof wialon === 'undefined') return alert("SDK no disponible.");
-
-        document.getElementById("status").innerText = "Conectando...";
+        if (!token) return alert("Ingresa tu token");
+        
+        document.getElementById("status").innerText = "Conectando con Wialon...";
         const sess = wialon.core.Session.getInstance();
         sess.initSession("https://hst-api.wialon.com");
         
         sess.loginToken(token, "", function (code) {
-            if (code) return alert("Error de Acceso: " + wialon.core.Errors.getErrorText(code));
-            
+            if (code) return alert("Error: " + code);
             document.getElementById("loginOverlay").style.display = "none";
             document.getElementById("dashboard").style.display = "block";
             
+            // Cargar Unidades (1=Nom, 1024=Pos, 256=Admin/Profile fields para Driver) y Geocercas (4096)
             sess.loadLibrary("itemUnit");
-            sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], function () {
+            sess.loadLibrary("resourceZones");
+            
+            sess.updateDataFlags([
+                {type: "type", data: "avl_unit", flags: 1 | 1024 | 256, mode: 0},
+                {type: "type", data: "avl_resource", flags: 4096, mode: 0}
+            ], function () {
                 unidadesWialon = sess.getItems("avl_unit") || [];
+                
+                // Extraer Geocercas para autocompletado
+                const recursos = sess.getItems("avl_resource") || [];
+                let dl = document.getElementById("listaGeocercas");
+                recursos.forEach(r => {
+                    const zones = r.getZones();
+                    for (let z in zones) { dl.innerHTML += `<option value="${zones[z].n}">`; }
+                });
+
                 actualizarSelectUnidades();
                 renderizarBitacora();
-                sess.addListener("dataUpdated", renderizarBitacora); // Actualización en tiempo real Wialon
+                sess.addListener("dataUpdated", renderizarBitacora);
             });
         });
     }
 
-    // 3. BITÁCORA Y VIAJES
+    // VIAJES
     function iniciarViaje() {
         const uId = document.getElementById("nv_unidad").value;
-        const gId = document.getElementById("nv_grupo").value;
-        if (!uId) return alert("Selecciona una unidad.");
+        if (!uId) return alert("Selecciona unidad");
         
         db.ref('viajes_activos/' + uId).set({
-            grupo: gId, origen: "", destino: "", estatus: "Disponible", comentarios: "", 
-            inicioTs: Date.now()
+            grupo: document.getElementById("nv_grupo").value,
+            origen: document.getElementById("nv_origen").value,
+            destino: document.getElementById("nv_destino").value,
+            estatus: "s1", // Por defecto: 1. Ruta
+            inicioTs: Date.now(),
+            bitacora: [{fecha: Date.now(), txt: "Viaje Iniciado"}]
         });
         
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje'));
-        modal.hide();
-        renderizarBitacora();
-    }
-
-    function finalizarViaje(id, nombre) {
-        if(!confirm(`¿Finalizar el viaje de la unidad ${nombre}? Se guardará en el historial.`)) return;
-        
-        const viaje = viajesActivos[id];
-        viaje.unidad = nombre;
-        viaje.finTs = Date.now();
-        
-        db.ref('historial').push(viaje);
-        db.ref('viajes_activos/' + id).remove();
-        renderizarBitacora();
+        bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
         actualizarSelectUnidades();
     }
 
-    // 4. TABLA PRINCIPAL (Se dibuja SOLO con las unidades en "viajes_activos")
+    function registrarTiempo(id, tipo) {
+        const now = Date.now();
+        db.ref(`viajes_activos/${id}/${tipo}`).set(now);
+        guardarEnBitacoraSilencioso(id, `Marcado tiempo: ${tipo}`);
+    }
+
+    function finalizarViaje(id, nombre) {
+        if(!confirm(`¿Finalizar el viaje de ${nombre}? Se irá al historial.`)) return;
+        const viaje = viajesActivos[id];
+        viaje.unidad = nombre;
+        viaje.finViajeTs = Date.now();
+        db.ref('historial').push(viaje);
+        db.ref('viajes_activos/' + id).remove();
+        actualizarSelectUnidades();
+    }
+
+    // RENDERIZADO PRINCIPAL
     function renderizarBitacora() {
+        if(document.activeElement.tagName === "INPUT") return; // Evitar parpadeo si escribe
+        
         const tbody = document.getElementById('units-body');
         let html = "";
+        
+        // Obtener el orden actual de las columnas
+        const headers = Array.from(document.getElementById("tableHeaders").children);
+        const colOrder = headers.map(th => parseInt(th.getAttribute("data-index")));
 
         unidadesWialon.forEach(u => {
             const id = u.getId();
-            // Si la unidad NO tiene viaje activo en Firebase, la saltamos
             if (!viajesActivos[id]) return;
-
             const viaje = viajesActivos[id];
             const pos = u.getPosition();
-            const speed = pos ? pos.s : 0;
-            const mov = speed > 0;
             
-            // Cálculo del último mensaje
-            let lastMsgTxt = "N/D";
+            // 1. CONDUCTOR INFO (Intentar sacar de Profile Fields si existe)
+            let operador = "S/D";
+            // u.getProfileFields() o u.getAdminFields()
+            
+            // 2. ÚLTIMO MENSAJE
+            let lastMsg = "N/D";
+            let lastMsgRaw = "";
             if (pos && pos.t) {
-                const date = new Date(pos.t * 1000); // Wialon da el tiempo en segundos (Unix)
-                lastMsgTxt = date.toLocaleString('es-MX', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+                lastMsg = new Date(pos.t * 1000).toLocaleString('es-MX', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'});
+                lastMsgRaw = `Última notificación: ${lastMsg}`;
             }
 
-            // Opciones del Grupo
-            let opcionesGrupo = `<option value="">Sin Grupo</option>`;
-            Object.keys(dataGrupos).forEach(k => {
-                const selected = viaje.grupo === k ? "selected" : "";
-                opcionesGrupo += `<option value="${k}" ${selected}>${dataGrupos[k].nombre}</option>`;
+            // 3. ESTATUS Y COLOR
+            let selEstatus = `<select class="form-select form-select-sm status-select" style="background-color: ${dataEstatus[viaje.estatus]?dataEstatus[viaje.estatus].color:'#fff'}; color: ${dataEstatus[viaje.estatus] && ['#EAEAEA','#FFCCCC','#D0F0C0','#BCE3F9','#C2DEDB','#E1C6F2'].includes(dataEstatus[viaje.estatus].color) ? '#333' : '#fff'};" onchange="guardar('${id}','estatus',this.value); guardarEnBitacoraSilencioso('${id}','Cambio estatus: '+this.options[this.selectedIndex].text)">`;
+            Object.keys(dataEstatus).forEach(k => {
+                selEstatus += `<option value="${k}" ${viaje.estatus===k?'selected':''} style="background:#fff; color:#333">${dataEstatus[k].nombre}</option>`;
             });
+            selEstatus += `</select>`;
 
-            // Imagen del grupo actual
-            const imgGrupo = (viaje.grupo && dataGrupos[viaje.grupo] && dataGrupos[viaje.grupo].imagen) 
-                           ? `<img src="${dataGrupos[viaje.grupo].imagen}" class="group-img">` 
-                           : '';
+            // 4. TIEMPOS
+            const tSalida = viaje.t_salida ? new Date(viaje.t_salida).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : `<button class="btn btn-sm btn-light p-0 text-primary" onclick="registrarTiempo('${id}','t_salida')">Marcar</button>`;
+            const tArribo = viaje.t_arribo ? new Date(viaje.t_arribo).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : `<button class="btn btn-sm btn-light p-0 text-primary" onclick="registrarTiempo('${id}','t_arribo')">Marcar</button>`;
 
-            html += `<tr>
-                <td class="fw-bold text-primary">${u.getName()}</td>
-                <td class="d-flex align-items-center justify-content-center">
-                    ${imgGrupo}
-                    <select class="form-select form-select-sm w-auto" onchange="guardar('${id}','grupo',this.value)">${opcionesGrupo}</select>
-                </td>
-                <td><input class="table-input" value="${viaje.origen||''}" onblur="guardar('${id}','origen',this.value)"></td>
-                <td><input class="table-input" value="${viaje.destino||''}" onblur="guardar('${id}','destino',this.value)"></td>
-                <td>
-                    <select class="table-input" onchange="guardar('${id}','estatus',this.value)">
-                        <option value="Disponible" ${viaje.estatus==='Disponible'?'selected':''}>Disponible</option>
-                        <option value="En Tránsito" ${viaje.estatus==='En Tránsito'?'selected':''}>En Tránsito</option>
-                        <option value="Cargando" ${viaje.estatus==='Cargando'?'selected':''}>Cargando</option>
-                    </select>
-                </td>
-                <td><input class="table-input text-warning fw-bold" value="${viaje.comentarios||''}" placeholder="Escribe aquí..." onblur="guardar('${id}','comentarios',this.value)"></td>
-                <td class="fw-bold ${mov?'text-success':'text-danger'}">${speed} km/h</td>
-                <td class="small text-muted">${lastMsgTxt}</td>
-                <td id="addr_${id}" style="font-size:0.7rem; color:#666; font-style:italic;">Buscando...</td>
-                <td><button onclick="finalizarViaje('${id}', '${u.getName()}')" class="btn btn-danger btn-action">Finalizar</button></td>
-            </tr>`;
+            // 5. GRUPO
+            const imgGrupo = (viaje.grupo && dataGrupos[viaje.grupo]) ? `<img src="${dataGrupos[viaje.grupo].imagen}" class="group-img" title="${dataGrupos[viaje.grupo].nombre}">` : '';
+
+            // 6. BITÁCORA PREVIEW
+            let bitacoraCount = viaje.bitacora ? Object.keys(viaje.bitacora).length : 0;
+            let ultimoComentario = bitacoraCount > 0 ? Object.values(viaje.bitacora).pop().txt : "Sin notas";
+
+            // CONSTRUIR CELDAS SEGÚN EL ORDEN
+            const celdas = {
+                0: `<div class="d-flex align-items-center justify-content-center">${imgGrupo} <span class="fw-bold">${viaje.grupo?dataGrupos[viaje.grupo].nombre:'N/A'}</span></div>`,
+                1: `<input class="table-input text-primary" value="${viaje.operador||''}" placeholder="Nombre / Tel" onblur="guardar('${id}','operador',this.value)">`,
+                2: `<span class="fw-bold text-primary" style="font-size:14px;">${u.getName()}</span>`,
+                3: `<div class="d-flex flex-column"><input class="table-input mb-1" value="${viaje.cliente||''}" placeholder="Cliente" onblur="guardar('${id}','cliente',this.value)"><input class="table-input" value="${viaje.subcliente||''}" placeholder="Subcliente" onblur="guardar('${id}','subcliente',this.value)"></div>`,
+                4: `<textarea class="table-input" rows="2" placeholder="Ej. CMAU287..." onblur="guardar('${id}','contenedores',this.value)">${viaje.contenedores||''}</textarea>`,
+                5: `<input class="table-input" list="listaGeocercas" value="${viaje.origen||''}" onblur="guardar('${id}','origen',this.value)">`,
+                6: `<input class="table-input" list="listaGeocercas" value="${viaje.destino||''}" onblur="guardar('${id}','destino',this.value)">`,
+                7: `<span class="badge bg-secondary">${tSalida}</span>`,
+                8: `<span class="badge bg-secondary">${tArribo}</span>`,
+                9: `<div id="addr_${id}" style="font-size:10px; color:#555; font-style:italic;">Calculando...</div>`,
+                10: `<span class="small text-muted fw-bold" title="${lastMsgRaw}">${lastMsg}</span>`,
+                11: selEstatus,
+                12: `<div class="d-flex flex-column align-items-center"><span class="small text-muted text-truncate" style="max-width:100px;">${ultimoComentario}</span><span class="log-btn" onclick="abrirComentarios('${id}','${u.getName()}')">[ ${bitacoraCount} Notas ]</span></div>`,
+                13: `<button onclick="finalizarViaje('${id}', '${u.getName()}')" class="btn btn-sm btn-danger fw-bold">FINALIZAR</button>`
+            };
+
+            let rowHtml = "";
+            colOrder.forEach(idx => { rowHtml += `<td>${celdas[idx]}</td>`; });
             
+            html += `<tr>${rowHtml}</tr>`;
+            
+            // Geocodificar asíncronamente
             if (pos) {
                 wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], function(code, addr) {
                     const el = document.getElementById(`addr_${id}`);
@@ -273,101 +378,155 @@
             }
         });
         
-        // Si el usuario no está filtrando/escribiendo, actualizar html
-        if(document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "SELECT") {
-             tbody.innerHTML = html;
-        }
+        tbody.innerHTML = html;
+        aplicarFiltroActual();
     }
 
-    function guardar(id, campo, valor) {
-        db.ref(`viajes_activos/${id}/${campo}`).set(valor);
-    }
+    function guardar(id, campo, valor) { db.ref(`viajes_activos/${id}/${campo}`).set(valor); }
 
-    // 5. GESTIÓN DE GRUPOS
-    function crearGrupo() {
-        const nom = document.getElementById("mg_nombre").value;
-        const img = document.getElementById("mg_img").value;
-        if (!nom) return alert("El nombre es obligatorio");
-        db.ref('grupos').push({ nombre: nom, imagen: img || "https://cdn-icons-png.flaticon.com/512/3063/3063822.png" });
-        document.getElementById("mg_nombre").value = "";
-        document.getElementById("mg_img").value = "";
-    }
-
-    function actualizarListasGrupos() {
-        const sel = document.getElementById("nv_grupo");
-        const list = document.getElementById("listaGrupos");
-        sel.innerHTML = `<option value="">Seleccionar Grupo (Opcional)</option>`;
-        list.innerHTML = "";
+    // COMENTARIOS / BITÁCORA INTERNA
+    function abrirComentarios(id, nombre) {
+        document.getElementById("tituloComentarios").innerText = `Notas: ${nombre}`;
+        document.getElementById("comentario_unidad_id").value = id;
         
-        Object.keys(dataGrupos).forEach(k => {
-            const g = dataGrupos[k];
-            sel.innerHTML += `<option value="${k}">${g.nombre}</option>`;
-            list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                <div><img src="${g.imagen}" class="group-img">${g.nombre}</div>
-                <button onclick="db.ref('grupos/${k}').remove()" class="btn btn-sm btn-outline-danger">X</button>
-            </li>`;
+        const bit = viajesActivos[id].bitacora || {};
+        let html = "";
+        Object.values(bit).forEach(b => {
+            html += `<div class="border-bottom pb-1 mb-1"><span class="text-muted" style="font-size:10px">${new Date(b.fecha).toLocaleString()}</span><br><b>${b.txt}</b></div>`;
         });
-        // Refrescar bitácora si estamos logueados
-        if(unidadesWialon.length > 0) renderizarBitacora();
+        document.getElementById("listaComentarios").innerHTML = html;
+        new bootstrap.Modal(document.getElementById('modalComentarios')).show();
+    }
+
+    function guardarComentario() {
+        const id = document.getElementById("comentario_unidad_id").value;
+        const txt = document.getElementById("nuevoComentario").value;
+        if(!txt) return;
+        guardarEnBitacoraSilencioso(id, txt);
+        document.getElementById("nuevoComentario").value = "";
+        abrirComentarios(id, document.getElementById("tituloComentarios").innerText.replace("Notas: ", "")); // Refresh
+    }
+
+    function guardarEnBitacoraSilencioso(id, txt) {
+        db.ref(`viajes_activos/${id}/bitacora`).push({fecha: Date.now(), txt: txt});
+    }
+
+    // GESTIÓN DE COLUMNAS (DRAG AND DROP)
+    function iniciarDragAndDrop() {
+        const headers = document.querySelectorAll("#tableHeaders th");
+        let dragSrcEl = null;
+
+        headers.forEach(header => {
+            header.addEventListener('dragstart', function(e) {
+                dragSrcEl = this;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML);
+                this.classList.add('dragging');
+            });
+            header.addEventListener('dragover', function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; });
+            header.addEventListener('drop', function(e) {
+                e.stopPropagation();
+                if (dragSrcEl !== this) {
+                    // Intercambiar Atributos y HTML
+                    const srcIndex = dragSrcEl.getAttribute('data-index');
+                    const targetIndex = this.getAttribute('data-index');
+                    
+                    dragSrcEl.innerHTML = this.innerHTML;
+                    this.innerHTML = e.dataTransfer.getData('text/html');
+                    
+                    dragSrcEl.setAttribute('data-index', targetIndex);
+                    this.setAttribute('data-index', srcIndex);
+                    renderizarBitacora(); // Redibujar tabla con nuevo orden
+                }
+                return false;
+            });
+            header.addEventListener('dragend', function(e) { this.classList.remove('dragging'); });
+        });
+    }
+
+    // FILTROS Y BÚSQUEDA
+    function filtrarTabla() { aplicarFiltroActual(); }
+    
+    function aplicarFiltroActual() {
+        const txt = document.getElementById("buscador").value.toLowerCase();
+        const filas = document.querySelectorAll("#units-body tr");
+        filas.forEach(f => {
+            // Revisa todo el texto visible en la fila, incluyendo los values de los inputs
+            let rowText = f.innerText.toLowerCase();
+            f.querySelectorAll('input').forEach(i => rowText += " " + i.value.toLowerCase());
+            f.style.display = rowText.includes(txt) ? "" : "none";
+        });
+    }
+
+    // GESTIÓN DE CONFIGURACIONES (Grupos y Estatus)
+    function crearGrupo() {
+        db.ref('grupos').push({ nombre: document.getElementById("mg_nombre").value, imagen: document.getElementById("mg_img").value || "https://cdn-icons-png.flaticon.com/512/3063/3063822.png" });
+    }
+    function actualizarListasGrupos() {
+        let sel = document.getElementById("nv_grupo"), list = document.getElementById("listaGrupos");
+        sel.innerHTML = `<option value="">Seleccionar Grupo</option>`; list.innerHTML = "";
+        Object.keys(dataGrupos).forEach(k => {
+            sel.innerHTML += `<option value="${k}">${dataGrupos[k].nombre}</option>`;
+            list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><img src="${dataGrupos[k].imagen}" class="group-img">${dataGrupos[k].nombre}</div><button onclick="db.ref('grupos/${k}').remove()" class="btn btn-sm btn-danger">X</button></li>`;
+        });
+    }
+    
+    function crearEstatus() {
+        db.ref('config/estatus').push({ nombre: document.getElementById("me_nombre").value, color: document.getElementById("me_color").value });
+    }
+    function actualizarListaEstatus() {
+        let list = document.getElementById("listaEstatusConfig"); list.innerHTML = "";
+        Object.keys(dataEstatus).forEach(k => {
+            list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><span class="badge" style="background:${dataEstatus[k].color}">${dataEstatus[k].nombre}</span><button onclick="db.ref('config/estatus/${k}').remove()" class="btn btn-sm btn-outline-danger">X</button></li>`;
+        });
     }
 
     function actualizarSelectUnidades() {
         const sel = document.getElementById("nv_unidad");
-        sel.innerHTML = `<option value="">Seleccionar Unidad Libre...</option>`;
-        unidadesWialon.forEach(u => {
-            if (!viajesActivos[u.getId()]) { // Solo unidades que no estén en viaje
-                sel.innerHTML += `<option value="${u.getId()}">${u.getName()}</option>`;
+        sel.innerHTML = `<option value="">Seleccione Unidad Libre...</option>`;
+        unidadesWialon.forEach(u => { if (!viajesActivos[u.getId()]) sel.innerHTML += `<option value="${u.getId()}">${u.getName()}</option>`; });
+    }
+
+    // HISTORIAL Y REPORTES
+    function cargarHistorial() {
+        db.ref('historial').once('value', s => {
+            const data = s.val() || {};
+            let html = "";
+            let clientes = new Set();
+            
+            Object.keys(data).reverse().forEach(k => {
+                const h = data[k];
+                if(h.cliente) clientes.add(h.cliente.toUpperCase());
+                
+                const filtroCliente = document.getElementById("filtroClienteHistorial").value;
+                if(filtroCliente !== "ALL" && (!h.cliente || h.cliente.toUpperCase() !== filtroCliente)) return; // Filtrar
+
+                const fInicio = h.inicioTs ? new Date(h.inicioTs).toLocaleString() : 'N/D';
+                const fFin = h.finViajeTs ? new Date(h.finViajeTs).toLocaleString() : 'N/D';
+                
+                // Extraer bitácora en texto
+                let logTxt = "";
+                if(h.bitacora) Object.values(h.bitacora).forEach(b => logTxt += `[${new Date(b.fecha).toLocaleTimeString()}] ${b.txt}\n`);
+
+                html += `<tr><td>${h.unidad||'N/D'}</td><td>${h.cliente||'S/C'}</td><td>${fInicio}</td><td>${fFin}</td><td>${h.origen||''}</td><td>${h.destino||''}</td><td><textarea class="form-control" rows="1" readonly>${logTxt}</textarea></td></tr>`;
+            });
+            document.getElementById("listaHistorial").innerHTML = html;
+            
+            // Llenar select de filtro de clientes si está vacío
+            const selCli = document.getElementById("filtroClienteHistorial");
+            if(selCli.options.length === 1) {
+                clientes.forEach(c => selCli.innerHTML += `<option value="${c}">${c}</option>`);
             }
         });
     }
 
-    // 6. HISTORIAL Y EXTRAS
-    function renderizarHistorial(data) {
-        let html = "";
-        Object.keys(data).reverse().forEach(k => {
-            const h = data[k];
-            const fInicio = h.inicioTs ? new Date(h.inicioTs).toLocaleDateString() : 'N/D';
-            const fFin = h.finTs ? new Date(h.finTs).toLocaleDateString() : 'N/D';
-            html += `<tr><td>${h.unidad||'N/D'}</td><td>${fInicio}</td><td>${fFin}</td><td>${h.origen||''}</td><td>${h.destino||''}</td><td>${h.comentarios||''}</td></tr>`;
-        });
-        document.getElementById("listaHistorial").innerHTML = html;
-    }
-
-    function filtrarTabla() {
-        const txt = document.getElementById("buscador").value.toLowerCase();
-        const filas = document.querySelectorAll("#units-body tr");
-        filas.forEach(f => {
-            f.style.display = f.innerText.toLowerCase().includes(txt) ? "" : "none";
-        });
-    }
-
-    function ordenar(columnaIdx) {
-        const tabla = document.getElementById("tablaViajes");
-        const tbody = document.getElementById("units-body");
-        const filas = Array.from(tbody.querySelectorAll("tr"));
-        
-        // Determinar dirección de orden (asc o desc) alternando por clics
-        const asc = tabla.getAttribute("data-orden") === "asc";
-        tabla.setAttribute("data-orden", asc ? "desc" : "asc");
-        
-        filas.sort((a, b) => {
-            const valA = a.cells[columnaIdx].innerText.toLowerCase();
-            const valB = b.cells[columnaIdx].innerText.toLowerCase();
-            if (valA < valB) return asc ? -1 : 1;
-            if (valA > valB) return asc ? 1 : -1;
-            return 0;
-        });
-        filas.forEach(f => tbody.appendChild(f));
-    }
-
     function exportarExcel() {
-        // Simple export para Active Trips
-        let csv = "\uFEFFUNIDAD,GRUPO,ORIGEN,DESTINO,ESTATUS,COMENTARIOS,VELOCIDAD,ÚLTIMO MSJ,DIRECCIÓN\n";
+        let csv = "\uFEFFUNIDAD,OPERADOR,CLIENTE,ORIGEN,DESTINO,ESTATUS,SALIDA,ARRIBO,UBICACIÓN\n";
         document.querySelectorAll("#units-body tr").forEach(row => {
             if(row.style.display !== "none") {
-                const i = row.querySelectorAll("input, select");
-                const grupoTxt = i[0].options[i[0].selectedIndex].text;
-                csv += `${row.cells[0].innerText},${grupoTxt},${i[1].value},${i[2].value},${i[3].value},${i[4].value},${row.cells[6].innerText},${row.cells[7].innerText},${row.cells[8].innerText.replace(/,/g, " ")}\n`;
+                const c = row.cells;
+                // Como las columnas se mueven, esto es un exportado básico fijo.
+                csv += `${c[2].innerText},${c[1].querySelector('input').value},${c[3].querySelector('input').value},${c[5].querySelector('input').value},${c[6].querySelector('input').value},${c[11].querySelector('select').options[c[11].querySelector('select').selectedIndex].text},${c[7].innerText},${c[8].innerText},${c[9].innerText.replace(/,/g, "")}\n`;
             }
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
