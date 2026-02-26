@@ -2,84 +2,188 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Wialon Playground</title>
+    <title>Bitácora Logística - Control Maestro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    
+    <style>
+        body { background: #002a61; color: white; font-family: 'Segoe UI', sans-serif; }
+        .login-card { background: white; color: #333; width: 420px; border-radius: 25px; padding: 40px; margin: 15vh auto; border: none; }
+        #dashboard { display:none; background: #f8f9fa; color: #333; min-height: 100vh; padding: 25px; }
+        .table-input { border: 1px solid #dee2e6; padding: 5px; width: 100%; border-radius: 6px; font-size: 0.8rem; }
+        .status-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border-radius: 12px; }
+    </style>
 </head>
 <body>
-<style>
-.panel {
-	position: absolute;
-	border: 1px solid #76BBFF;
-	padding: 5px;
-	box-sizing: border-box;
-}
 
-.header {
-	left: 0;
-	top: 0;
-	height: 40px;
-	right: 0;
-	background: #CAECF7;
-}
+<div id="loginOverlay">
+    <div class="login-card shadow-lg text-center">
+        <h2 class="text-primary fw-bold mb-3">Logística Cloud</h2>
+        <p class="text-muted small mb-4">Pega tu token para autorizar la conexión con la flota</p>
+        <input type="password" id="token" class="form-control mb-4 text-center py-2" placeholder="Wialon API Token">
+        <button onclick="autorizarYConectar()" id="btnGo" class="btn btn-primary w-100 fw-bold py-2 shadow">AUTORIZAR E INGRESAR</button>
+        <div id="status" class="mt-4 small fw-bold text-secondary">Esperando Token...</div>
+    </div>
+</div>
 
-.footer {
-	left: 0;
-	bottom: 0;
-	height: 40px;
-	right: 0;
-	background: #CAECF7;
-}
-
-.left {
-	left: 0;
-	top: 41px;
-	bottom: 41px;
-	width: 120px;
-	background: #A7E2FF;
-}
-
-.right {
-	right: 0;
-	top: 41px;
-	bottom: 41px;
-	width: 280px;
-	background: #A7E2FF;
-}
-
-.content {
-	left: 121px;
-	top: 41px;
-	bottom: 41px;
-	right: 281px;
-	background: #D6F1FF;
-	overflow: hidden;
-	text-align: justify;
-	text-overflow: ellipsis;
-}
-
-.remark {
-	font-size: 10px;
-	font-style: italic;
-	color: #666;
-}
-
-</style>
-
-
-		<div class="panel header"><span class="remark">Header block.</span> Some monitoring company.</div>
-		<div class="panel left"><span class="remark">Left block</span></div>
-		<div class="panel content"><span class="remark">Content block.</span><br />
-Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
-		</div>
-		<div class="panel right"><span class="remark">Right block</span><br />
-			<!-- paste this to your company's site -->
-			<iframe name="simple_form" src="//hosting.wialon.com/login_simple.html?cms_url=http://cms.wialon.com&cms_title=CMS&lite_url=http://lite.wialon.com&mobile_url=http://m.wialon.com&demo_title=Demo login&demo_url=http://hosting.wialon.com/?token=5dce19710a5e26ab8b7b8986cb3c49e54E9D73F9D2D2C1A4808D6F032006CE3267346C30&title=Monitoring&lang=en" scrolling="no" style="width: 230px; height: 290px; border: 0; margin: 10px;"></iframe>
-			<!-- paste this to your company's site -->
-		</div>
-		<div class="panel footer"><span class="remark">Footer block</span></div>
-    
+<div id="dashboard">
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm border-start border-primary border-5">
+        <h4 class="fw-bold text-primary m-0">BITÁCORA LOGÍSTICA REAL-TIME</h4>
+        <button onclick="exportarExcel()" class="btn btn-success btn-sm fw-bold px-4">📥 Descargar Reporte Maestro</button>
+    </div>
+    <div class="card shadow border-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="12%">Unidad</th>
+                        <th width="10%">Cliente</th>
+                        <th width="10%">Subcliente</th>
+                        <th width="10%">Origen</th>
+                        <th width="10%">Destino</th>
+                        <th width="10%">Estatus</th>
+                        <th width="10%">Contenedores</th>
+                        <th width="8%">Velocidad</th>
+                        <th width="15%">Ubicación</th>
+                        <th width="5%">GPS</th>
+                    </tr>
+                </thead>
+                <tbody id="units-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 <script type="text/javascript">
+    // 1. CONFIGURACIÓN FIREBASE (image_d0861e.png)
+    const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
+    // 2. FLUJO DE AUTORIZACIÓN (Primero el Token)
+    function autorizarYConectar() {
+        const tokenVal = document.getElementById("token").value;
+        if (!tokenVal) return alert("Por favor, ingresa tu token");
+
+        document.getElementById("status").innerText = "Validando Token e inyectando SDK...";
+        document.getElementById("status").className = "mt-4 small fw-bold text-warning";
+
+        // Inyectamos el SDK dinámicamente SOLO cuando hay interacción (como en el Playground)
+        const script = document.createElement('script');
+        script.src = "https://hst-api.wialon.com/wscommon/js/wialon.js?t=" + Date.now(); 
+        
+        script.onload = () => {
+            console.log("SDK Inyectado exitosamente tras token");
+            realizarLogin(tokenVal);
+        };
+        
+        script.onerror = () => {
+            document.getElementById("status").innerText = "Error: El navegador bloqueó la conexión ❌";
+            document.getElementById("status").className = "mt-4 small text-danger fw-bold";
+            alert("No se pudo conectar. Intenta usar otro navegador o revisa tu red.");
+        };
+        
+        document.head.appendChild(script);
+    }
+
+    function realizarLogin(token) {
+        if (typeof wialon === 'undefined') return;
+        
+        const sess = wialon.core.Session.getInstance();
+        sess.initSession("https://hst-api.wialon.com");
+        
+        sess.loginToken(token, "", (code) => {
+            if (code) {
+                alert("Error de Acceso: " + wialon.core.Errors.getErrorText(code));
+                document.getElementById("status").innerText = "Token Rechazado ❌";
+                return;
+            }
+            
+            // Éxito: Cambio de pantalla
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("dashboard").style.display = "block";
+            
+            // Cargar recursos
+            sess.loadLibrary("itemUnit");
+            sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
+                actualizarTabla();
+                sess.addListener("dataUpdated", actualizarTabla);
+            });
+        });
+    }
+
+    function actualizarTabla() {
+        const sess = wialon.core.Session.getInstance();
+        const units = sess.getItems("avl_unit") || [];
+        let html = "";
+
+        units.forEach(u => {
+            const id = u.getId();
+            const pos = u.getPosition();
+            const speed = pos ? pos.s : 0;
+            const mov = speed > 0;
+
+            html += `<tr>
+                <td class="fw-bold text-primary">${u.getName()}</td>
+                <td><input id="cli_${id}" class="table-input" onchange="guardar('${id}','cliente',this.value)"></td>
+                <td><input id="sub_${id}" class="table-input" onchange="saveCloud('${id}','subcliente',this.value)"></td>
+                <td><input id="ori_${id}" class="table-input" onchange="saveCloud('${id}','origen',this.value)"></td>
+                <td><input id="des_${id}" class="table-input" onchange="saveCloud('${id}','destino',this.value)"></td>
+                <td>
+                    <select id="est_${id}" class="table-input" onchange="saveCloud('${id}','estatus',this.value)">
+                        <option value="Disponible">Disponible</option>
+                        <option value="En Tránsito">En Tránsito</option>
+                        <option value="Cargando">Cargando</option>
+                        <option value="Aduana">Aduana</option>
+                    </select>
+                </td>
+                <td><input id="con_${id}" class="table-input" onchange="saveCloud('${id}','contenedores',this.value)"></td>
+                <td class="fw-bold text-dark">${speed} km/h</td>
+                <td id="addr_${id}" style="font-size:0.7rem; color:#666; font-style:italic;">Buscando...</td>
+                <td><span class="status-badge ${mov?'bg-success text-white':'bg-danger text-white'}">${mov?'MOV':'STOP'}</span></td>
+            </tr>`;
+            
+            // Obtener dirección real (Geocodificación)
+            if (pos) {
+                wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], (code, addr) => {
+                    const el = document.getElementById(`addr_${id}`);
+                    if (el && addr) el.innerText = addr[0];
+                });
+            }
+
+            // Sincronizar datos individuales con Firebase
+            db.ref('viajes/' + id).once('value', (s) => {
+                const v = s.val();
+                if (v) {
+                    if(document.getElementById(`cli_${id}`)) document.getElementById(`cli_${id}`).value = v.cliente || "";
+                    if(document.getElementById(`sub_${id}`)) document.getElementById(`sub_${id}`).value = v.subcliente || "";
+                    if(document.getElementById(`ori_${id}`)) document.getElementById(`ori_${id}`).value = v.origen || "";
+                    if(document.getElementById(`des_${id}`)) document.getElementById(`des_${id}`).value = v.destino || "";
+                    if(document.getElementById(`est_${id}`)) document.getElementById(`est_${id}`).value = v.estatus || "Disponible";
+                    if(document.getElementById(`con_${id}`)) document.getElementById(`con_${id}`).value = v.contenedores || "";
+                }
+            });
+        });
+        document.getElementById("units-body").innerHTML = html;
+    }
+
+    function saveCloud(id, campo, valor) {
+        db.ref('viajes/' + id).update({ [campo]: valor });
+    }
+
+    function exportarExcel() {
+        let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,ORIGEN,DESTINO,ESTATUS,CONTENEDORES,VELOCIDAD,DIRECCIÓN\n";
+        document.querySelectorAll("#units-body tr").forEach(row => {
+            const i = row.querySelectorAll("input, select");
+            csv += `${row.cells[0].innerText},${i[0].value},${i[1].value},${i[2].value},${i[3].value},${i[4].value},${i[5].value},${row.cells[7].innerText},${row.cells[8].innerText.replace(/,/g, " ")}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "Reporte_Flota_Maestra.csv";
+        link.click();
+    }
 </script>
 </body>
 </html>
