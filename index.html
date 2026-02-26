@@ -38,7 +38,7 @@
         .workspace-container.show-map .table-panel { height: 55%; }
         #map { width: 100%; height: 100%; z-index: 1;}
         
-        /* DISEÑO DE TABLA FLOTANTE (ESTILO MODERNO) */
+        /* DISEÑO DE TABLA FLOTANTE */
         .table-custom { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: -8px;}
         
         #mainTableHeader th { 
@@ -78,30 +78,32 @@
         .input-ghost { border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 6px 8px; width: 100%; font-size: 0.75rem; font-weight: 700; color: inherit; text-transform: uppercase; text-align: center; transition: all 0.2s; outline: none; }
         .input-ghost:hover { border-color: var(--border-col); background: var(--bg-main); }
         .input-ghost:focus { border-color: var(--accent); background: var(--bg-card); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .dark-mode .input-ghost:hover { border-color: #475569; background: rgba(0,0,0,0.2); }
+        .dark-mode .input-ghost:focus { background: #0f172a; }
         
         /* ANCHOS ÓPTIMOS */
         .col-unidad { min-width: 100px; }
         .col-operador { min-width: 130px; }
-        .col-ruta { min-width: 160px; }
+        .col-ruta { min-width: 180px; }
         .col-contenedores { min-width: 110px; }
         .col-horarios { min-width: 130px; }
         .col-estatus { min-width: 140px; }
         .col-gps { min-width: 300px; } 
-        .col-alertas { min-width: 60px; }
+        .col-alertas { min-width: 70px; }
         .col-historial { min-width: 220px; }
         .col-accion { min-width: 50px; }
 
-        /* BADGES */
+        /* BADGES Y BOTONES */
         .status-select { border-radius: 20px; font-weight: 800; cursor: pointer; text-align: center; font-size: 0.75rem; padding: 6px 12px; background: transparent; border: 2px solid; outline: none; transition: all 0.2s; -webkit-appearance: none; -moz-appearance: none; appearance: none;}
         .status-select:hover { transform: scale(1.02); }
         
-        .unit-name { cursor: pointer; color: #0f172a; font-weight: 900; font-size: 1.1rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
+        .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.1rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
         .dark-mode .unit-name { color: #f8fafc; }
-        .unit-name:hover { color: var(--accent); text-decoration: underline; }
+        .unit-name:hover { color: #0284c7; text-decoration: underline; }
         
-        .speed-badge { font-size: 0.85rem; font-weight: 800; border-radius: 8px; padding: 4px 10px; text-align: center; color: white; display: inline-block; margin-bottom: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
-        .addr-link { font-size: 0.85rem; line-height: 1.3; color: var(--accent); text-decoration: none; display: block; width: 100%; margin: 0 auto; font-weight: 700; text-align: center; transition: 0.2s;}
-        .addr-link:hover { text-decoration: underline; color: #1d4ed8; }
+        .speed-badge { font-size: 0.85rem; font-weight: 900; border-radius: 8px; padding: 4px 12px; text-align: center; color: white; display: inline-block; margin-bottom: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .addr-link { font-size: 0.85rem; line-height: 1.3; color: #0284c7; text-decoration: none; display: block; width: 100%; margin: 0 auto; font-weight: 700; text-align: center; transition: 0.2s;}
+        .addr-link:hover { text-decoration: underline; color: #0369a1; }
         
         .cp { cursor: pointer; }
         .btn-modern { border-radius: 8px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
@@ -115,11 +117,11 @@
 <div id="loginOverlay" class="login-bg">
     <div class="login-card text-center">
         <img src="TIGPS HD2.png" alt="Logo" style="height: 65px; margin-bottom: 20px;">
-        <h5 class="fw-bold mb-4">GRUDICOM TI & GPS</h5>
+        <h5 class="fw-bold mb-4" style="color: #0f172a;">GRUDICOM TI & GPS</h5>
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v13.0 Premium</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v12.0 (Titanio)</div>
     </div>
 </div>
 
@@ -234,21 +236,26 @@
         "s1":{nombre:"1. Ruta",col:"#10b981"}, "s2":{nombre:"1.1 PARADO",col:"#ef4444"}, "s3":{nombre:"1.2 RETEN",col:"#d97706"}, "s4":{nombre:"1.3 Resguardo",col:"#8b5cf6"}, "s5":{nombre:"1.4 REGRESANDO",col:"#f59e0b"}, "s6":{nombre:"2. Incidencia",col:"#be123c"}, "s7":{nombre:"3. Cargando",col:"#64748b"}, "s8":{nombre:"4. Descargando",col:"#0284c7"}, "s9":{nombre:"5. Patio GDL",col:"#06b6d4"}, "s10":{nombre:"6. Patio Reynosa",col:"#14b8a6"}, "s11":{nombre:"7. Taller",col:"#94a3b8"}, "s12":{nombre:"8. Finalizado",col:"#1e40af"}, "s13":{nombre:"9. Baja cobertura",col:"#fbbf24"}, "s14":{nombre:"ALIMENTOS",col:"#f59e0b"} 
     };
 
-    // EL BUSCADOR UNIVERSAL
+    // MOTOR ELIMINADOR DE ERRORES: BUSCADOR UNIVERSAL WIALON
     function encontrarUnidad(v, vId) {
         if(!v) return null;
-        if(v.wialonId && unidadesGlobales[v.wialonId]) return unidadesGlobales[v.wialonId];
+        if(v.wialonId && v.wialonId !== "EXTERNO" && unidadesGlobales[v.wialonId]) return unidadesGlobales[v.wialonId];
+        
+        // Auto-curación de nombres (ignora espacios tontos o guiones)
         let n = String(v.unidadN || v.unidadFallback || "").trim().toUpperCase();
         let norm = n.replace(/[\s\-]/g, "");
         for(let k in unidadesGlobales) {
             let uName = String(unidadesGlobales[k].name).trim().toUpperCase();
             if(uName === n || uName.replace(/[\s\-]/g, "") === norm) return unidadesGlobales[k];
         }
+        
+        // Fallback por si la DB vieja aún tenía el ID de wialon como llave principal
         if(unidadesGlobales[vId]) return unidadesGlobales[vId];
+        
         return null; 
     }
 
-    // MOTOR MATEMÁTICO DE GEOCERCAS WIALON 
+    // MATEMÁTICA DE GEOCERCAS WIALON 
     function isInsidePolygon(point, vs) {
         let x = point[0], y = point[1], inside = false;
         for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -313,23 +320,54 @@
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
 
-    // PLANILLA WHATSAPP
-    function shareWA(u, loc, o, d, est, cont, cli, sub, vel, posY, posX) { 
-        let estNombre = window.estatusData[est]?.nombre || "En Trayecto"; 
-        let subText = sub !== 'N/A' ? ` -> ${sub}` : '';
-        let mapLink = posY && posX ? `\n📍 *Ubicación:* https://maps.google.com/?q=LAT,LON{posY},${posX}` : `\n📍 *Ubicación:* ${loc}`;
+    // RENDERIZADORES EXTERNOS DE JAVASCRIPT (Anti-Choques de HTML)
+    function enviarWA(vId) {
+        let v = viajesActivos[vId]; if(!v) return;
+        let uData = encontrarUnidad(v, vId);
+        let nombreCamion = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
+        let pos = uData ? uData.pos : null;
+        let speed = pos ? pos.s : 0;
+        let estNombre = window.estatusData[v.estatus]?.nombre || "En Trayecto";
+        
+        let cliId = v.cliente || "Sin_Cliente";
+        let subId = v.subcliente || "N/A";
+        let cliName = dataClientes[cliId] ? dataClientes[cliId].nombre : "SIN CLIENTE";
+        let subName = (dataClientes[cliId] && dataClientes[cliId].subclientes && dataClientes[cliId].subclientes[subId]) ? dataClientes[cliId].subclientes[subId].nombre : "";
+        let subText = subName && subName !== "N/A" ? ` -> ${subName}` : '';
+        
+        let addrText = v.ubicacion_manual || "Buscando...";
+        let mapLink = "";
+        
+        if (pos) {
+            let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
+            let domAddr = document.getElementById("addr_" + vId);
+            addrText = domAddr ? domAddr.innerText : (geocodeCache[geoKey] || "Ubicación GPS");
+            mapLink = `\n📍 *Ubicación:* https://maps.google.com/?q=LAT,LON${pos.y},${pos.x}`;
+        } else {
+            mapLink = `\n📍 *Ubicación:* ${addrText}`;
+        }
         
         let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
-                   `🏢 *Cliente:* ${cli}${subText}\n\n` +
-                   `🚛 *Unidad:* ${u}\n` +
-                   `📦 *Contenedores:* ${cont||'N/A'}` + 
+                   `🏢 *Cliente:* ${cliName}${subText}\n\n` +
+                   `🚛 *Unidad:* ${nombreCamion}\n` +
+                   `📦 *Contenedores:* ${v.contenedores||'N/A'}` + 
                    mapLink + `\n` +
-                   `⏱️ *Vel:* ${vel} km/h\n` +
+                   `⏱️ *Vel:* ${speed} km/h\n` +
                    `🚦 *Estatus:* ${estNombre}\n` +
-                   `🏁 *Ruta:* ${o||'N/A'} -> Destino: ${d||'N/A'}\n\n` +
+                   `🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n\n` +
                    `_Reporte C4_`;
                    
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); 
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank'); 
+    }
+
+    function editarUbicacionManual(vId) {
+        let v = viajesActivos[vId]; if(!v) return;
+        let uName = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
+        let u = prompt(`Escribir ubicación manual para ${uName}:`, v.ubicacion_manual || '');
+        if(u !== null) { 
+            db.ref(`viajes_activos/${vId}/ubicacion_manual`).set(String(u).toUpperCase()); 
+            registrarLog(vId, 'Añadió Ubicación Manual', String(u).toUpperCase()); 
+        }
     }
 
     function generarReporteGrupal(cId, sId, titulo) {
@@ -339,22 +377,32 @@
         let txt = `*GRUDICOM TI & GPS - REPORTE DE FLOTA*\n` +
                   `🏢 *${titulo}*\n\n`;
                   
-        arrViajes.forEach(({v, u, isExternal}) => {
-            let name = String(v.unidadN || "Desconocida");
+        arrViajes.forEach(({v, vId}) => {
+            let uData = encontrarUnidad(v, vId);
+            let name = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
             let est = window.estatusData[v.estatus]?.nombre || "En Trayecto";
-            let pos = u ? u.pos : null; let vel = pos ? pos.s : 0;
-            let mapLink = pos ? `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}` : (v.ubicacion_manual || "Manual");
+            let pos = uData ? uData.pos : null; 
+            let vel = pos ? pos.s : 0;
+            
+            let addrText = v.ubicacion_manual || "Manual";
+            if(pos) {
+                let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
+                let domAddr = document.getElementById("addr_" + vId);
+                addrText = domAddr ? domAddr.innerText : (geocodeCache[geoKey] || "Ubicación GPS");
+            }
+            
+            let mapLink = pos ? `https://maps.google.com/?q=LAT,LON${pos.y},${pos.x}` : addrText;
             
             txt += `🚛 *Unidad:* ${name}\n` +
                    `📦 *Contenedores:* ${v.contenedores||'N/A'}\n` +
                    `📍 *Ubicación:* ${mapLink}\n` +
                    `⏱️ *Vel:* ${vel} km/h\n` +
                    `🚦 *Estatus:* ${est}\n` +
-                   `🏁 *Ruta:* ${v.origen||'N/A'} -> Destino: ${v.destino||'N/A'}\n\n`;
+                   `🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n\n`;
         });
         txt += `_Reporte C4_`;
         
-        window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
     }
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
@@ -373,7 +421,7 @@
         
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
         
-        // Fila de espera Anti-Baneo de Nominatim
+        // Fila de espera de Nominatim 1 segundo (Seguro anti-baneo)
         setInterval(procesarFilaDirecciones, 1100); 
     };
 
@@ -461,28 +509,31 @@
         renderStatusTokens(); renderizarBitacora(); desencadenarGeocoding(); if(mapVisible) actualizarMarcadoresMapa();
     }
 
-    // GEOCODIFICACIÓN (Con Auto-Arribo y Actualización Directa a ID)
+    // GEOCODIFICACIÓN EXACTA Y SEGURA 
     function desencadenarGeocoding() {
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId];
             if(typeof v !== 'object' || !v) return;
-            let u = encontrarUnidad(v, vId); 
             
-            if(u && u.pos) {
-                let zonaGeo = resolverGeocerca(u.pos.y, u.pos.x);
+            let uData = encontrarUnidad(v, vId);
+            
+            if(uData && uData.pos) {
+                // 1. REVISIÓN INSTANTÁNEA DE GEOCERCAS WIALON
+                let zonaGeo = resolverGeocerca(uData.pos.y, uData.pos.x);
                 if(zonaGeo) {
-                    let textGeo = `[GEOCERCA] ${zonaGeo}`;
                     let el = document.getElementById("addr_" + vId);
-                    if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-success"></i> <b class="text-success">${textGeo}</b>`;
+                    if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-success"></i> <b class="text-success">[GEOCERCA] ${zonaGeo}</b>`;
                     if(v.destino && !v.t_arribo && zonaGeo.toUpperCase().includes(String(v.destino).toUpperCase())) {
-                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); registrarLog(vId, 'Arribo Automático (Geocerca)');
+                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now());
+                        registrarLog(vId, 'Arribo Automático (Geocerca)');
                     }
                     return; 
                 }
 
-                let geoKey = `${u.pos.y.toFixed(4)}_${u.pos.x.toFixed(4)}`;
+                // 2. NOMINATIM CLÁSICO (Con fila de espera anti-baneo)
+                let geoKey = `${uData.pos.y.toFixed(4)}_${uData.pos.x.toFixed(4)}`;
                 if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) {
-                    geoQueue.push({ key: geoKey, y: u.pos.y, x: u.pos.x, vId: vId, dest: v.destino });
+                    geoQueue.push({ key: geoKey, y: uData.pos.y, x: uData.pos.x, vId: vId, dest: v.destino });
                 } else if(geocodeCache[geoKey]) {
                     let el = document.getElementById("addr_" + vId);
                     if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
@@ -533,18 +584,18 @@
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId];
             if(typeof v !== 'object' || !v) return;
-            let u = encontrarUnidad(v, vId);
+            let uData = encontrarUnidad(v, vId);
             
-            if(u && u.pos) {
-                let isMoving = u.pos.s > 0;
+            if(uData && uData.pos) {
+                let isMoving = uData.pos.s > 0;
                 let colorIcon = isMoving ? '#10b981' : '#3b82f6';
-                let course = u.pos.c || 0;
+                let course = uData.pos.c || 0;
                 let markerHtml = isMoving 
                     ? `<div style="transform: rotate(${course}deg); color: ${colorIcon}; font-size: 22px; text-shadow: 0 0 3px #fff;"><i class="fa-solid fa-location-arrow"></i></div>` 
                     : `<div style="color: ${colorIcon}; font-size: 22px; text-shadow: 0 0 3px #fff;"><i class="fa-solid fa-location-dot"></i></div>`;
                 let customIcon = L.divIcon({ html: markerHtml, className: '', iconSize: [22, 22], iconAnchor: [11, 11] });
-                let popupContent = `<div style="text-align:center; min-width: 130px;"><b style="font-size:15px; color:#f59e0b;">${u.name}</b><br><b style="font-size:12px;">${u.pos.s} km/h</b><br><span style="color:#cbd5e1; font-size:10px;">hace ${timeAgo(u.pos.t)}</span></div>`;
-                L.marker([u.pos.y, u.pos.x], {icon: customIcon}).bindPopup(popupContent, {className: 'custom-popup'}).addTo(mapLayerGroup);
+                let popupContent = `<div style="text-align:center; min-width: 130px;"><b style="font-size:15px; color:#f59e0b;">${uData.name}</b><br><b style="font-size:12px;">${uData.pos.s} km/h</b><br><span style="color:#cbd5e1; font-size:10px;">hace ${timeAgo(uData.pos.t)}</span></div>`;
+                L.marker([uData.pos.y, uData.pos.x], {icon: customIcon}).bindPopup(popupContent, {className: 'custom-popup'}).addTo(mapLayerGroup);
             }
         });
     }
@@ -576,7 +627,7 @@
         // Purgado de datos corruptos al vuelo
         Object.keys(viajesActivos).forEach(vId => { 
             let v = viajesActivos[vId]; 
-            if(typeof v !== 'object' || !v) return; 
+            if(typeof v !== 'object' || !v) return; // Ignora registros rotos en Firebase
             
             let cId = String(v.cliente || "Sin_Cliente"); 
             let sId = String(v.subcliente || "N/A"); 
@@ -609,8 +660,9 @@
                         let isExternal = v.wialonId === "EXTERNO"; 
                         let pos = uData ? uData.pos : null; 
                         let speed = pos ? pos.s : 0; 
-                        let isLost = uData && !pos; 
+                        let isLost = !uData || (uData && !pos && !isExternal); 
                         
+                        let geoKey = pos ? `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}` : 'none';
                         let uText = (isLost || isExternal) ? `<span class="unit-name ${isExternal?'text-info':'text-danger'}" title="${isExternal?'GPS Externo':'Sin señal Wialon'}">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
                         
                         let speedBg = "#64748b"; if(speed > 0 && speed < 100) speedBg = "#10b981"; if(speed >= 100) speedBg = "#ef4444"; 
@@ -620,8 +672,7 @@
 
                         let drvName = String(v.operador || ramDrivers[nombreCamion] || dbOperadores[nombreCamion] || "");
                         let addr = "<i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...";
-                        let mapsLink = pos ? `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}` : '#';
-                        let posTextY = pos ? pos.y : null; let posTextX = pos ? pos.x : null;
+                        let mapsLink = pos ? `https://maps.google.com/?q=LAT,LON${pos.y},${pos.x}` : '#';
 
                         let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a'; 
 
@@ -643,12 +694,11 @@
                         let ubiControl = (isLost || isExternal) ? 
                             `<div class="d-flex align-items-center justify-content-center">
                                 <span class="${isExternal?'text-info':'text-danger'} fw-bold" style="font-size:0.75rem;">${isExternal?'<i class="fa-solid fa-globe"></i> GPS EXTERNO':'<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL'}</span>
-                                <button class="btn btn-sm btn-link p-0 ms-2 text-primary" title="Editar ubicación manual" onclick="let u = prompt('Escribir ubicación manual para ${nombreCamion}:', '${v.ubicacion_manual||''}'); if(u !== null) { db.ref('viajes_activos/${vId}/ubicacion_manual').set(String(u).toUpperCase()); registrarLog('${vId}', 'Añadió Ubicación Manual', String(u).toUpperCase()); }"><i class="fa-solid fa-pencil"></i></button>
+                                <button class="btn btn-sm btn-link p-0 ms-2 text-primary" title="Editar ubicación manual" onclick="editarUbicacionManual('${vId}')"><i class="fa-solid fa-pencil"></i></button>
                             </div>
                             <div style="font-size:0.85rem; color:#0f172a; font-weight:800; max-width:100%; margin:0 auto;" class="text-wrap">${v.ubicacion_manual||'--'}</div>` 
                             : `<a href="${mapsLink}" target="_blank" class="addr-link" title="Abrir en Maps"><div id="addr_${vId}">${addr}</div></a>`;
 
-                        let textWhatsAppAddr = String(v.ubicacion_manual || 'Buscando...');
                         let searchData = `${nombreCamion} ${drvName} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${cliData.nombre} ${nomSub} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                         let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
@@ -695,19 +745,19 @@
                             <td class="col-historial ${hiddenCols['col-historial'] ? 'd-none' : ''}">
                                 <div class="d-flex flex-column justify-content-between h-100">
                                     ${lastLog}
-                                    <button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-2 shadow-sm rounded-pill" style="font-size:0.70rem;" onclick="abrirModalLog('${vId}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Ver Historial</button>
+                                    <button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-2 shadow-sm rounded-pill" style="font-size:0.70rem;" onclick="abrirModalLogJS('${vId}')"><i class="fa-solid fa-list-check"></i> Ver Historial</button>
                                 </div>
                             </td>
                             <td class="col-accion">
                                 <div class="d-flex flex-column gap-2 align-items-center">
-                                    <button onclick="shareWA('${nombreCamion}', document.getElementById('addr_${vId}') ? document.getElementById('addr_${vId}').innerText : '${textWhatsAppAddr}', '${v.origen||''}', '${v.destino||''}', '${v.estatus}', '${v.contenedores||''}', '${cliData.nombre}', '${nomSub}', '${speed}', '${posTextY}', '${posTextX}')" class="btn btn-outline-success btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
-                                    <button onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-primary btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
-                                    <button onclick="finalizarViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-danger btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
+                                    <button onclick="enviarWA('${vId}')" class="btn btn-outline-success btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                                    <button onclick="abrirEdicionViajeJS('${vId}')" class="btn btn-outline-primary btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
+                                    <button onclick="finalizarViajeJS('${vId}')" class="btn btn-outline-danger btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </td>
                         </tr>`;
                     } catch(err) {
-                        console.error("Error al renderizar fila de unidad:", vId, err);
+                        console.error("Fila omitida por error de datos:", vId, err);
                     }
                 });
             }
@@ -730,9 +780,14 @@
         }
     }
 
-    function abrirModalLog(uId, uName) {
-        document.getElementById("log_uid").value = uId; document.getElementById("log_uName").innerText = uName; document.getElementById("log_txt").value = "";
-        let logsObj = viajesActivos[uId]?.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
+    // CONTROLADORES SEGUROS (Evitan inyecciones HTML)
+    function abrirModalLogJS(vId) {
+        let v = viajesActivos[vId]; if(!v) return;
+        document.getElementById("log_uid").value = vId; 
+        document.getElementById("log_uName").innerText = String(v.unidadN || v.unidadFallback || "Desconocida"); 
+        document.getElementById("log_txt").value = "";
+        
+        let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
         let html = logsArr.map(l => `<div class="mb-2 border-bottom pb-2"><div style="font-size:0.70rem; color:#6c757d; font-weight:bold; margin-bottom:2px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(l.t)}</div><b class="text-dark">${l.usr}:</b> <span class="text-primary">${l.act}</span> <span class="text-muted">${l.det||''}</span></div>`).join('');
         document.getElementById("log_container").innerHTML = html || '<div class="text-muted text-center p-3 mt-4">Sin eventos. Escribe una nota abajo.</div>';
         new bootstrap.Modal(document.getElementById('modalLog')).show();
@@ -741,8 +796,7 @@
     function guardarLogManual() {
         let uId = document.getElementById("log_uid").value, txt = document.getElementById("log_txt").value.toUpperCase(); if(!txt) return;
         registrarLog(uId, "Agregó Nota", txt);
-        let m = bootstrap.Modal.getInstance(document.getElementById('modalLog'));
-        if(m) m.hide();
+        try{ bootstrap.Modal.getInstance(document.getElementById('modalLog')).hide(); }catch(e){}
     }
 
     function registrarViaje() {
@@ -759,19 +813,49 @@
         }
 
         let refPush = db.ref('viajes_activos').push();
-        refPush.set({ wialonId: wId, cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase(), unidadFallback: uN, unidadN: uN });
+        refPush.set({ 
+            id: refPush.key, wialonId: wId, 
+            cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, 
+            origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), 
+            estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase(), unidadFallback: uN, unidadN: uN 
+        });
         registrarLog(refPush.key, "REGISTRÓ VIAJE", "Registró unidad en bitácora");
         
-        let m = bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje'));
-        if(m) m.hide();
+        try{ bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); }catch(e){}
         document.getElementById("nv_unidad_input").value = ""; document.getElementById("nv_operador").value = "";
     }
 
-    function finalizarViaje(id, n) { if(confirm(`¿Archivar viaje de la unidad ${n}?`)) { registrarLog(id, "FINALIZÓ VIAJE", "Se archiva registro"); setTimeout(()=>db.ref('viajes_activos/'+id).remove(), 1000); } }
+    function finalizarViajeJS(vId) { 
+        let v = viajesActivos[vId]; if(!v) return;
+        let uName = String(v.unidadN || v.unidadFallback || "Desconocida");
+        if(confirm(`¿Archivar viaje de la unidad ${uName}?`)) { 
+            registrarLog(vId, "FINALIZÓ VIAJE", "Se archiva registro"); 
+            setTimeout(()=>db.ref('viajes_activos/'+vId).remove(), 1000); 
+        } 
+    }
+    
+    function abrirEdicionViajeJS(vId) { 
+        let v = viajesActivos[vId]; if(!v) return; 
+        document.getElementById("edU_id").value = vId; 
+        document.getElementById("edU_name").innerText = String(v.unidadN || v.unidadFallback || "Desconocida"); 
+        document.getElementById("ed_operador").value = v.operador || ""; 
+        document.getElementById("ed_origen").value = v.origen || ""; 
+        document.getElementById("ed_destino").value = v.destino || ""; 
+        let s = document.getElementById("ed_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); s.value = v.cliente || ""; 
+        cargarSubclientesEnSelect('ed_subcliente', s.value); document.getElementById("ed_subcliente").value = v.subcliente || ""; 
+        new bootstrap.Modal(document.getElementById('modalEditarViaje')).show(); 
+    }
+
+    function guardarEdicionViaje() { 
+        let uId = document.getElementById("edU_id").value; 
+        registrarLog(uId, "Editó Datos de Viaje", "Modificó rutas/cliente/operador"); 
+        db.ref('viajes_activos/' + uId).update({ cliente: document.getElementById("ed_cliente").value, subcliente: document.getElementById("ed_subcliente").value, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { 
+            try{ bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide(); }catch(e){}
+        }); 
+    }
+
     function prepararNuevoViaje() { let s = document.getElementById("nv_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); cargarSubclientesEnSelect('nv_subcliente', s.value); }
     function cargarSubclientesEnSelect(e, c) { let s = document.getElementById(e); s.innerHTML = '<option value="">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k => s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
-    function abrirEdicionViaje(uId, uName) { let v = viajesActivos[uId]; if(!v) return; document.getElementById("edU_id").value = uId; document.getElementById("edU_name").innerText = uName; document.getElementById("ed_operador").value = v.operador || ""; document.getElementById("ed_origen").value = v.origen || ""; document.getElementById("ed_destino").value = v.destino || ""; let s = document.getElementById("ed_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); s.value = v.cliente || ""; cargarSubclientesEnSelect('ed_subcliente', s.value); document.getElementById("ed_subcliente").value = v.subcliente || ""; new bootstrap.Modal(document.getElementById('modalEditarViaje')).show(); }
-    function guardarEdicionViaje() { let uId = document.getElementById("edU_id").value; registrarLog(uId, "Editó Datos de Viaje", "Modificó rutas/cliente/operador"); db.ref('viajes_activos/' + uId).update({ cliente: document.getElementById("ed_cliente").value, subcliente: document.getElementById("ed_subcliente").value, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { let m=bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')); if(m)m.hide(); }); }
     function cerrarSesion() { localStorage.clear(); location.reload(); }
 
     function vincularOperador() {
