@@ -2,91 +2,70 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>DSG - CargoQuin | TMS Maestro</title>
+    <title>DSG - CargoQuin | C4 Multiplataforma</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
     <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
 
     <style>
-        body { background: #f4f6f9; color: #333; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.75rem; }
-        .login-bg { background: #002a61; min-height: 100vh; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
-        .login-card { background: white; width: 400px; border-radius: 15px; padding: 40px; }
-        
-        .header-bar { background: white; padding: 10px 20px; border-bottom: 4px solid #336699; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .logo-img { height: 50px; }
-        
-        /* Tablas y Celdas */
-        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; text-align: center; font-weight: bold; background: rgba(255,255,255,0.85); }
-        .table-input:focus { border-color: #336699; outline: none; background: #fff; }
-        .group-img { width: 25px; height: 25px; border-radius: 50%; object-fit: cover; margin-right: 5px; border: 2px solid #336699; }
-        
-        th { cursor: pointer; user-select: none; background-color: #e9ecef !important; color: #002a61 !important; font-weight: 800; vertical-align: middle;}
-        
-        /* Filas y Estatus */
-        .status-select { border-radius: 20px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.75rem;}
-        .log-btn { cursor: pointer; text-decoration: underline; color: #0d6efd; font-weight: bold;}
-        
-        /* Link de Maps */
-        .maps-link { color: #dc3545; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;}
-        .maps-link:hover { color: #a71d2a; text-decoration: underline; }
+        body { background: #f0f4f8; color: #2c3e50; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.75rem; }
+        .login-bg { background: linear-gradient(135deg, #002a61 0%, #001122 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
+        .login-card { background: white; width: 380px; border-radius: 12px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header-bar { background: white; padding: 10px 20px; border-bottom: 4px solid #002a61; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; text-align: center; font-weight: 600; }
+        .table-input:focus { border-color: #002a61; outline: none; box-shadow: inset 0 0 5px rgba(0,42,97,0.2); }
+        .group-img { width: 25px; height: 25px; border-radius: 50%; object-fit: cover; margin-right: 5px; border: 1px solid #002a61; }
+        th { background-color: #002a61 !important; color: white !important; font-weight: 600; text-align: center; vertical-align: middle;}
+        .status-select { border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.70rem; padding: 2px;}
+        .audit-log { font-size: 0.7rem; background: #e9ecef; padding: 6px; border-radius: 5px; border-left: 3px solid #0d6efd; margin-bottom: 4px; text-align: left;}
     </style>
 </head>
 <body>
 
 <div id="loginOverlay" class="login-bg">
-    <div class="login-card shadow-lg text-center">
-        <img src="TIGPS HD2.jpg" alt="Logo" style="height: 60px; margin-bottom: 20px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
-        <h4 class="text-primary fw-bold mb-3">Acceso TMS Wialon</h4>
-        <input type="password" id="token" class="form-control mb-4 text-center py-2" placeholder="Wialon API Token">
-        <button onclick="login()" class="btn btn-primary w-100 fw-bold py-2 shadow">INICIAR SESIÓN</button>
-        <div id="status" class="mt-4 small fw-bold text-secondary">Verificando sistema...</div>
+    <div class="login-card text-center">
+        <img src="TIGPS HD2.jpg" alt="Logo" style="height: 55px; margin-bottom: 20px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
+        <h5 class="text-primary fw-bold mb-4">C4 Multiplataforma</h5>
+        <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario de Monitor">
+        <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
+        <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Identifícate para continuar</div>
     </div>
 </div>
 
 <div id="dashboard" style="display:none;">
     <div class="header-bar d-flex justify-content-between align-items-center mb-3">
         <div class="d-flex align-items-center">
-            <img src="TIGPS HD2.jpg" alt="Logo" class="logo-img me-3" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
-            <h4 class="fw-bold m-0" style="color: #336699; letter-spacing: 1px;">BITÁCORA TMS GLOBAL</h4>
+            <img src="TIGPS HD2.jpg" alt="Logo" style="height: 40px;" class="me-3" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
+            <div>
+                <h5 class="fw-bold m-0" style="color: #002a61;">C4 - BITÁCORA MAESTRA</h5>
+                <small class="text-muted fw-bold" id="lblUsuarioActivo"><i class="fa-solid fa-user-shield"></i> Monitor: </small>
+            </div>
         </div>
         <div>
-            <button class="btn btn-outline-primary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje"><i class="fa-solid fa-plus"></i> Viaje</button>
-            <button class="btn btn-outline-secondary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalGrupos"><i class="fa-solid fa-folder-open"></i> Grupos</button>
-            <button class="btn btn-outline-dark btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalEstatus"><i class="fa-solid fa-palette"></i> Estatus</button>
-            <button class="btn btn-outline-warning btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#modalHistorial" onclick="cargarHistorial()"><i class="fa-solid fa-clock-rotate-left"></i> Historial</button>
+            <button class="btn btn-outline-primary btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje">➕ Viaje</button>
+            <button class="btn btn-outline-secondary btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalGrupos">📁 Grupos</button>
+            <button class="btn btn-outline-warning btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalHistorial" onclick="cargarHistorial()">📜 Historial</button>
+            <button class="btn btn-danger btn-sm fw-bold me-3" id="btnAdmin" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalAdmin"><i class="fa-solid fa-gears"></i> ADMIN</button>
+            <button onclick="exportarExcel()" class="btn btn-success btn-sm fw-bold"><i class="fa-solid fa-file-excel"></i> Exportar</button>
         </div>
     </div>
 
     <div class="container-fluid px-3">
-        <div class="row mb-2 align-items-center">
-            <div class="col-md-4">
-                <input type="text" id="buscador" class="form-control form-control-sm shadow-sm" placeholder="🔍 Buscar unidad, cliente, origen..." onkeyup="filtrarTabla()">
-            </div>
-            <div class="col-md-8 text-end">
-                <span class="badge bg-info text-dark"><i class="fa-brands fa-whatsapp"></i> Integración WA Activa</span>
-            </div>
+        <div class="row mb-2">
+            <div class="col-md-3"><input type="text" id="buscador" class="form-control form-control-sm shadow-sm" placeholder="🔍 Buscar..." onkeyup="filtrarTabla()"></div>
         </div>
-
         <div class="card shadow border-0">
-            <div class="table-responsive" style="min-height: 75vh;">
+            <div class="table-responsive" style="height: 75vh;">
                 <table class="table table-bordered table-hover align-middle text-center mb-0" id="tablaViajes">
                     <thead>
-                        <tr id="tableHeaders">
-                            <th style="width: 8%;">UNIDAD / MOTOR</th>
-                            <th style="width: 10%;">OP / GRUPO</th>
-                            <th style="width: 10%;">OPERADOR / TEL</th>
-                            <th style="width: 10%;">CLIENTE / SUB</th>
-                            <th style="width: 12%;">ORIGEN ➔ DESTINO</th>
-                            <th style="width: 8%;">CONTENEDORES</th>
-                            <th style="width: 10%;">TIEMPOS RUTA</th>
-                            <th style="width: 10%;">ESTATUS</th>
-                            <th style="width: 12%;">UBICACIÓN & VEL.</th>
-                            <th style="width: 6%;">BITÁCORA</th>
-                            <th style="width: 4%;">ACCIÓN</th>
+                        <tr>
+                            <th width="8%">UNIDAD</th><th width="8%">GRUPO</th><th width="9%">OPERADOR</th><th width="9%">CLIENTE</th>
+                            <th width="12%">RUTA (O ➔ D)</th><th width="8%">CONTENEDORES</th><th width="10%">TIEMPOS</th>
+                            <th width="10%">ESTATUS</th><th width="12%">GPS & NOTIFICACIÓN</th><th width="10%">AUDITORÍA (NOTAS)</th><th width="4%">FIN</th>
                         </tr>
                     </thead>
                     <tbody id="units-body"></tbody>
@@ -96,72 +75,47 @@
     </div>
 </div>
 
-<datalist id="listaGeocercas"></datalist>
-<datalist id="listaConductores"></datalist>
+<div class="modal fade" id="modalAdmin" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white"><h6 class="modal-title fw-bold"><i class="fa-solid fa-gears"></i> Configuración de Sistema</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+          <div class="row">
+              <div class="col-md-6 border-end">
+                  <h6 class="fw-bold text-primary"><i class="fa-solid fa-key"></i> Tokens Multiplataforma</h6>
+                  <div class="input-group input-group-sm mb-2"><input type="text" id="nuevoToken" class="form-control" placeholder="Pegar Token Wialon"><button class="btn btn-success" onclick="agregarToken()">Añadir</button></div>
+                  <ul class="list-group list-group-sm" id="listaTokens" style="font-size:10px;"></ul>
+              </div>
+              <div class="col-md-6">
+                  <h6 class="fw-bold text-primary"><i class="fa-solid fa-users"></i> Gestión de Monitores</h6>
+                  <div class="input-group input-group-sm mb-2"><input type="text" id="nu_user" class="form-control" placeholder="Usuario"><input type="password" id="nu_pass" class="form-control" placeholder="Pass"><button class="btn btn-primary" onclick="crearMonitor()">Crear</button></div>
+                  <ul class="list-group list-group-sm" id="listaUsuarios"></ul>
+              </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<div class="modal fade" id="modalNuevoViaje" tabindex="-1">
+<div class="modal fade" id="modalComentarios" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">Iniciar Nuevo Viaje</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header bg-info text-white"><h6 class="modal-title fw-bold" id="tituloComentarios">Centro de Mensajes</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
       <div class="modal-body small">
-          <label class="fw-bold">Unidad:</label>
-          <select id="nv_unidad" class="form-select form-select-sm mb-2"></select>
-          
-          <label class="fw-bold">Grupo / Operación:</label>
-          <div class="input-group input-group-sm mb-2">
-            <select id="nv_grupo" class="form-select"></select>
+          <div class="alert alert-warning p-2" id="msgUltimaNotif" style="font-size:10px;"></div>
+          <div id="listaComentarios" class="mb-3" style="max-height: 250px; overflow-y: auto; padding: 5px;"></div>
+          <div class="input-group">
+              <input type="text" id="nuevoComentario" class="form-control form-control-sm" placeholder="Respuesta / Novedad del monitor...">
+              <button class="btn btn-primary btn-sm fw-bold" onclick="guardarComentario()">Registrar Novedad</button>
           </div>
-
-          <div class="row">
-              <div class="col-6">
-                  <label class="fw-bold">Origen:</label>
-                  <input type="text" id="nv_origen" class="form-control form-control-sm mb-2" list="listaGeocercas" placeholder="Buscar geocerca...">
-              </div>
-              <div class="col-6">
-                  <label class="fw-bold">Destino:</label>
-                  <input type="text" id="nv_destino" class="form-control form-control-sm mb-2" list="listaGeocercas" placeholder="Buscar geocerca...">
-              </div>
-          </div>
-          <button onclick="iniciarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2"><i class="fa-solid fa-play"></i> Iniciar Ruta</button>
+          <input type="hidden" id="comentario_unidad_id">
       </div>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="modalHistorial" tabindex="-1">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header bg-warning"><h6 class="modal-title fw-bold"><i class="fa-solid fa-list-check"></i> Historial y Reportes</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body small">
-          <div class="row mb-3 bg-light p-2 rounded align-items-end">
-              <div class="col-md-3">
-                  <label class="fw-bold">Cliente:</label>
-                  <select id="filtroClienteHistorial" class="form-select form-select-sm"><option value="ALL">Todos los Clientes</option></select>
-              </div>
-              <div class="col-md-3">
-                  <label class="fw-bold">Desde:</label>
-                  <input type="date" id="filtroDesde" class="form-control form-control-sm">
-              </div>
-              <div class="col-md-3">
-                  <label class="fw-bold">Hasta:</label>
-                  <input type="date" id="filtroHasta" class="form-control form-control-sm">
-              </div>
-              <div class="col-md-3">
-                  <button onclick="cargarHistorial()" class="btn btn-primary btn-sm fw-bold w-100 mb-1"><i class="fa-solid fa-filter"></i> Filtrar</button>
-                  <button onclick="descargarReporteHistorial()" class="btn btn-success btn-sm fw-bold w-100"><i class="fa-solid fa-file-excel"></i> Exportar Excel</button>
-              </div>
-          </div>
-          <div class="table-responsive" style="max-height: 50vh;">
-              <table class="table table-bordered table-striped text-center text-nowrap"><thead class="table-dark"><tr><th>Unidad</th><th>Cliente</th><th>Inicio</th><th>Fin</th><th>Duración</th><th>Origen ➔ Destino</th><th>Reporte Bitácora</th></tr></thead><tbody id="listaHistorial"></tbody></table>
-          </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="modalComentarios" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-info text-white"><h6 class="modal-title fw-bold" id="tituloComentarios">Bitácora</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small"><div id="listaComentarios" class="mb-3" style="max-height: 250px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px;"></div><div class="input-group"><input type="text" id="nuevoComentario" class="form-control form-control-sm" placeholder="Añadir novedad..."><button class="btn btn-primary btn-sm fw-bold" onclick="guardarComentario()">Agregar</button></div><input type="hidden" id="comentario_unidad_id"></div></div></div></div>
-<div class="modal fade" id="modalEstatus" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-dark text-white"><h6 class="modal-title fw-bold">Estatus</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small"><div class="d-flex mb-3"><input type="text" id="me_nombre" class="form-control form-control-sm me-2" placeholder="Ej. 1. Ruta"><input type="color" id="me_color" class="form-control form-control-sm form-control-color me-2" value="#0F7D42"><button onclick="crearEstatus()" class="btn btn-success btn-sm fw-bold">Añadir</button></div><ul class="list-group" id="listaEstatusConfig"></ul></div></div></div></div>
-<div class="modal fade" id="modalGrupos" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-secondary text-white"><h6 class="modal-title fw-bold">Grupos</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small"><div class="d-flex mb-3"><input type="text" id="mg_nombre" class="form-control form-control-sm me-2" placeholder="Nombre (Ej. ADALBERTO)"><input type="text" id="mg_img" class="form-control form-control-sm me-2" placeholder="URL Imagen"><button onclick="crearGrupo()" class="btn btn-success btn-sm fw-bold">Crear</button></div><ul class="list-group" id="listaGrupos"></ul></div></div></div></div>
+<div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">Nuevo Viaje</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small"><select id="nv_unidad" class="form-select form-select-sm mb-2"></select><select id="nv_grupo" class="form-select form-select-sm mb-2"></select><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" placeholder="Origen"><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" placeholder="Destino"><button onclick="iniciarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2">Crear Viaje</button></div></div></div></div>
+<div class="modal fade" id="modalGrupos" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-secondary text-white"><h6 class="modal-title fw-bold">Grupos</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small"><div class="d-flex mb-3"><input type="text" id="mg_nombre" class="form-control form-control-sm me-2" placeholder="Nombre"><input type="text" id="mg_img" class="form-control form-control-sm me-2" placeholder="URL Img"><button onclick="crearGrupo()" class="btn btn-success btn-sm fw-bold">Crear</button></div><ul class="list-group" id="listaGrupos"></ul></div></div></div></div>
 
 <script type="text/javascript">
     // 1. CONFIGURACIÓN FIREBASE
@@ -169,362 +123,254 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Variables
-    let dataGrupos = {}; let dataEstatus = {}; let viajesActivos = {}; let unidadesWialon = []; let historialGlobal = {};
+    // Variables C4
+    let currentUser = null; 
+    let configSistema = { tokens: [], usuarios: {} };
+    let dataGrupos = {}; let viajesActivos = {}; let unidadesWialon = [];
+    const estatusData = { "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"3. Cargando",col:"#EAEAEA"}, "s4":{nombre:"4. Descargando",col:"#D0F0C0"}, "s5":{nombre:"8. Finalizado",col:"#0055A5"} }; // Resumido por espacio
 
-    const estatusPorDefecto = {
-        "s1": { nombre: "1. Ruta", color: "#0F7D42" }, "s2": { nombre: "1.1 PARADO", color: "#B50000" },
-        "s3": { nombre: "1.2 RETEN", color: "#7D3F00" }, "s4": { nombre: "1.3 Resguardo", color: "#5C338A" },
-        "s5": { nombre: "2. Incidencia", color: "#FFCCCC" }, "s6": { nombre: "3. Cargando", color: "#EAEAEA" },
-        "s7": { nombre: "4. Descargando", color: "#D0F0C0" }, "s8": { nombre: "5. Patio GDL", color: "#BCE3F9" },
-        "s9": { nombre: "6. Patio Reynosa", color: "#C2DEDB" }, "s10": { nombre: "7. Taller", color: "#B5A6A6" },
-        "s11": { nombre: "8. Finalizado", color: "#0055A5" }, "s12": { nombre: "9. Baja cobertura", color: "#4A4A4A" },
-        "s13": { nombre: "1.4 REGRESANDO", color: "#009E73" }, "s14": { nombre: "ALIMENTOS", color: "#E1C6F2" }
-    };
+    // 2. SISTEMA DE AUTENTICACIÓN
+    function autenticarUsuario() {
+        const u = document.getElementById("logUser").value.trim();
+        const p = document.getElementById("logPass").value.trim();
+        const statusEl = document.getElementById("status");
+        
+        if(!u || !p) return statusEl.innerText = "Llene sus datos.";
+        statusEl.innerText = "Autenticando...";
 
-    // Función auxiliar para colores con transparencia
-    function hexToRgba(hex, alpha) {
-        if(!hex) return `rgba(255,255,255,${alpha})`;
-        let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        db.ref('sistema').once('value', s => {
+            let sys = s.val() || { usuarios: { admin: { pass: "admin123", rol: "admin", nom: "Administrador Maestro" } }, tokens: [] };
+            
+            // Forzar creación inicial de BD si no existe
+            if(!s.val()) db.ref('sistema').set(sys);
+
+            if(sys.usuarios[u] && sys.usuarios[u].pass === p) {
+                currentUser = sys.usuarios[u];
+                configSistema = sys;
+                
+                document.getElementById("loginOverlay").style.display = "none";
+                document.getElementById("dashboard").style.display = "block";
+                document.getElementById("lblUsuarioActivo").innerHTML += currentUser.nom;
+                
+                if(currentUser.rol === "admin") document.getElementById("btnAdmin").style.display = "inline-block";
+                
+                cargarDatosSecundarios();
+                iniciarMultiplesSesionesWialon();
+            } else {
+                statusEl.innerHTML = "<span class='text-danger'>Credenciales incorrectas</span>";
+            }
+        });
     }
 
-    // Calcular Duración
-    function calcularDuracion(inicioTs, finTs = Date.now()) {
-        if(!inicioTs) return "N/D";
-        const diff = finTs - inicioTs;
-        const hrs = Math.floor(diff / (1000 * 60 * 60));
-        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        return `${hrs}h ${mins}m`;
-    }
-
-    window.onload = function () {
-        if (typeof wialon !== 'undefined') {
-            document.getElementById("status").innerHTML = "SDK Listo ✅"; document.getElementById("status").className = "mt-4 small fw-bold text-success";
-        }
+    function cargarDatosSecundarios() {
         db.ref('grupos').on('value', s => { dataGrupos = s.val() || {}; actualizarListasGrupos(); });
         db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; if(unidadesWialon.length>0) renderizarBitacora(); });
-        db.ref('config/estatus').on('value', s => { 
-            dataEstatus = s.val();
-            if(!dataEstatus) { dataEstatus = estatusPorDefecto; db.ref('config/estatus').set(estatusPorDefecto); }
-            actualizarListaEstatus(); if(unidadesWialon.length>0) renderizarBitacora();
-        });
-        db.ref('historial').on('value', s => { historialGlobal = s.val() || {}; });
-    };
+        if(currentUser.rol === "admin") renderizarAdmin();
+    }
 
-    function login() {
-        const token = document.getElementById("token").value;
-        if (!token) return alert("Ingresa tu token");
-        
-        document.getElementById("status").innerText = "Conectando con Wialon...";
-        const sess = wialon.core.Session.getInstance();
-        sess.initSession("https://hst-api.wialon.com");
-        
-        sess.loginToken(token, "", function (code) {
-            if (code) return alert("Error: " + code);
-            document.getElementById("loginOverlay").style.display = "none";
-            document.getElementById("dashboard").style.display = "block";
-            
-            sess.loadLibrary("itemUnit");
-            sess.loadLibrary("resourceZones");
-            sess.loadLibrary("resourceDrivers");
-            
-            // Flags: 1(Base), 1024(Pos), 4096(Params/Sensors para Motor), 256(Drivers vinculados a Recursos)
-            sess.updateDataFlags([
-                {type: "type", data: "avl_unit", flags: 1 | 1024 | 4096, mode: 0},
-                {type: "type", data: "avl_resource", flags: 4096 | 256, mode: 0}
-            ], function () {
-                unidadesWialon = sess.getItems("avl_unit") || [];
-                const recursos = sess.getItems("avl_resource") || [];
-                
-                let dlGeo = document.getElementById("listaGeocercas");
-                let dlCond = document.getElementById("listaConductores");
-                
-                recursos.forEach(r => {
-                    // Cargar Geocercas
-                    const zones = r.getZones();
-                    for (let z in zones) { dlGeo.innerHTML += `<option value="${zones[z].n}">`; }
-                    // Cargar Conductores de Wialon
-                    const drivers = r.getDrivers();
-                    for (let d in drivers) { dlCond.innerHTML += `<option value="${drivers[d].n}">`; }
+    // 3. MULTI-SESIÓN WIALON (Carga arreglos de tokens simultáneos)
+    async function iniciarMultiplesSesionesWialon() {
+        if(!configSistema.tokens || configSistema.tokens.length === 0) {
+            if(currentUser.rol === "admin") alert("No hay tokens de Wialon configurados. Ve al Panel Admin.");
+            return;
+        }
+
+        unidadesWialon = []; // Limpiar
+        let loadedSessions = 0;
+
+        // Iterar sobre cada plataforma/token
+        const promesas = configSistema.tokens.map((tk, idx) => {
+            return new Promise((resolve) => {
+                let sess = wialon.core.Session.getInstance("WialonSess_" + idx);
+                sess.initSession("https://hst-api.wialon.com");
+                sess.loginToken(tk, "", (code) => {
+                    if(!code) {
+                        sess.loadLibrary("itemUnit");
+                        sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024 | 4096, mode: 0}], () => {
+                            let units = sess.getItems("avl_unit") || [];
+                            unidadesWialon = unidadesWialon.concat(units); // Fusionar Flotas
+                            sess.addListener("dataUpdated", renderizarBitacora); // Escuchar cambios en vivo
+                            resolve(true);
+                        });
+                    } else resolve(false);
                 });
-
-                actualizarSelectUnidades();
-                renderizarBitacora();
-                sess.addListener("dataUpdated", renderizarBitacora);
             });
         });
-    }
 
-    // VIAJES Y HORARIOS
-    function iniciarViaje() {
-        const uId = document.getElementById("nv_unidad").value;
-        if (!uId) return alert("Selecciona unidad");
-        
-        db.ref('viajes_activos/' + uId).set({
-            grupo: document.getElementById("nv_grupo").value,
-            origen: document.getElementById("nv_origen").value,
-            destino: document.getElementById("nv_destino").value,
-            estatus: "s1", 
-            inicioTs: Date.now(), // 3. Se guarda fecha y hora de inicio
-            bitacora: [{fecha: Date.now(), txt: "Viaje Iniciado"}]
-        });
-        
-        bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
+        await Promise.all(promesas);
         actualizarSelectUnidades();
+        renderizarBitacora();
     }
 
-    // 3. Modificado para guardar Date completo y mostrar de forma legible
-    function registrarTiempo(id, tipo) {
-        const now = Date.now();
-        db.ref(`viajes_activos/${id}/${tipo}`).set(now);
-        guardarEnBitacoraSilencioso(id, `Marcado: ${tipo==='t_salida'?'Salida a Ruta':'Arribo a Descarga'}`);
-    }
-
-    // 7. Acción verde con ícono para finalizar
-    function finalizarViaje(id, nombre) {
-        if(!confirm(`¿Finalizar el viaje de ${nombre} y pasarlo al historial?`)) return;
-        const viaje = viajesActivos[id];
-        viaje.unidad = nombre;
-        viaje.finViajeTs = Date.now(); // 3. Fecha y hora de finalización
-        db.ref('historial').push(viaje);
-        db.ref('viajes_activos/' + id).remove();
-        actualizarSelectUnidades();
-    }
-
-    // RENDERIZADO PRINCIPAL
+    // 4. RENDERIZADO MAESTRO
     function renderizarBitacora() {
         if(document.activeElement.tagName === "INPUT") return; 
-        
         const tbody = document.getElementById('units-body');
         let html = "";
 
         unidadesWialon.forEach(u => {
             const id = u.getId();
             if (!viajesActivos[id]) return;
-            const viaje = viajesActivos[id];
+            const v = viajesActivos[id];
             const pos = u.getPosition();
             
-            // 5. ESTADO DEL MOTOR
-            let motorEstado = `<span class="badge bg-secondary"><i class="fa-solid fa-power-off"></i> OFF</span>`;
+            // Cálculo Velocidad/Motor
             const speed = pos ? pos.s : 0;
-            // Detección de motor (Si hay velocidad o por parámetro ignición)
-            if(speed > 0 || (pos && pos.p && (pos.p.engine_ignition === 1 || pos.p.ign === 1))) {
-                motorEstado = `<span class="badge bg-success"><i class="fa-solid fa-bolt"></i> ON</span>`;
-            }
-
-            // ÚLTIMO MENSAJE
-            let lastMsg = "N/D";
-            if (pos && pos.t) {
-                lastMsg = new Date(pos.t * 1000).toLocaleString('es-MX', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-            }
-
-            // 2. COLOR DE FILA SEGÚN ESTATUS
-            const colorHex = dataEstatus[viaje.estatus] ? dataEstatus[viaje.estatus].color : '#ffffff';
-            const rgbaBg = hexToRgba(colorHex, 0.15); // Transparencia para que el texto sea legible
-            const textColorCls = ['#EAEAEA','#FFCCCC','#D0F0C0','#BCE3F9','#C2DEDB','#E1C6F2'].includes(colorHex) ? '#333' : '#fff';
-
-            let selEstatus = `<select class="form-select form-select-sm status-select" style="background-color: ${colorHex}; color: ${textColorCls};" onchange="guardar('${id}','estatus',this.value); guardarEnBitacoraSilencioso('${id}','Cambio estatus a: '+this.options[this.selectedIndex].text)">`;
-            Object.keys(dataEstatus).forEach(k => {
-                selEstatus += `<option value="${k}" ${viaje.estatus===k?'selected':''} style="background:#fff; color:#333">${dataEstatus[k].nombre}</option>`;
-            });
-            selEstatus += `</select>`;
-
-            // 3. TIEMPOS (FORMATO FECHA Y HORA)
-            const fmtDate = (ts) => new Date(ts).toLocaleString('es-MX',{month:'short', day:'numeric', hour:'2-digit',minute:'2-digit'});
-            const tSalida = viaje.t_salida ? `<div class="small fw-bold text-success" style="font-size:10px;">Salida: ${fmtDate(viaje.t_salida)}</div>` : `<button class="btn btn-sm btn-outline-success p-0 px-1 mb-1" style="font-size:10px;" onclick="registrarTiempo('${id}','t_salida')">Marcar Salida</button>`;
-            const tArribo = viaje.t_arribo ? `<div class="small fw-bold text-danger" style="font-size:10px;">Arribo: ${fmtDate(viaje.t_arribo)}</div>` : `<br><button class="btn btn-sm btn-outline-danger p-0 px-1" style="font-size:10px;" onclick="registrarTiempo('${id}','t_arribo')">Marcar Arribo</button>`;
-            const duracion = calcularDuracion(viaje.inicioTs);
-
-            const imgGrupo = (viaje.grupo && dataGrupos[viaje.grupo]) ? `<img src="${dataGrupos[viaje.grupo].imagen}" class="group-img" title="${dataGrupos[viaje.grupo].nombre}">` : '';
-
-            let bitacoraCount = viaje.bitacora ? Object.keys(viaje.bitacora).length : 0;
-            let ultimoComentario = bitacoraCount > 0 ? Object.values(viaje.bitacora).pop().txt : "Sin notas";
-
-            // 9. MAPS LINK Y 4. VELOCIDAD RESALTADA
-            const mapLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : '#';
-            const velBadge = `<span class="badge ${speed>0?'bg-danger':'bg-dark'} fs-6 border border-white mb-1"><i class="fa-solid fa-gauge-high"></i> ${speed} km/h</span>`;
+            const motorOn = speed > 0 || (pos && pos.p && (pos.p.ign === 1 || pos.p.engine_ignition === 1));
             
-            // 11. BOTÓN WHATSAPP
-            const waText = encodeURIComponent(`*Reporte de Viaje*\n🚛 Unidad: ${u.getName()}\n📍 Ubicación: ${mapLink}\n⏱️ Vel: ${speed} km/h\n🚦 Estatus: ${dataEstatus[viaje.estatus]?.nombre}\n🏁 Origen: ${viaje.origen} -> Destino: ${viaje.destino}`);
-            const btnWA = `<a href="https://api.whatsapp.com/send?text=${waText}" target="_blank" class="btn btn-sm btn-success p-0 px-1 mt-1" style="font-size:10px;" title="Compartir Estatus"><i class="fa-brands fa-whatsapp"></i> Compartir</a>`;
+            // Última Notificación GPS
+            let tGPS = pos && pos.t ? new Date(pos.t*1000) : null;
+            let txtTGPS = tGPS ? tGPS.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/D';
+            
+            // Auditoría (Última Respuesta de Monitor)
+            let logsCount = v.bitacora ? Object.keys(v.bitacora).length : 0;
+            let ultLog = "Sin registros";
+            if(logsCount > 0) {
+                let lastLogObj = Object.values(v.bitacora).pop();
+                ultLog = `<div class="audit-log"><b class="text-primary">${lastLogObj.autor}:</b> ${lastLogObj.txt}<br><small class="text-muted"><i class="fa-regular fa-clock"></i> ${new Date(lastLogObj.fecha).toLocaleTimeString()}</small></div>`;
+            }
 
-            // CONSTRUCCIÓN DE FILA (2. Fila pintada completa)
-            html += `<tr style="background-color: ${rgbaBg}; transition: 0.3s;">
+            // Tiempos
+            const tSal = v.t_salida ? `<div style="font-size:9px" class="text-success fw-bold">SAL: ${new Date(v.t_salida).toLocaleTimeString()}</div>` : `<button class="btn btn-sm btn-light p-0 text-primary" onclick="db.ref('viajes_activos/${id}/t_salida').set(Date.now()); auditoria('${id}','Marcó Salida a Ruta');">Salida</button>`;
+            
+            // Color Estatus
+            const bgSt = estatusData[v.estatus] ? estatusData[v.estatus].col : '#fff';
+            const fgSt = ['#EAEAEA','#FFCCCC','#D0F0C0','#BCE3F9'].includes(bgSt) ? '#333' : '#fff';
+
+            // HTML Fila
+            html += `<tr style="background: rgba(255,255,255,0.8);">
                 <td>
                     <div class="fw-bold text-primary fs-6">${u.getName()}</div>
-                    <div class="mt-1">${motorEstado}</div>
+                    <span class="badge ${motorOn?'bg-success':'bg-secondary'}"><i class="fa-solid fa-bolt"></i> Motor</span>
+                </td>
+                <td><img src="${(dataGrupos[v.grupo]||{}).imagen||''}" class="group-img d-block mx-auto mb-1"><span class="fw-bold" style="font-size:9px;">${(dataGrupos[v.grupo]||{}).nombre||'N/A'}</span></td>
+                <td><input class="table-input" value="${v.operador||''}" placeholder="Operador" onblur="db.ref('viajes_activos/${id}/operador').set(this.value)"></td>
+                <td>
+                    <input class="table-input mb-1" value="${v.cliente||''}" placeholder="Cliente" onblur="db.ref('viajes_activos/${id}/cliente').set(this.value)">
+                    <input class="table-input" value="${v.subcliente||''}" placeholder="Subcliente" onblur="db.ref('viajes_activos/${id}/subcliente').set(this.value)">
                 </td>
                 <td>
-                    <div class="d-flex align-items-center justify-content-center mb-1">${imgGrupo} <span class="fw-bold">${viaje.grupo?dataGrupos[viaje.grupo].nombre:'N/A'}</span></div>
+                    <div class="input-group input-group-sm mb-1"><span class="input-group-text p-1">O</span><input class="form-control p-1 fw-bold text-center" value="${v.origen||''}" onblur="db.ref('viajes_activos/${id}/origen').set(this.value)"></div>
+                    <div class="input-group input-group-sm"><span class="input-group-text p-1">D</span><input class="form-control p-1 fw-bold text-center" value="${v.destino||''}" onblur="db.ref('viajes_activos/${id}/destino').set(this.value)"></div>
+                </td>
+                <td><textarea class="table-input" rows="2" placeholder="CMAU..." onblur="db.ref('viajes_activos/${id}/contenedores').set(this.value)">${v.contenedores||''}</textarea></td>
+                <td>${tSal}</td>
+                <td>
+                    <select class="form-select status-select" style="background:${bgSt}; color:${fgSt};" onchange="db.ref('viajes_activos/${id}/estatus').set(this.value); auditoria('${id}','Cambió Estatus: '+this.options[this.selectedIndex].text)">
+                        ${Object.keys(estatusData).map(k => `<option value="${k}" ${v.estatus===k?'selected':''} style="background:#fff;color:#000">${estatusData[k].nombre}</option>`).join('')}
+                    </select>
                 </td>
                 <td>
-                    <input class="table-input text-primary" list="listaConductores" value="${viaje.operador||''}" placeholder="Nombre / Tel" onblur="guardar('${id}','operador',this.value)">
+                    <span class="badge ${speed>0?'bg-danger':'bg-dark'} fs-6 mb-1"><i class="fa-solid fa-gauge"></i> ${speed} km/h</span>
+                    <div class="small fw-bold text-muted mb-1"><i class="fa-solid fa-satellite-dish"></i> GPS: ${txtTGPS}</div>
+                    <div id="addr_${id}" style="font-size:9px; font-style:italic;" class="text-truncate">Consultando mapa...</div>
                 </td>
                 <td>
-                    <div class="d-flex flex-column gap-1">
-                        <input class="table-input" value="${viaje.cliente||''}" placeholder="Cliente" onblur="guardar('${id}','cliente',this.value)">
-                        <input class="table-input" value="${viaje.subcliente||''}" placeholder="Subcliente" onblur="guardar('${id}','subcliente',this.value)">
-                    </div>
+                    ${ultLog}
+                    <button class="btn btn-sm btn-outline-primary p-0 px-2 fw-bold" onclick="abrirAuditoria('${id}', '${u.getName()}', '${txtTGPS}')"><i class="fa-solid fa-comment-dots"></i> Contestar</button>
                 </td>
-                <td>
-                    <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-light fw-bold" style="font-size:10px;">O</span><input class="form-control" list="listaGeocercas" value="${viaje.origen||''}" placeholder="Origen" onblur="guardar('${id}','origen',this.value)"></div>
-                    <div class="input-group input-group-sm"><span class="input-group-text bg-light fw-bold" style="font-size:10px;">D</span><input class="form-control" list="listaGeocercas" value="${viaje.destino||''}" placeholder="Destino" onblur="guardar('${id}','destino',this.value)"></div>
-                </td>
-                <td>
-                    <textarea class="table-input" rows="2" placeholder="Ej. CMAU..." onblur="guardar('${id}','contenedores',this.value)">${viaje.contenedores||''}</textarea>
-                </td>
-                <td class="text-start">
-                    ${tSalida} ${tArribo}
-                    <div class="text-muted text-center mt-1" style="font-size:9px;"><i class="fa-regular fa-clock"></i> Ruta: ${duracion}</div>
-                </td>
-                <td>
-                    ${selEstatus}
-                    <div class="mt-2 small text-muted text-center fw-bold" title="Último mensaje del GPS"><i class="fa-solid fa-satellite-dish"></i> ${lastMsg}</div>
-                </td>
-                <td>
-                    <div class="d-flex flex-column align-items-center">
-                        ${velBadge}
-                        <a href="${mapLink}" target="_blank" class="maps-link" title="Abrir en Google Maps"><i class="fa-solid fa-map-location-dot"></i> <span id="addr_${id}">Buscando mapa...</span></a>
-                        ${btnWA}
-                    </div>
-                </td>
-                <td>
-                    <div class="d-flex flex-column align-items-center">
-                        <span class="small text-dark text-truncate fst-italic mb-1" style="max-width:100px;">"${ultimoComentario}"</span>
-                        <span class="log-btn" onclick="abrirComentarios('${id}','${u.getName()}')"><i class="fa-solid fa-book"></i> Notas (${bitacoraCount})</span>
-                    </div>
-                </td>
-                <td>
-                    <button onclick="finalizarViaje('${id}', '${u.getName()}')" class="btn btn-success rounded-circle shadow-sm" style="width: 35px; height: 35px;" title="Finalizar Viaje y Archivar"><i class="fa-solid fa-check"></i></button>
-                </td>
+                <td><button onclick="finalizarViaje('${id}', '${u.getName()}')" class="btn btn-success btn-sm rounded-circle"><i class="fa-solid fa-check"></i></button></td>
             </tr>`;
             
-            if (pos) {
-                wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], function(code, addr) {
-                    const el = document.getElementById(`addr_${id}`);
-                    if (el && addr) el.innerText = addr[0];
-                });
-            }
+            // Geocoding
+            if (pos) { wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], function(c, addr) { let el = document.getElementById(`addr_${id}`); if(el&&addr) el.innerText = addr[0]; }); }
         });
-        
         tbody.innerHTML = html;
         aplicarFiltroActual();
     }
 
-    // Funciones Auxiliares
-    function guardar(id, campo, valor) { db.ref(`viajes_activos/${id}/${campo}`).set(valor); }
-    function abrirComentarios(id, nombre) {
-        document.getElementById("tituloComentarios").innerText = `Notas de Viaje: ${nombre}`;
+    // 5. AUDITORÍA (Monitores)
+    function auditoria(idViaje, texto) {
+        db.ref(`viajes_activos/${idViaje}/bitacora`).push({ autor: currentUser.nom, fecha: Date.now(), txt: texto });
+    }
+
+    function abrirAuditoria(id, unidadNom, tGps) {
+        document.getElementById("tituloComentarios").innerText = `Registro Auditado: ${unidadNom}`;
         document.getElementById("comentario_unidad_id").value = id;
+        document.getElementById("msgUltimaNotif").innerHTML = `<b>Último reporte GPS:</b> ${tGps}<br><em>Es obligatorio validar esta posición.</em>`;
+        
         const bit = viajesActivos[id].bitacora || {};
         let html = "";
-        Object.values(bit).forEach(b => { html += `<div class="border-bottom pb-1 mb-1"><span class="text-muted" style="font-size:10px"><i class="fa-regular fa-clock"></i> ${new Date(b.fecha).toLocaleString()}</span><br><b>${b.txt}</b></div>`; });
+        Object.values(bit).forEach(b => { 
+            html += `<div class="audit-log"><strong class="text-primary">${b.autor}</strong> <span class="text-muted" style="font-size:9px;">[${new Date(b.fecha).toLocaleString()}]</span><br>${b.txt}</div>`; 
+        });
         document.getElementById("listaComentarios").innerHTML = html;
         new bootstrap.Modal(document.getElementById('modalComentarios')).show();
     }
+
     function guardarComentario() {
         const id = document.getElementById("comentario_unidad_id").value;
         const txt = document.getElementById("nuevoComentario").value;
         if(!txt) return;
-        guardarEnBitacoraSilencioso(id, txt);
+        auditoria(id, txt); // Guarda con el nombre del monitor
         document.getElementById("nuevoComentario").value = "";
-        setTimeout(()=> abrirComentarios(id, document.getElementById("tituloComentarios").innerText.replace("Notas de Viaje: ", "")), 200); 
-    }
-    function guardarEnBitacoraSilencioso(id, txt) { db.ref(`viajes_activos/${id}/bitacora`).push({fecha: Date.now(), txt: txt}); }
-
-    // FILTROS
-    function filtrarTabla() { aplicarFiltroActual(); }
-    function aplicarFiltroActual() {
-        const txt = document.getElementById("buscador").value.toLowerCase();
-        document.querySelectorAll("#units-body tr").forEach(f => {
-            let rowText = f.innerText.toLowerCase();
-            f.querySelectorAll('input').forEach(i => rowText += " " + i.value.toLowerCase());
-            f.style.display = rowText.includes(txt) ? "" : "none";
-        });
+        setTimeout(() => abrirAuditoria(id, document.getElementById("tituloComentarios").innerText.replace("Registro Auditado: ",""), ""), 300);
     }
 
-    // GESTIÓN BÁSICA
+    // 6. GESTIÓN ADMIN
+    function renderizarAdmin() {
+        let ulT = document.getElementById("listaTokens"); ulT.innerHTML = "";
+        (configSistema.tokens||[]).forEach((t, i) => { ulT.innerHTML += `<li class="list-group-item d-flex justify-content-between">Plataforma ${i+1}: ${t.substring(0,8)}... <button class="btn btn-sm btn-danger py-0" onclick="borrarToken(${i})">X</button></li>`; });
+        
+        let ulU = document.getElementById("listaUsuarios"); ulU.innerHTML = "";
+        Object.keys(configSistema.usuarios).forEach(u => { ulU.innerHTML += `<li class="list-group-item d-flex justify-content-between"><b>${u}</b> (${configSistema.usuarios[u].rol}) <button class="btn btn-sm btn-danger py-0" onclick="db.ref('sistema/usuarios/${u}').remove()">X</button></li>`; });
+    }
+    
+    function agregarToken() {
+        let t = document.getElementById("nuevoToken").value.trim();
+        if(!t) return;
+        let tokens = configSistema.tokens || []; tokens.push(t);
+        db.ref('sistema/tokens').set(tokens);
+        document.getElementById("nuevoToken").value = "";
+    }
+    function borrarToken(idx) {
+        let tokens = configSistema.tokens; tokens.splice(idx,1); db.ref('sistema/tokens').set(tokens);
+    }
+    function crearMonitor() {
+        let u = document.getElementById("nu_user").value.trim(); let p = document.getElementById("nu_pass").value.trim();
+        if(!u || !p) return;
+        db.ref(`sistema/usuarios/${u}`).set({ pass: p, rol: "monitor", nom: u.toUpperCase() });
+        document.getElementById("nu_user").value = ""; document.getElementById("nu_pass").value = "";
+    }
+
+    // 7. FUNCIONES BÁSICAS DE FLUJO
+    function iniciarViaje() {
+        const uId = document.getElementById("nv_unidad").value; if (!uId) return;
+        db.ref('viajes_activos/' + uId).set({ grupo: document.getElementById("nv_grupo").value, origen: document.getElementById("nv_origen").value, destino: document.getElementById("nv_destino").value, estatus: "s1", bitacora: [{autor:"Sistema", fecha: Date.now(), txt: "Viaje Iniciado por " + currentUser.nom}] });
+        bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
+        actualizarSelectUnidades();
+    }
+    function finalizarViaje(id, nom) {
+        if(!confirm(`¿Finalizar ${nom}?`)) return;
+        let v = viajesActivos[id]; v.unidad = nom; v.finTs = Date.now();
+        db.ref('historial').push(v); db.ref('viajes_activos/'+id).remove();
+        actualizarSelectUnidades();
+    }
     function crearGrupo() { db.ref('grupos').push({ nombre: document.getElementById("mg_nombre").value, imagen: document.getElementById("mg_img").value || "https://cdn-icons-png.flaticon.com/512/3063/3063822.png" }); }
     function actualizarListasGrupos() {
         let sel = document.getElementById("nv_grupo"), list = document.getElementById("listaGrupos");
         sel.innerHTML = `<option value="">Sin Grupo</option>`; list.innerHTML = "";
         Object.keys(dataGrupos).forEach(k => {
             sel.innerHTML += `<option value="${k}">${dataGrupos[k].nombre}</option>`;
-            list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><img src="${dataGrupos[k].imagen}" class="group-img">${dataGrupos[k].nombre}</div><button onclick="db.ref('grupos/${k}').remove()" class="btn btn-sm btn-danger"><i class="fa-solid fa-trash"></i></button></li>`;
+            list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><img src="${dataGrupos[k].imagen}" class="group-img">${dataGrupos[k].nombre}</div><button onclick="db.ref('grupos/${k}').remove()" class="btn btn-sm btn-danger">X</button></li>`;
         });
-    }
-    function crearEstatus() { db.ref('config/estatus').push({ nombre: document.getElementById("me_nombre").value, color: document.getElementById("me_color").value }); }
-    function actualizarListaEstatus() {
-        let list = document.getElementById("listaEstatusConfig"); list.innerHTML = "";
-        Object.keys(dataEstatus).forEach(k => { list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><span class="badge" style="background:${dataEstatus[k].color}">${dataEstatus[k].nombre}</span><button onclick="db.ref('config/estatus/${k}').remove()" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-xmark"></i></button></li>`; });
     }
     function actualizarSelectUnidades() {
-        const sel = document.getElementById("nv_unidad");
-        sel.innerHTML = `<option value="">Seleccione Unidad Libre...</option>`;
+        const sel = document.getElementById("nv_unidad"); sel.innerHTML = `<option value="">Seleccione Unidad...</option>`;
         unidadesWialon.forEach(u => { if (!viajesActivos[u.getId()]) sel.innerHTML += `<option value="${u.getId()}">${u.getName()}</option>`; });
     }
-
-    // 10. REPORTES AVANZADOS EN HISTORIAL
-    function cargarHistorial() {
-        const data = historialGlobal;
-        let html = "";
-        let clientes = new Set();
-        
-        const filtroCli = document.getElementById("filtroClienteHistorial").value;
-        const fDesde = document.getElementById("filtroDesde").value ? new Date(document.getElementById("filtroDesde").value).getTime() : 0;
-        const fHasta = document.getElementById("filtroHasta").value ? new Date(document.getElementById("filtroHasta").value).getTime() + 86400000 : Infinity; // +1 dia para incluir final
-        
-        Object.keys(data).reverse().forEach(k => {
-            const h = data[k];
-            if(h.cliente) clientes.add(h.cliente.toUpperCase());
-            
-            // Filtros
-            if(filtroCli !== "ALL" && (!h.cliente || h.cliente.toUpperCase() !== filtroCli)) return;
-            if(h.inicioTs < fDesde || h.inicioTs > fHasta) return;
-
-            const fInicio = h.inicioTs ? new Date(h.inicioTs).toLocaleString() : 'N/D';
-            const fFin = h.finViajeTs ? new Date(h.finViajeTs).toLocaleString() : 'N/D';
-            const duracion = calcularDuracion(h.inicioTs, h.finViajeTs);
-            
-            let logTxt = "";
-            if(h.bitacora) Object.values(h.bitacora).forEach(b => logTxt += `[${new Date(b.fecha).toLocaleString()}] ${b.txt}\n`);
-
-            html += `<tr><td class="fw-bold">${h.unidad||'N/D'}</td><td>${h.cliente||'S/C'}<br><small>${h.subcliente||''}</small></td><td>${fInicio}</td><td>${fFin}</td><td><span class="badge bg-info text-dark">${duracion}</span></td><td>${h.origen||''} ➔ ${h.destino||''}</td><td><textarea class="form-control" rows="1" readonly style="font-size:10px;">${logTxt}</textarea></td></tr>`;
+    function filtrarTabla() { aplicarFiltroActual(); }
+    function aplicarFiltroActual() { const txt = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#units-body tr").forEach(f => { let rText = f.innerText.toLowerCase(); f.querySelectorAll('input').forEach(i => rText += " " + i.value.toLowerCase()); f.style.display = rText.includes(txt) ? "" : "none"; }); }
+    function exportarExcel() {
+        let csv = "\uFEFFUNIDAD,OPERADOR,CLIENTE,ORIGEN,DESTINO,ESTATUS,SALIDA,UBICACION\n";
+        document.querySelectorAll("#units-body tr").forEach(row => {
+            if(row.style.display !== "none") {
+                const c = row.cells;
+                csv += `${c[0].innerText.replace('Motor','').trim()},${c[2].querySelector('input').value},${c[3].querySelector('input').value},${c[4].querySelectorAll('input')[0].value},${c[4].querySelectorAll('input')[1].value},${c[7].querySelector('select').options[c[7].querySelector('select').selectedIndex].text},${c[6].innerText.replace('Salida','').trim()},${c[8].innerText.replace(/,/g, "")}\n`;
+            }
         });
-        document.getElementById("listaHistorial").innerHTML = html;
-        
-        const selCli = document.getElementById("filtroClienteHistorial");
-        if(selCli.options.length === 1) { clientes.forEach(c => selCli.innerHTML += `<option value="${c}">${c}</option>`); }
-    }
-
-    function descargarReporteHistorial() {
-        let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,INICIO,FIN,DURACION,ORIGEN,DESTINO,COMENTARIOS,HISTORIAL_BITACORA\n";
-        
-        const filtroCli = document.getElementById("filtroClienteHistorial").value;
-        const fDesde = document.getElementById("filtroDesde").value ? new Date(document.getElementById("filtroDesde").value).getTime() : 0;
-        const fHasta = document.getElementById("filtroHasta").value ? new Date(document.getElementById("filtroHasta").value).getTime() + 86400000 : Infinity;
-
-        Object.keys(historialGlobal).forEach(k => {
-            const h = historialGlobal[k];
-            if(filtroCli !== "ALL" && (!h.cliente || h.cliente.toUpperCase() !== filtroCli)) return;
-            if(h.inicioTs < fDesde || h.inicioTs > fHasta) return;
-
-            const fInicio = h.inicioTs ? new Date(h.inicioTs).toLocaleString() : 'N/D';
-            const fFin = h.finViajeTs ? new Date(h.finViajeTs).toLocaleString() : 'N/D';
-            const duracion = calcularDuracion(h.inicioTs, h.finViajeTs);
-            
-            let logTxt = "";
-            if(h.bitacora) Object.values(h.bitacora).forEach(b => logTxt += `[${new Date(b.fecha).toLocaleString()}] ${b.txt} | `);
-
-            csv += `${h.unidad||''},${h.cliente||''},${h.subcliente||''},${fInicio},${fFin},${duracion},${h.origen||''},${h.destino||''},${(h.comentarios||'').replace(/,/g," ")},${logTxt.replace(/,/g," ")}\n`;
-        });
-
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `Reporte_Historial_${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
+        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "Bitacora_C4.csv"; link.click();
     }
 </script>
 </body>
