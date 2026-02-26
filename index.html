@@ -31,7 +31,6 @@
         .table-panel { width: 100%; transition: width 0.4s ease; overflow-y: auto; padding: 15px; }
         .map-panel { width: 0%; transition: width 0.4s ease; border-left: 3px solid var(--header-bg); display: none; position: relative;}
         
-        /* Cuando el mapa está activo */
         .workspace-container.show-map .table-panel { width: 70%; }
         .workspace-container.show-map .map-panel { width: 30%; display: block; }
         #map { width: 100%; height: 100%; }
@@ -288,7 +287,6 @@
         });
         db.ref('historial').on('value', s => { historialGlobal = s.val() || {}; });
         
-        // ESCUCHADOR DE TOKENS EN VIVO (Detecta cambios sin F5)
         db.ref('sistema/tokens').on('value', s => {
             let nuevosTokens = s.val() || [];
             if(currentUser && JSON.stringify(nuevosTokens) !== JSON.stringify(configSistema.tokens)) {
@@ -300,11 +298,11 @@
             }
         });
 
-        // LOGIN CON ENTER Y PERSISTENCIA
+        // LOGIN CON ENTER
         document.getElementById("logPass").addEventListener("keyup", function(event) { if (event.key === "Enter") autenticarUsuario(); });
         document.getElementById("logUser").addEventListener("keyup", function(event) { if (event.key === "Enter") document.getElementById("logPass").focus(); });
 
-        // AUTO-OPERADOR MÁGICO Y BUSCADOR
+        // AUTO-OPERADOR MÁGICO
         document.getElementById("nv_unidad_input").addEventListener("input", function() {
             let val = this.value.trim().toUpperCase();
             let opInput = document.getElementById("nv_operador");
@@ -358,7 +356,7 @@
         location.reload();
     }
 
-    // 3. SINCRONIZACIÓN MULTI-TOKEN SECUENCIAL (LA SOLUCIÓN AL BUG)
+    // 3. SINCRONIZACIÓN SECUENCIAL (LA SOLUCIÓN AL BUG)
     async function iniciarMultiplesSesionesWialon() {
         let ind = document.getElementById("syncIndicator");
         ind.className = "badge bg-warning text-dark"; ind.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Sincronizando Flotas...";
@@ -372,7 +370,7 @@
             ind.className = "badge bg-danger"; ind.innerHTML = "Sin Plataformas Conectadas"; return; 
         }
 
-        // CARGA SECUENCIAL PARA EVITAR QUE EL SDK DE WIALON SE AHORQUE
+        // CARGA SECUENCIAL
         for (let idx = 0; idx < configSistema.tokens.length; idx++) {
             let tkObj = configSistema.tokens[idx];
             let tkName = tkObj.nombre || "TK"+idx;
@@ -389,14 +387,12 @@
                         sess.loadLibrary("itemUnit"); sess.loadLibrary("resourceZones"); sess.loadLibrary("resourceDrivers");
                         sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024 | 4096, mode: 0}, {type: "type", data: "avl_resource", flags: 4096 | 256, mode: 0}], () => {
                             
-                            // Guardamos las unidades
                             let units = sess.getItems("avl_unit") || [];
                             units.forEach(u => {
                                 unidadesWialon.push(u);
                                 mapUnidades[u.getName().toUpperCase()] = { id: u.getId(), tk: tkName }; 
                             });
                             
-                            // Guardamos Conductores y Geocercas etiquetados por su plataforma
                             let recursos = sess.getItems("avl_resource") || [];
                             recursos.forEach(r => {
                                 const zones = r.getZones(); 
@@ -441,7 +437,7 @@
         });
     }
 
-    // 4. RENDERIZADO MAESTRO DE LA TABLA
+    // 4. RENDERIZADO MAESTRO CON SOLUCIÓN UNDEFINED
     function renderizarBitacora() {
         if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return; 
         const tbody = document.getElementById('units-body');
@@ -503,8 +499,8 @@
                     const bgSt = estatusData[v.estatus] ? estatusData[v.estatus].col : '#fff';
                     const fgSt = ['#EAEAEA','#FFCCCC','#D0F0C0','#BCE3F9'].includes(bgSt) ? '#333' : '#fff';
 
-                    // EVENTO CLICK EN EL NOMBRE PARA CENTRAR EL MAPA
                     let clickMap = pos ? `onclick="centrarUnidadMapa(${pos.y}, ${pos.x})"` : "";
+                    const mapLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : '#';
 
                     cliHtml += `<tr class="${rowClass}">
                         <td class="fw-bold fs-6 unit-name" ${clickMap} title="Ver en el mapa">${u.getName()}</td>
@@ -520,7 +516,7 @@
                         </select></td>
                         <td>
                             <div class="d-flex align-items-center justify-content-center gap-2 mb-1"><span class="fs-5">${iconMotor}</span><span class="badge ${speed>0?'bg-danger':'bg-dark'} fs-6">${speed} km/h</span></div>
-                            <span id="addr_${id}" style="font-size:9px; color:var(--text-main); display:block; line-height:1;">Buscando...</span>
+                            <a href="${mapLink}" target="_blank" class="maps-link d-block" title="Maps"><i class="fa-solid fa-map-location-dot"></i> <span id="addr_${id}" style="font-size:10px; color:var(--text-main);">Buscando...</span></a>
                         </td>
                         <td>
                             ${alertaUI}
@@ -538,14 +534,29 @@
                         </td>
                     </tr>`;
                     
+                    // FALLBACK MÁGICO PARA DIRECCIONES UNDEFINED DE SERVIDORES LOCALES
                     if (pos) {
-                        wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], function(c, addr) { 
+                        wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], async function(c, addr) { 
                             let el = document.getElementById(`addr_${id}`); 
-                            if(el&&addr) {
-                                let dirStr = addr[0]; el.innerText = dirStr;
-                                if(v.destino && !v.t_arribo && dirStr.toUpperCase().includes(v.destino.toUpperCase())) {
-                                    registrarTiempo(id, 't_arribo'); auditoria(id, `AUTO-ARRIBO: El sistema detectó entrada a ${v.destino}`);
+                            if(!el) return;
+                            
+                            let dirStr = "";
+                            if(c === 0 && addr && addr[0]) {
+                                dirStr = addr[0];
+                            } else {
+                                // Respaldo: Si Wialon falla, usamos OpenStreetMap gratis
+                                try {
+                                    let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.y}&lon=${pos.x}&zoom=16&addressdetails=0`);
+                                    let data = await res.json();
+                                    dirStr = data.display_name || `${pos.y.toFixed(5)}, ${pos.x.toFixed(5)}`;
+                                } catch(err) {
+                                    dirStr = `Coord: ${pos.y.toFixed(5)}, ${pos.x.toFixed(5)}`;
                                 }
+                            }
+                            el.innerText = dirStr;
+                            
+                            if(v.destino && !v.t_arribo && dirStr.toUpperCase().includes(v.destino.toUpperCase())) {
+                                registrarTiempo(id, 't_arribo'); auditoria(id, `AUTO-ARRIBO: El sistema detectó entrada a ${v.destino}`);
                             }
                         });
                     }
@@ -560,7 +571,7 @@
         aplicarFiltroActual();
     }
 
-    // 5. REGISTRAR VIAJES CON AUTO-OPERADOR
+    // 5. REGISTRAR VIAJES
     function prepararNuevoViaje() {
         actualizarDatalistUnidades(); 
         let sel = document.getElementById("nv_cliente"); sel.innerHTML = `<option value="">Seleccione Cliente...</option>`;
@@ -594,7 +605,7 @@
             destino: document.getElementById("nv_destino").value.toUpperCase(), 
             estatus: "s1", 
             operador: opFinal,
-            tkName: uData.tk, // Guardar a qué plataforma pertenece
+            tkName: uData.tk, 
             bitacora: [{autor: currentUser.nom, fecha: Date.now(), txt: "Registró Viaje"}] 
         });
         bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
@@ -620,7 +631,7 @@
         bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide();
     }
 
-    // ADMIN TOKENS CORREGIDO
+    // ADMIN TOKENS
     function renderizarAdmin() {
         let ulT = document.getElementById("listaTokens"); ulT.innerHTML = "";
         (configSistema.tokens||[]).forEach((tk, i) => { 
@@ -677,7 +688,7 @@
     }
 
     function crearMonitor() { let u = document.getElementById("nu_user").value.trim().toUpperCase(); let p = document.getElementById("nu_pass").value.trim(); if(!u||!p) return; db.ref(`sistema/usuarios/${u}`).set({ pass: p, rol: "monitor", nom: u }); document.getElementById("nu_user").value=""; document.getElementById("nu_pass").value=""; }
-    function finalizarViaje(id, nom) { if(!confirm(`¿Archivar viaje?`)) return; let v = viajesActivos[id]; v.unidad = nom; v.finTs = Date.now(); db.ref('historial').push(v); db.ref('viajes_activos/'+id).remove(); actualizarDatalistUnidades(); }
+    function finalizarViaje(id, nom) { if(!confirm(`¿Archivar viaje?`)) return; let v = viajesActivos[id]; v.unidad = nom; v.finTs = Date.now(); db.ref('historial').push(v); db.ref('viajes_activos/'+id).remove(); actualizarDatalistUnidades(); if(mapMarkers[id]) { lmap.removeLayer(mapMarkers[id]); delete mapMarkers[id]; } }
     
     function cargarHistorial() { let html = ""; Object.keys(historialGlobal).reverse().forEach(k => { const h = historialGlobal[k]; html += `<tr><td>${h.unidad||''}</td><td>${(dataClientes[h.cliente]||{}).nombre||''}<br><small>${(dataClientes[h.cliente]?.subclientes?.[h.subcliente]?.nombre)||''}</small></td><td>${h.inicioTs?new Date(h.inicioTs).toLocaleDateString():''}</td><td>${h.finTs?new Date(h.finTs).toLocaleDateString():''}</td><td>${h.origen||''} ➔ ${h.destino||''}</td></tr>`; }); document.getElementById("listaHistorial").innerHTML = html; }
     function filtrarTabla() { const txt = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#units-body tr").forEach(f => { if(f.classList.contains("header-cliente")||f.classList.contains("header-subcliente")||f.classList.contains("header-columnas")) return; let rText = f.innerText.toLowerCase(); f.querySelectorAll('input').forEach(i => rText += " " + i.value.toLowerCase()); f.style.display = rText.includes(txt) ? "" : "none"; }); }
