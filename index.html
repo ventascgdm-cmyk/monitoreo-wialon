@@ -17,9 +17,9 @@
         body { background: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; margin: 0; overflow: hidden;}
         
         .login-bg { background: #001a33; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
-        .login-card { background: white; padding: 40px; border-radius: 12px; width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .login-card { background: white; padding: 40px; border-radius: 12px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         
-        .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); }
+        .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 75px); width: 100%; }
         
         .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 4px solid var(--header-bg); position: relative; z-index: 10; overflow: hidden; }
@@ -44,12 +44,12 @@
 
 <div id="loginOverlay" class="login-bg">
     <div class="login-card text-center">
-        <img src="TIGPS HD2.png" alt="Logo" style="width: 200px; margin-bottom: 25px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
+        <img src="TIGPS HD2.png" alt="Logo" style="width: 220px; margin-bottom: 25px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
         <h5 class="text-primary fw-bold mb-4">GRUDICOM TI & GPS | C4</h5>
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario" value="admin">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña" value="admin123">
         <button id="btnEnter" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Prioridad: Base de Datos Firebase</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Acceso Directo Firebase</div>
     </div>
 </div>
 
@@ -74,22 +74,30 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">NUEVO REGISTRO</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body small">
+        <label>Unidad:</label><input type="text" id="nv_u" class="form-control form-control-sm mb-2" placeholder="RACEL-01">
+        <label>Operador:</label><input type="text" id="nv_o" class="form-control form-control-sm mb-2" placeholder="Nombre">
+        <button onclick="registrarViaje()" class="btn btn-primary w-100 fw-bold mt-2">GUARDAR EN FIREBASE</button>
+    </div>
+</div></div></div>
+
 <script type="text/javascript">
-    // CONFIGURACIÓN FIREBASE BASADA EN TU IMAGEN
+    // URL DE TU FIREBASE
     const db = firebase.database({ databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" });
-    let dataClientes = {}, viajesActivos = {}, unidadesWialon = {}, activeSIDs = {}, lmap = null;
+    let dataClientes = {}, viajesActivos = {}, unidadesWialon = {}, lmap = null;
 
-    const estatusData = { "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s11":{nombre:"8. Finalizado",col:"#0055A5"} };
-
-    // LOGIN DIRECTO (SIN BLOQUEOS)
+    // LOGIN TOTALMENTE INDEPENDIENTE
     function intentarEntrar() {
         const u = document.getElementById("logUser").value.trim();
         const p = document.getElementById("logPass").value.trim();
 
-        // Si es el admin de tu imagen, entra directo
+        // Bypass directo para el admin de Firebase
         if (u === "admin" && p === "admin123") {
             ejecutarEntrada("Administrador Maestro");
         } else {
+            document.getElementById("status").innerText = "Buscando en Firebase...";
             db.ref('sistema/usuarios/' + u).once('value', s => {
                 const user = s.val();
                 if(user && user.pass === p) ejecutarEntrada(user.nom || u);
@@ -107,24 +115,25 @@
 
     document.getElementById("btnEnter").onclick = intentarEntrar;
     document.getElementById("logPass").onkeyup = e => { if(e.key === "Enter") intentarEntrar(); };
+    document.getElementById("logUser").onkeyup = e => { if(e.key === "Enter") document.getElementById("logPass").focus(); };
 
-    // CARGA DE DATOS PRIORIZANDO FIREBASE
+    // CARGA DE DATOS (FIREBASE PRIMERO)
     function iniciarApp() {
-        // Escuchar Clientes y Viajes (Firebase siempre manda aquí)
+        // Escuchar Clientes y Viajes Activos
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; renderizar(); });
         db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizar(); });
         
-        // Intentar Wialon solo de fondo
+        // Intentar conectar a Wialon en segundo plano
         db.ref('sistema/tokens').once('value', s => {
             const tokens = s.val() ? Object.values(s.val()) : [];
             tokens.forEach(tk => {
                 let script = document.createElement("script"), cb = "w_"+Math.random().toString(36).substr(2,5);
                 window[cb] = (d) => {
+                    const diag = document.getElementById("tokenDiagnostics");
                     if(d && d.eid) {
-                        document.getElementById("tokenDiagnostics").innerHTML += `<span class="diag-pill diag-ok">${tk.nombre}</span>`;
-                        // Carga de unidades aquí sin bloquear tabla principal
+                        diag.innerHTML += `<span class="diag-pill diag-ok">${tk.nombre}: OK</span>`;
                     } else {
-                        document.getElementById("tokenDiagnostics").innerHTML += `<span class="diag-pill diag-error">${tk.nombre}</span>`;
+                        diag.innerHTML += `<span class="diag-pill diag-error">${tk.nombre}: Error</span>`;
                     }
                     script.remove();
                 };
@@ -145,12 +154,23 @@
                 <td><input class="table-input" value="${v.operador||''}" onblur="db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase())"></td>
                 <td>${v.origen || ''} ➔ ${v.destino || ''}</td>
                 <td><textarea class="table-input" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores || ''}</textarea></td>
-                <td><span class="badge" style="background:${estatusData[v.estatus]?.col || '#666'}">${estatusData[v.estatus]?.nombre || 'En Ruta'}</span></td>
-                <td><small class="text-muted">Firebase Active</small></td>
+                <td><span class="badge bg-primary">En Ruta</span></td>
+                <td><small class="text-muted">Firebase Online</small></td>
                 <td><button class="btn btn-success btn-sm"><i class="fa-brands fa-whatsapp"></i></button></td>
             </tr>`;
         });
         tbody.innerHTML = html;
+    }
+
+    function registrarViaje() {
+        const u = document.getElementById("nv_u").value.toUpperCase();
+        if(!u) return;
+        db.ref('viajes_activos/M' + Date.now()).set({ 
+            unidadN: u, 
+            operador: document.getElementById("nv_o").value.toUpperCase(), 
+            estatus: "s1" 
+        });
+        bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
     }
 
     function toggleMap() { 
