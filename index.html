@@ -9,7 +9,7 @@
     
     <style>
         body { background: #002a61; color: white; font-family: sans-serif; }
-        .login-card { background: white; color: #333; width: 400px; border-radius: 20px; padding: 35px; margin: 15vh auto; }
+        .login-card { background: white; color: #333; width: 420px; border-radius: 20px; padding: 40px; margin: 15vh auto; }
         #dashboard { display:none; background: #f4f7f6; color: #333; min-height: 100vh; padding: 20px; }
         .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; }
     </style>
@@ -19,17 +19,17 @@
 <div id="loginOverlay">
     <div class="login-card shadow-lg text-center">
         <h3 class="text-primary fw-bold mb-3">Logística Cloud</h3>
-        <p class="text-muted small mb-4">Ingresa tu token para autorizar la conexión</p>
+        <p class="text-muted small mb-4">Ingresa tu token para autorizar la flota</p>
         <input type="password" id="token" class="form-control mb-3 text-center" placeholder="Pega tu Wialon Token aquí">
-        <button onclick="autorizarYConectar()" id="btnIngresar" class="btn btn-primary w-100 fw-bold">Autorizar y Sincronizar</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Esperando credenciales...</div>
+        <button onclick="autorizar()" id="btnIngresar" class="btn btn-primary w-100 fw-bold">AUTORIZAR Y CONECTAR</button>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Esperando token...</div>
     </div>
 </div>
 
 <div id="dashboard">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold text-primary m-0">BITÁCORA LOGÍSTICA REAL-TIME</h4>
-        <button onclick="exportarExcel()" class="btn btn-success btn-sm fw-bold shadow-sm">📥 Descargar Reporte</button>
+        <h4 class="fw-bold text-primary m-0">BITÁCORA LOGÍSTICA EN TIEMPO REAL</h4>
+        <button onclick="exportarExcel()" class="btn btn-success btn-sm fw-bold shadow-sm">📥 Descargar Excel</button>
     </div>
     <div class="card shadow-sm border-0">
         <div class="table-responsive">
@@ -37,7 +37,7 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Unidad</th><th>Cliente</th><th>Subcliente</th><th>Origen</th><th>Destino</th>
-                        <th>Estatus</th><th>Contenedores</th><th>Velocidad</th><th>Ubicación</th><th>GPS</th>
+                        <th>Estatus</th><th>Contenedores</th><th>Velocidad</th><th>Dirección Actual</th><th>Estado</th>
                     </tr>
                 </thead>
                 <tbody id="units-body"></tbody>
@@ -47,33 +47,39 @@
 </div>
 
 <script type="text/javascript">
-    // 1. FIREBASE (Configuración verificada: image_d0861e.png)
+    // 1. CONFIGURACIÓN FIREBASE (URL Verificada: image_d0861e.png)
     const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 2. FUNCIÓN DE AUTORIZACIÓN (Tu lógica de Token Primero)
-    async function autorizarYConectar() {
+    // 2. PROCESO DE AUTORIZACIÓN (Tu flujo solicitado)
+    function autorizar() {
         const tokenValue = document.getElementById("token").value;
         if (!tokenValue) return alert("Por favor, ingresa tu token");
 
-        document.getElementById("status").innerText = "Validando Token e inyectando SDK...";
+        document.getElementById("status").innerText = "Validando acceso con Wialon...";
         document.getElementById("status").className = "mt-3 small fw-bold text-warning";
 
-        // Inyectamos el SDK dinámicamente solo cuando hay un token
+        // Inyectamos el SDK dinámicamente solo al presionar el botón
         const script = document.createElement('script');
-        script.src = "https://sdk.wialon.com/library/js/wialon.js"; // Usamos la ruta más estable
+        // Usamos la ruta oficial que usa el Playground para asegurar compatibilidad
+        script.src = "https://hst-api.wialon.com/wscommon/js/wialon.js"; 
+        
         script.onload = () => {
-            console.log("SDK Cargado tras token");
-            realizarLogin(tokenValue);
+            console.log("SDK Inyectado exitosamente");
+            conectar(tokenValue);
         };
+        
         script.onerror = () => {
-            alert("Error crítico: No se pudo cargar la librería de Wialon. Revisa tu conexión.");
+            document.getElementById("status").innerText = "Error crítico de conexión ❌";
+            document.getElementById("status").className = "mt-3 small text-danger fw-bold";
+            alert("El navegador bloqueó la librería de Wialon. Intenta en modo incógnito.");
         };
+        
         document.head.appendChild(script);
     }
 
-    function realizarLogin(token) {
+    function conectar(token) {
         if (typeof wialon === 'undefined') return;
         
         const sess = wialon.core.Session.getInstance();
@@ -82,15 +88,15 @@
         sess.loginToken(token, "", (code) => {
             if (code) {
                 alert("Error de Acceso: " + wialon.core.Errors.getErrorText(code));
-                document.getElementById("status").innerText = "Token Inválido ❌";
+                document.getElementById("status").innerText = "Token rechazado por el servidor ❌";
                 return;
             }
             
-            // Éxito: Pasamos al Panel
+            // Éxito: Pasamos al Panel Maestro
             document.getElementById("loginOverlay").style.display = "none";
             document.getElementById("dashboard").style.display = "block";
             
-            // Cargamos la flota
+            // Cargar unidades
             sess.loadLibrary("itemUnit");
             sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
                 renderizarTabla();
@@ -121,15 +127,16 @@
                         <option value="Disponible">Disponible</option>
                         <option value="En Tránsito">En Tránsito</option>
                         <option value="Cargando">Cargando</option>
+                        <option value="Descargando">Descargando</option>
                     </select>
                 </td>
                 <td><input id="con_${id}" class="table-input" onchange="save('${id}','contenedores',this.value)"></td>
                 <td class="fw-bold text-dark">${speed} km/h</td>
-                <td id="addr_${id}" style="font-size:0.7rem; color:#666">Obteniendo...</td>
+                <td id="addr_${id}" style="font-size:0.7rem; color:#666">Obteniendo dirección...</td>
                 <td><span class="badge ${mov?'bg-success':'bg-danger'}">${mov?'MOV':'STOP'}</span></td>
             </tr>`;
             
-            // Pedir dirección real
+            // Obtener dirección real (Geocodificación)
             if (pos) {
                 wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], (code, addr) => {
                     const el = document.getElementById(`addr_${id}`);
@@ -137,7 +144,7 @@
                 });
             }
 
-            // Sincronizar con tu Firebase independiente
+            // Sincronizar con Firebase por ID único
             db.ref('viajes/' + id).once('value', (s) => {
                 const v = s.val();
                 if (v) {
