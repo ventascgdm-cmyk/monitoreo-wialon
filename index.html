@@ -64,7 +64,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v8.0</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v9.0</div>
     </div>
 </div>
 
@@ -280,7 +280,9 @@
         let tree = { "Sin_Cliente": { "N/A": [] } };
         
         Object.keys(dataClientes).forEach(cId => { tree[cId] = { "N/A": [] }; if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []); });
-        Object.keys(viajesActivos).forEach(vId => { let v = viajesActivos[vId], u = unidadesGlobales[vId] || null; let cId = v.cliente || "Sin_Cliente", sId = v.subcliente || "N/A"; if(!tree[cId]) tree[cId] = { "N/A": [] }; if(!tree[cId][sId]) tree[cId][sId] = []; tree[cId][sId].push({u, v}); });
+        
+        // AQUÍ ESTÁ LA MAGIA DEL VID (Llave Absoluta)
+        Object.keys(viajesActivos).forEach(vId => { let v = viajesActivos[vId], u = unidadesGlobales[vId] || null; let cId = v.cliente || "Sin_Cliente", sId = v.subcliente || "N/A"; if(!tree[cId]) tree[cId] = { "N/A": [] }; if(!tree[cId][sId]) tree[cId][sId] = []; tree[cId][sId].push({vId, u, v}); });
 
         const headerCols = `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA (O ➔ D)</th><th>CONTENEDORES</th><th>HORARIOS</th><th>ESTATUS</th><th>GPS & UBICACIÓN</th><th>ALERTAS</th><th>HISTORIAL LOG</th><th>ACCIÓN</th></tr>`;
         
@@ -293,10 +295,10 @@
                 if(sId !== "N/A" && dataClientes[cId].subclientes) cliHtml += `<tr class="header-subcliente shadow-sm"><td colspan="10">↳ Subcliente: ${nomSub}</td></tr>`;
                 cliHtml += headerCols;
                 
-                tree[cId][sId].forEach(({u, v}) => {
+                // USAMOS vId EN LUGAR DE v.unidadN PARA CADA ACCIÓN
+                tree[cId][sId].forEach(({vId, u, v}) => {
                     let nombreCamion = v.unidadN || v.unidadFallback || "Desconocida";
                     
-                    // Match con unidad GPS si existe
                     let uIdGps = null;
                     Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === nombreCamion) uIdGps = k; });
                     let uData = unidadesGlobales[uIdGps];
@@ -312,27 +314,26 @@
                     let mapsLink = pos ? `https://maps.google.com/?q=$${pos.y},${pos.x}` : '#';
                     let colEstatus = estatusData[v.estatus]?.col || '#fff'; let colText = (v.estatus === "s7" || v.estatus === "s8" || v.estatus === "s9" || v.estatus === "s10") ? "#000" : "#fff";
 
-                    let btnSalida = `<button class="btn btn-outline-success btn-sm w-100 py-0 mb-1 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${v.unidadN}', 'Marcó hora de SALIDA'); db.ref('viajes_activos/${v.unidadN}/t_salida').set(Date.now());">${v.t_salida ? formatTimeFriendly(v.t_salida/1000) : 'Salida'}</button>`;
-                    let btnArribo = `<button class="btn btn-outline-danger btn-sm w-100 py-0 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${v.unidadN}', 'Marcó hora de ARRIBO'); db.ref('viajes_activos/${v.unidadN}/t_arribo').set(Date.now());">${v.t_arribo ? formatTimeFriendly(v.t_arribo/1000) : 'Arribo'}</button>`;
+                    let btnSalida = `<button class="btn btn-outline-success btn-sm w-100 py-0 mb-1 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${vId}', 'INICIÓ VIAJE'); db.ref('viajes_activos/${vId}/t_salida').set(Date.now());">${v.t_salida ? formatTimeFriendly(v.t_salida/1000) : 'Salida'}</button>`;
+                    let btnArribo = `<button class="btn btn-outline-danger btn-sm w-100 py-0 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${vId}', 'Marcó hora de ARRIBO'); db.ref('viajes_activos/${vId}/t_arribo').set(Date.now());">${v.t_arribo ? formatTimeFriendly(v.t_arribo/1000) : 'Arribo'}</button>`;
                     
                     let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
-                    let lastLog = logsArr.length > 0 ? `<div class="text-start mb-1 text-truncate" style="font-size:0.60rem; line-height:1.1; color:#444; max-width: 140px;"><b class="text-primary">${logsArr[0].usr}:</b> ${logsArr[0].act}</div>` : `<div style="font-size:0.6rem; color:#888;">Sin eventos</div>`;
+                    let lastLog = logsArr.length > 0 ? `<div class="text-start mb-1 text-wrap" style="font-size:0.60rem; line-height:1.1; color:#444; max-width: 140px;"><b class="text-primary">${logsArr[0].usr}:</b> ${logsArr[0].act}</div>` : `<div style="font-size:0.6rem; color:#888;">Sin eventos</div>`;
 
-                    // UBICACIÓN EDITABLE
-                    let ubiControl = isLost ? `<input class="form-control form-control-sm text-center text-uppercase p-0 mt-1 shadow-sm border-danger" style="font-size:0.60rem; height:20px;" value="${v.ubicacion_manual||''}" placeholder="Escribir ubicación..." onblur="if(this.value !== '${v.ubicacion_manual||''}'){ registrarLog('${v.unidadN}', 'Ubicación manual', this.value); db.ref('viajes_activos/${v.unidadN}/ubicacion_manual').set(this.value.toUpperCase()); }">` : `<a href="${mapsLink}" target="_blank" class="addr-link addr-span-${geoKey}" title="Abrir en Maps"><i class="fa-solid fa-map-location-dot"></i> ${addr}</a>`;
+                    let ubiControl = isLost ? `<input class="form-control form-control-sm text-center text-uppercase p-0 mt-1 shadow-sm border-danger" style="font-size:0.60rem; height:20px;" value="${v.ubicacion_manual||''}" placeholder="Escribir ubicación..." onblur="if(this.value !== '${v.ubicacion_manual||''}'){ registrarLog('${vId}', 'Ubicación manual', this.value); db.ref('viajes_activos/${vId}/ubicacion_manual').set(this.value.toUpperCase()); }">` : `<a href="${mapsLink}" target="_blank" class="addr-link addr-span-${geoKey}" title="Abrir en Maps"><i class="fa-solid fa-map-location-dot"></i> ${addr}</a>`;
 
                     let searchData = `${nombreCamion} ${drv} ${v.origen} ${v.destino} ${v.contenedores} ${cliData.nombre} ${nomSub} ${estatusData[v.estatus]?.nombre}`.toLowerCase();
 
                     cliHtml += `<tr class="data-row ${isLost?'lost-connection-row':''}" data-search="${searchData}">
                         <td style="min-width: 90px; vertical-align: middle;">${uText}</td>
-                        <td style="vertical-align: middle;"><input class="table-input border rounded p-1" value="${drv}" onblur="if(this.value.toUpperCase() !== '${drv.toUpperCase()}'){ registrarLog('${v.unidadN}', 'Cambió Operador', this.value); db.ref('viajes_activos/${v.unidadN}/operador').set(this.value.toUpperCase()); }"></td>
+                        <td style="vertical-align: middle;"><input class="table-input border rounded p-1" value="${drv}" onblur="if(this.value.toUpperCase() !== '${drv.toUpperCase()}'){ registrarLog('${vId}', 'Cambió Operador', this.value); db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase()); }"></td>
                         <td style="min-width:160px; vertical-align: middle;">
-                            <div class="input-group input-group-sm mb-1 border rounded"><span class="input-group-text">O</span><input class="form-control ruta-input text-uppercase" value="${v.origen||''}" onblur="db.ref('viajes_activos/${v.unidadN}/origen').set(this.value.toUpperCase())"></div>
-                            <div class="input-group input-group-sm border rounded"><span class="input-group-text">D</span><input class="form-control ruta-input text-uppercase" value="${v.destino||''}" onblur="db.ref('viajes_activos/${v.unidadN}/destino').set(this.value.toUpperCase())"></div>
+                            <div class="input-group input-group-sm mb-1 border rounded"><span class="input-group-text">O</span><input class="form-control ruta-input text-uppercase" value="${v.origen||''}" onblur="db.ref('viajes_activos/${vId}/origen').set(this.value.toUpperCase())"></div>
+                            <div class="input-group input-group-sm border rounded"><span class="input-group-text">D</span><input class="form-control ruta-input text-uppercase" value="${v.destino||''}" onblur="db.ref('viajes_activos/${vId}/destino').set(this.value.toUpperCase())"></div>
                         </td>
-                        <td style="vertical-align: middle;"><textarea class="table-input border rounded p-1 text-uppercase" style="min-height: 50px;" onblur="db.ref('viajes_activos/${v.unidadN}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
+                        <td style="vertical-align: middle;"><textarea class="table-input border rounded p-1 text-uppercase" style="min-height: 50px;" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
                         <td style="vertical-align: middle; min-width: 90px;">${btnSalida}${btnArribo}</td>
-                        <td style="vertical-align: middle;"><select class="form-select status-select" style="background:${colEstatus}; color:${colText};" onchange="registrarLog('${v.unidadN}', 'Cambió estatus a', this.options[this.selectedIndex].text); db.ref('viajes_activos/${v.unidadN}/estatus').set(this.value)">${Object.keys(estatusData).map(k=>`<option value="${k}" ${v.estatus===k?'selected':''}>${estatusData[k].nombre}</option>`).join('')}</select></td>
+                        <td style="vertical-align: middle;"><select class="form-select status-select" style="background:${colEstatus}; color:${colText};" onchange="registrarLog('${vId}', 'Cambió estatus a', this.options[this.selectedIndex].text); db.ref('viajes_activos/${vId}/estatus').set(this.value)">${Object.keys(estatusData).map(k=>`<option value="${k}" ${v.estatus===k?'selected':''}>${estatusData[k].nombre}</option>`).join('')}</select></td>
                         <td style="vertical-align: middle; min-width: 140px;">
                             <div class="d-flex flex-column align-items-center">
                                 <div><i class="fa-solid fa-signal text-${isLost?'danger':'success'} me-1" style="font-size:10px;"></i><span class="speed-badge" style="background-color:${isLost?'#adb5bd':speedBg};">${speed} km/h</span></div>
@@ -340,12 +341,12 @@
                             </div>
                         </td>
                         <td style="vertical-align: middle;">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.7rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.7rem;">OK</span>'}</td>
-                        <td style="min-width:130px; vertical-align: middle;">${lastLog}<button class="btn btn-dark btn-sm p-0 w-100 fw-bold" style="font-size:0.65rem;" onclick="abrirModalLog('${v.unidadN}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Ver / Añadir</button></td>
+                        <td style="min-width:130px; vertical-align: middle;">${lastLog}<button class="btn btn-dark btn-sm p-0 w-100 fw-bold" style="font-size:0.65rem;" onclick="abrirModalLog('${vId}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Ver / Añadir</button></td>
                         <td style="vertical-align: middle;">
                             <div class="d-flex flex-column gap-1 align-items-center">
                                 <button onclick="shareWA('${nombreCamion}', '${isLost?(v.ubicacion_manual||'Ubicación manual no registrada'):addr}', '${v.origen}', '${v.destino}', '${v.estatus}')" class="btn btn-outline-success btn-sm p-0" style="width: 25px; height: 25px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
-                                <button onclick="abrirEdicionViaje('${v.unidadN}', '${nombreCamion}')" class="btn btn-outline-primary btn-sm p-0" style="width: 25px; height: 25px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
-                                <button onclick="finalizarViaje('${v.unidadN}', '${nombreCamion}')" class="btn btn-outline-danger btn-sm p-0" style="width: 25px; height: 25px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
+                                <button onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-primary btn-sm p-0" style="width: 25px; height: 25px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
+                                <button onclick="finalizarViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-danger btn-sm p-0" style="width: 25px; height: 25px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>`;
@@ -354,7 +355,7 @@
             if(cliHtml !== "") html += `<tr class="header-cliente shadow"><td colspan="10">📦 CLIENTE: ${cliData.nombre}</td></tr>` + cliHtml;
         }
         tbody.innerHTML = html || '<tr><td colspan="10" class="p-5 text-muted fs-5">Aún no hay viajes activos en la bitácora.</td></tr>';
-        filtrarTablaInteligente(); // Aplicar filtro después de renderizar si hay texto
+        filtrarTablaInteligente();
     }
 
     // FILTRO INTELIGENTE INVERSO
@@ -362,7 +363,6 @@
         let t = document.getElementById("buscador").value.toLowerCase();
         let rows = Array.from(document.querySelectorAll("#mainTable tbody tr"));
         
-        // Paso 1: Mostrar/Ocultar filas de datos
         rows.forEach(r => {
             if(r.classList.contains("data-row")) {
                 let sData = r.getAttribute("data-search") || "";
@@ -370,7 +370,6 @@
             }
         });
 
-        // Paso 2: Escaneo inverso para ocultar encabezados sin hijos visibles
         let datosVisiblesSub = 0, datosVisiblesCli = 0;
         for (let i = rows.length - 1; i >= 0; i--) {
             let r = rows[i];
@@ -380,10 +379,10 @@
                 r.style.display = datosVisiblesSub > 0 ? "" : "none";
             } else if (r.classList.contains("header-subcliente")) {
                 r.style.display = datosVisiblesSub > 0 ? "" : "none";
-                datosVisiblesSub = 0; // Reset
+                datosVisiblesSub = 0; 
             } else if (r.classList.contains("header-cliente")) {
                 r.style.display = datosVisiblesCli > 0 ? "" : "none";
-                datosVisiblesCli = 0; // Reset
+                datosVisiblesCli = 0; 
             }
         }
     }
@@ -397,16 +396,13 @@
             let u = unidadesGlobales[uIdGps]; 
             
             if(u && u.pos) {
-                // Redondeamos coordenadas a 3 decimales (~111 metros) para usar memoria caché si está estacionado
                 let geoKey = `${u.pos.y.toFixed(3)}_${u.pos.x.toFixed(3)}`;
                 
                 if(!geocodeCache[geoKey]) {
-                    // Solo agregamos a la cola si no está ya esperando
                     if(!geoQueue.find(i => i.key === geoKey)) {
                         geoQueue.push({ key: geoKey, y: u.pos.y, x: u.pos.x });
                     }
                 } else {
-                    // Ya está en caché, pintamos directo
                     let els = document.querySelectorAll(`.addr-span-${geoKey}`);
                     els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${geocodeCache[geoKey]}`);
                 }
@@ -423,7 +419,6 @@
             .then(r => r.json())
             .then(d => {
                 let addrFull = d.display_name || "Sin dirección";
-                // Cortamos la dirección para que no sea inmensa (ej. Calle, Colonia, Ciudad)
                 let shortAddr = addrFull.split(",").slice(0, 3).join(",");
                 geocodeCache[item.key] = shortAddr;
                 
@@ -442,6 +437,7 @@
         document.getElementById("log_container").innerHTML = html || '<div class="text-muted text-center p-3 mt-4">Sin eventos. Escribe una nota abajo.</div>';
         new bootstrap.Modal(document.getElementById('modalLog')).show();
     }
+    
     function guardarLogManual() {
         let uId = document.getElementById("log_uid").value, txt = document.getElementById("log_txt").value.toUpperCase(); if(!txt) return;
         registrarLog(uId, "Agregó Nota", txt);
@@ -453,7 +449,8 @@
         Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === uN) uId = k; });
         if(!uId) uId = uN; 
         db.ref('viajes_activos/'+uId).set({ cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase(), unidadFallback: uN, unidadN: uN });
-        registrarLog(uId, "INICIÓ VIAJE", "Registró unidad en bitácora");
+        // AQUÍ ESTÁ LA CORRECCIÓN DE AUDITORÍA (REGISTRÓ VIAJE)
+        registrarLog(uId, "REGISTRÓ VIAJE", "Registró unidad en bitácora");
         bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); document.getElementById("nv_unidad_input").value = "";
     }
 
