@@ -3,98 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bitácora de Monitoreo - Sistema Seguro</title>
+    <title>Bitácora de Monitoreo Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --wialon-blue: #0045a5; }
         body { background-color: #f1f3f5; font-family: 'Segoe UI', sans-serif; }
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--wialon-blue); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .login-card { background: white; padding: 2.5rem; border-radius: 20px; width: 100%; max-width: 400px; }
-        #dashboard { display: none; }
+        .login-card { background: white; padding: 2rem; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #dashboard { display: none; padding-top: 20px; }
         .header-app { background: var(--wialon-blue); color: white; padding: 1rem; border-radius: 0 0 15px 15px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
     <div id="loginOverlay">
-        <div class="login-card text-center shadow-lg">
-            <h3 class="mb-3 fw-bold">Bienvenido</h3>
-            <p id="statusLabel" class="text-primary small fw-bold">Cargando componentes de seguridad...</p>
-            <input type="password" id="tokenInput" class="form-control mb-3" placeholder="Wialon API Token">
-            <button onclick="attemptLogin()" id="btnLogin" class="btn btn-primary w-100 fw-bold" disabled>Esperando SDK...</button>
+        <div class="login-card text-center">
+            <h3 class="mb-3 fw-bold">Monitor Wialon</h3>
+            <p id="status" class="text-primary small fw-bold">Iniciando seguridad...</p>
+            <input type="password" id="tokenInput" class="form-control mb-3" placeholder="Ingresa tu Wialon Token">
+            <button onclick="attemptLogin()" id="btnLogin" class="btn btn-primary w-100 fw-bold" disabled>Cargando SDK...</button>
         </div>
     </div>
 
     <div id="dashboard" class="container-fluid">
-        <div class="header-app shadow text-center">
+        <div class="header-app text-center shadow">
             <h2 class="h4 mb-0">Monitor de Flota Real-Time</h2>
         </div>
-        <div class="row">
-            <div class="col-lg-3 text-center"><canvas id="fleetChart"></canvas></div>
-            <div class="col-lg-9">
-                <div class="card p-3 table-responsive">
-                    <table class="table table-hover">
-                        <thead><tr><th>Cliente</th><th>Subcliente</th><th>Unidad</th><th>Estado</th><th>Velocidad</th></tr></thead>
-                        <tbody id="unitList"></tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="card p-3 shadow-sm table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>Cliente</th><th>Subcliente</th><th>Unidad</th><th>Estado</th><th>Velocidad</th></tr>
+                </thead>
+                <tbody id="unitList"></tbody>
+            </table>
         </div>
     </div>
+
+    <iframe id="wialon_sdk" src="https://hst-api.wialon.com/wscommon/js/wialon.js" style="display:none;"></iframe>
 
     <script>
         var sess = null;
 
-        // FUNCIÓN CLAVE: Inyectar el script manualmente para evadir bloqueos
-        function injectWialon() {
-            var script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = 'https://hst-api.wialon.com/wscommon/js/wialon.js';
-            script.onload = function() {
-                console.log("SDK Cargado");
-                initSess();
+        // Intentar capturar el SDK desde diferentes fuentes si falla
+        function loadSDK() {
+            const script = document.createElement('script');
+            // Usamos la URL que suele ser más permitida por firewalls
+            script.src = "https://hst-api.wialon.com/wscommon/js/wialon.js";
+            script.onload = () => {
+                if (typeof wialon !== 'undefined') {
+                    sess = wialon.core.Session.getInstance();
+                    document.getElementById('status').innerText = "Sistema Listo";
+                    document.getElementById('status').className = "text-success small fw-bold";
+                    document.getElementById('btnLogin').disabled = false;
+                    document.getElementById('btnLogin').innerText = "Entrar al Sistema";
+                }
             };
-            script.onerror = function() {
-                document.getElementById('statusLabel').innerText = "Error de conexión. Reintentando...";
-                setTimeout(injectWialon, 2000);
+            script.onerror = () => {
+                document.getElementById('status').innerText = "Reintentando conexión segura...";
+                setTimeout(loadSDK, 3000);
             };
             document.head.appendChild(script);
         }
 
-        function initSess() {
-            if (typeof wialon !== 'undefined') {
-                sess = wialon.core.Session.getInstance();
-                document.getElementById('statusLabel').innerText = "Sistema Listo";
-                document.getElementById('btnLogin').disabled = false;
-                document.getElementById('btnLogin').innerText = "Entrar al Sistema";
-            }
-        }
-
-        window.onload = injectWialon;
+        window.onload = loadSDK;
 
         function attemptLogin() {
             const token = document.getElementById('tokenInput').value;
             const btn = document.getElementById('btnLogin');
-            
+            if(!token) return;
+
             btn.disabled = true;
-            btn.innerText = "Validando...";
+            btn.innerText = "Conectando...";
 
             sess.initSession("https://hst-api.wialon.com");
             sess.loginToken(token, "", (code) => {
                 if (code) {
-                    alert("Error " + code + ": " + wialon.core.Errors.getErrorText(code));
+                    alert("Error: " + code);
                     btn.disabled = false;
                     btn.innerText = "Entrar al Sistema";
                     return;
                 }
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
-                startApp();
+                startMonitoring();
             });
         }
 
-        function startApp() {
+        function startMonitoring() {
             sess.loadLibrary("itemUnit");
             sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
                 render();
@@ -106,17 +101,19 @@
             const units = sess.getItems("avl_unit") || [];
             const tbody = document.getElementById('unitList');
             tbody.innerHTML = "";
+            
             units.forEach(u => {
                 const id = u.getId();
                 const pos = u.getPosition();
                 const moving = pos && pos.s > 0;
+                
                 tbody.innerHTML += `
                     <tr>
-                        <td><input class="form-control form-control-sm" value="${localStorage.getItem('c_'+id)||''}" onchange="localStorage.setItem('c_${id}', this.value)"></td>
-                        <td><input class="form-control form-control-sm" value="${localStorage.getItem('s_'+id)||''}" onchange="localStorage.setItem('s_${id}', this.value)"></td>
-                        <td>${u.getName()}</td>
+                        <td><input class="form-control form-control-sm border-0 bg-light" value="${localStorage.getItem('c_'+id)||''}" onchange="localStorage.setItem('c_${id}', this.value)" placeholder="Cliente"></td>
+                        <td><input class="form-control form-control-sm border-0 bg-light" value="${localStorage.getItem('s_'+id)||''}" onchange="localStorage.setItem('s_${id}', this.value)" placeholder="Sub"></td>
+                        <td class="fw-bold">${u.getName()}</td>
                         <td><span class="badge ${moving ? 'bg-success' : 'bg-danger'}">${moving ? 'MOV' : 'STOP'}</span></td>
-                        <td>${pos ? pos.s : 0} km/h</td>
+                        <td class="text-primary fw-bold">${pos ? pos.s : 0} km/h</td>
                     </tr>`;
             });
         }
