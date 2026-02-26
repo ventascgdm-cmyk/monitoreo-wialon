@@ -2,173 +2,84 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Bitácora Logística - Acceso Directo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    
-    <script type="text/javascript" src="https://hst-api.wialon.com/wscommon/js/wialon.js"></script>
-
-    <style>
-        body { background: #001f4d; color: white; font-family: sans-serif; }
-        .login-card { background: white; color: #333; width: 400px; border-radius: 20px; padding: 40px; margin: 12vh auto; }
-        #dashboard { display:none; background: #f4f7f6; color: #333; min-height: 100vh; padding: 20px; }
-        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; }
-    </style>
+    <title>Wialon Playground</title>
 </head>
 <body>
+<style>
+.panel {
+	position: absolute;
+	border: 1px solid #76BBFF;
+	padding: 5px;
+	box-sizing: border-box;
+}
 
-<div id="loginOverlay">
-    <div class="login-card shadow-lg text-center">
-        <h3 class="text-primary fw-bold mb-3">Logística Cloud</h3>
-        <p class="text-muted small mb-4">Ingresa tus credenciales de Wialon</p>
-        
-        <input type="text" id="user" class="form-control mb-3 text-center" placeholder="Usuario">
-        <input type="password" id="pass" class="form-control mb-3 text-center" placeholder="Contraseña">
-        
-        <button onclick="loginDirecto()" class="btn btn-primary w-100 fw-bold py-2">ENTRAR AL PANEL</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Esperando conexión...</div>
-    </div>
-</div>
+.header {
+	left: 0;
+	top: 0;
+	height: 40px;
+	right: 0;
+	background: #CAECF7;
+}
 
-<div id="dashboard">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold text-primary m-0">BITÁCORA LOGÍSTICA REAL-TIME</h4>
-        <button onclick="exportarExcel()" class="btn btn-success btn-sm fw-bold">📥 Reporte Excel</button>
-    </div>
-    <div class="card shadow-sm border-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 text-center">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Unidad</th><th>Cliente</th><th>Subcliente</th><th>Origen</th><th>Destino</th>
-                        <th>Estatus</th><th>Contenedores</th><th>Velocidad</th><th>Ubicación</th><th>GPS</th>
-                    </tr>
-                </thead>
-                <tbody id="units-body"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
+.footer {
+	left: 0;
+	bottom: 0;
+	height: 40px;
+	right: 0;
+	background: #CAECF7;
+}
+
+.left {
+	left: 0;
+	top: 41px;
+	bottom: 41px;
+	width: 120px;
+	background: #A7E2FF;
+}
+
+.right {
+	right: 0;
+	top: 41px;
+	bottom: 41px;
+	width: 280px;
+	background: #A7E2FF;
+}
+
+.content {
+	left: 121px;
+	top: 41px;
+	bottom: 41px;
+	right: 281px;
+	background: #D6F1FF;
+	overflow: hidden;
+	text-align: justify;
+	text-overflow: ellipsis;
+}
+
+.remark {
+	font-size: 10px;
+	font-style: italic;
+	color: #666;
+}
+
+</style>
+
+
+		<div class="panel header"><span class="remark">Header block.</span> Some monitoring company.</div>
+		<div class="panel left"><span class="remark">Left block</span></div>
+		<div class="panel content"><span class="remark">Content block.</span><br />
+Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
+		</div>
+		<div class="panel right"><span class="remark">Right block</span><br />
+			<!-- paste this to your company's site -->
+			<iframe name="simple_form" src="//hosting.wialon.com/login_simple.html?cms_url=http://cms.wialon.com&cms_title=CMS&lite_url=http://lite.wialon.com&mobile_url=http://m.wialon.com&demo_title=Demo login&demo_url=http://hosting.wialon.com/?token=5dce19710a5e26ab8b7b8986cb3c49e54E9D73F9D2D2C1A4808D6F032006CE3267346C30&title=Monitoring&lang=en" scrolling="no" style="width: 230px; height: 290px; border: 0; margin: 10px;"></iframe>
+			<!-- paste this to your company's site -->
+		</div>
+		<div class="panel footer"><span class="remark">Footer block</span></div>
+    
 
 <script type="text/javascript">
-    // 1. CONFIGURACIÓN FIREBASE (Confirmada)
-    const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
 
-    let sess = null;
-
-    // 2. LOGIN DIRECTO CON USUARIO Y CONTRASEÑA
-    function loginDirecto() {
-        const user = document.getElementById("user").value;
-        const pass = document.getElementById("pass").value;
-        
-        if (!user || !pass) return alert("Ingresa usuario y contraseña");
-
-        document.getElementById("status").innerText = "Autenticando...";
-        
-        // Inicializamos sesión
-        if (typeof wialon === 'undefined') {
-            alert("El SDK sigue bloqueado. Refresca la página.");
-            return;
-        }
-
-        sess = wialon.core.Session.getInstance();
-        sess.initSession("https://hst-api.wialon.com");
-        
-        // Autenticación por usuario y contraseña
-        sess.login(user, pass, "", (code) => {
-            if (code) {
-                alert("Error: " + wialon.core.Errors.getErrorText(code));
-                return;
-            }
-            
-            // Éxito: Mostramos el panel
-            document.getElementById("loginOverlay").style.display = "none";
-            document.getElementById("dashboard").style.display = "block";
-            
-            cargarFlota();
-        });
-    }
-
-    function cargarFlota() {
-        sess.loadLibrary("itemUnit");
-        sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
-            renderTable();
-            sess.addListener("dataUpdated", renderTable);
-        });
-    }
-
-    function renderTable() {
-        const units = sess.getItems("avl_unit") || [];
-        const tbody = document.getElementById('units-body');
-        tbody.innerHTML = "";
-        
-        units.forEach(u => {
-            const id = u.getId();
-            const pos = u.getPosition();
-            const speed = pos ? pos.s : 0;
-            const mov = speed > 0;
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="fw-bold text-primary">${u.getName()}</td>
-                <td><input id="cli_${id}" class="table-input" onchange="save('${id}','cliente',this.value)"></td>
-                <td><input id="sub_${id}" class="table-input" onchange="save('${id}','subcliente',this.value)"></td>
-                <td><input id="ori_${id}" class="table-input" onchange="save('${id}','origen',this.value)"></td>
-                <td><input id="des_${id}" class="table-input" onchange="save('${id}','destino',this.value)"></td>
-                <td>
-                    <select id="est_${id}" class="table-input" onchange="save('${id}','estatus',this.value)">
-                        <option value="Disponible">Disponible</option>
-                        <option value="En Tránsito">En Tránsito</option>
-                        <option value="Cargando">Cargando</option>
-                    </select>
-                </td>
-                <td><input id="con_${id}" class="table-input" onchange="save('${id}','contenedores',this.value)"></td>
-                <td class="fw-bold">${speed} km/h</td>
-                <td id="addr_${id}" style="font-size:0.7rem; color:#666">Buscando...</td>
-                <td><span class="badge ${mov?'bg-success':'bg-danger'}">${mov?'MOV':'STOP'}</span></td>
-            `;
-            tbody.appendChild(row);
-            
-            // Geocodificación Automática
-            if (pos) {
-                wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], (code, addr) => {
-                    const el = document.getElementById(`addr_${id}`);
-                    if (el && addr) el.innerText = addr[0];
-                });
-            }
-
-            // Sincronizar con Firebase por ID único
-            db.ref('viajes/' + id).once('value', (s) => {
-                const v = s.val();
-                if (v) {
-                    if(document.getElementById(`cli_${id}`)) document.getElementById(`cli_${id}`).value = v.cliente || "";
-                    if(document.getElementById(`sub_${id}`)) document.getElementById(`sub_${id}`).value = v.subcliente || "";
-                    if(document.getElementById(`ori_${id}`)) document.getElementById(`ori_${id}`).value = v.origen || "";
-                    if(document.getElementById(`des_${id}`)) document.getElementById(`des_${id}`).value = v.destino || "";
-                    if(document.getElementById(`est_${id}`)) document.getElementById(`est_${id}`).value = v.estatus || "Disponible";
-                    if(document.getElementById(`con_${id}`)) document.getElementById(`con_${id}`).value = v.contenedores || "";
-                }
-            });
-        });
-    }
-
-    function save(id, campo, valor) { db.ref('viajes/' + id).update({ [campo]: valor }); }
-
-    function exportarExcel() {
-        let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,ORIGEN,DESTINO,ESTATUS,CONTENEDORES,VELOCIDAD,DIRECCIÓN\n";
-        document.querySelectorAll("#units-body tr").forEach(row => {
-            const i = row.querySelectorAll("input, select");
-            csv += `${row.cells[0].innerText},${i[0].value},${i[1].value},${i[2].value},${i[3].value},${i[4].value},${i[5].value},${row.cells[7].innerText},${row.cells[8].innerText.replace(/,/g, " ")}\n`;
-        });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "Bitacora_RealTime.csv";
-        link.click();
-    }
 </script>
 </body>
 </html>
