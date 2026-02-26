@@ -57,7 +57,10 @@
         
         .unit-name { cursor: pointer; color: #002a61; font-weight: 900; font-size: 1.15rem; letter-spacing: 0.5px; display: block; text-align: center; }
         .unit-name:hover { color: #0d6efd; text-decoration: underline; }
+        
+        /* ESTADOS DE DESCONEXIÓN */
         .lost-connection-row td { background-color: #fff5f5 !important; }
+        .external-connection-row td { background-color: #f0f8ff !important; } /* Azul sutil para externas */
         
         .speed-badge { font-size: 0.95rem; font-weight: 900; border-radius: 6px; padding: 4px 10px; text-align: center; color: white; display: inline-block; margin-bottom: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);}
         .addr-link { font-size: 0.85rem; line-height: 1.2; color: #0d6efd; text-decoration: none; display: block; width: 100%; margin: 0 auto; font-weight: 700; text-align: center; transition: 0.2s;}
@@ -82,7 +85,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v10.5 (Estabilidad)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v10.5</div>
     </div>
 </div>
 
@@ -168,7 +171,7 @@
     </div>
 </div></div></div>
 
-<div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">REGISTRAR UNIDAD</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small"><label>Unidad GPS:</label><input type="text" class="form-control form-control-sm mb-2 border-primary fw-bold" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off" placeholder="Selecciona o escribe el nombre exacto..."><label>Operador:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2" list="listaConductores" autocomplete="off"><div class="row mb-2"><div class="col-6"><label>Cliente:</label><select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div><div class="col-6"><label>Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select></div></div><div class="row"><div class="col-6"><label>Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" list="listaGeocercas"></div><div class="col-6"><label>Destino:</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" list="listaGeocercas"></div></div><button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2">REGISTRAR EN BITÁCORA</button></div></div></div></div>
+<div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">REGISTRAR UNIDAD</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small"><label>Unidad GPS:</label><input type="text" class="form-control form-control-sm mb-2 border-primary fw-bold" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off" placeholder="Escribe o selecciona (Wialon / Externa)..."><label>Operador:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2" list="listaConductores" autocomplete="off"><div class="row mb-2"><div class="col-6"><label>Cliente:</label><select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div><div class="col-6"><label>Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select></div></div><div class="row"><div class="col-6"><label>Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" list="listaGeocercas"></div><div class="col-6"><label>Destino:</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" list="listaGeocercas"></div></div><button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2">REGISTRAR EN BITÁCORA</button></div></div></div></div>
 <div class="modal fade" id="modalEditarViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-success text-white"><h6>EDITAR VIAJE: <span id="edU_name"></span></h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small"><input type="hidden" id="edU_id"><div class="row mb-2"><div class="col-6"><label>Cliente:</label><select id="ed_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('ed_subcliente', this.value)"></select></div><div class="col-6"><label>Subcliente:</label><select id="ed_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select></div></div><div class="row mb-2"><div class="col-6"><label>Origen:</label><input type="text" id="ed_origen" class="form-control form-control-sm" list="listaGeocercas"></div><div class="col-6"><label>Destino:</label><input type="text" id="ed_destino" class="form-control form-control-sm" list="listaGeocercas"></div></div><label>Operador:</label><input type="text" id="ed_operador" class="form-control form-control-sm mb-3" list="listaConductores"><button onclick="guardarEdicionViaje()" class="btn btn-success btn-sm w-100 fw-bold">ACTUALIZAR DATOS</button></div></div></div></div>
 <div class="modal fade" id="modalLog" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-dark text-white"><h6 class="modal-title fw-bold"><i class="fa-solid fa-list-ul"></i> HISTORIAL: <span id="log_uName"></span></h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-2"><div id="log_container" class="mb-3 border rounded p-2 bg-light" style="height:250px; overflow-y:auto; font-size:0.75rem;"></div><input type="hidden" id="log_uid"><div class="input-group"><input type="text" id="log_txt" class="form-control form-control-sm text-uppercase border-primary" placeholder="Escribe un evento o nota manual..."><button class="btn btn-primary btn-sm fw-bold" onclick="guardarLogManual()"><i class="fa-solid fa-paper-plane"></i></button></div></div></div></div></div>
 
@@ -185,6 +188,7 @@
     let estadoTokens = {}; 
     let datosAgrupadosGlobal = {}; 
 
+    // SISTEMA GEOCODING NOMINATIM Y CACHÉ
     let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
     let geoQueue = [];
     let isGeocoding = false;
@@ -266,21 +270,20 @@
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
 
-    // PLANILLA WHATSAPP EXACTA CONCATENADA (Petición Cumplida)
+    // PLANILLA WHATSAPP EXACTA CONCATENADA
     function shareWA(u, loc, o, d, est, cont, cli, sub, vel, posY, posX) { 
         let estNombre = window.estatusData[est]?.nombre || "En Trayecto"; 
         let subText = sub !== 'N/A' ? ` -> ${sub}` : '';
-        let mapLink = posY && posX ? `https://maps.google.com/?q=${posY},${posX}` : `${loc}`;
+        let mapLink = posY && posX ? `\n📍 *Ubicación:* https://maps.google.com/?q=LAT,LON{posY},${posX}` : `\n📍 *Ubicación:* ${loc}`;
         
         let text = `🛰️REPORTE GCOM GPS:🛰️\n` +
                    `${cli}${subText}\n\n` +
-                   `🚛 Unidad: ${u}\n` +
-                   `📦 Contenedores: ${cont||'N/A'}\n` +
-                   `📍 Ubicación: ${mapLink}\n` +
-                   `⏱️ Vel: ${vel} km/h\n` +
-                   `🚦 Estatus: ${estNombre}\n` +
-                   `🏁 Origen: ${o||'N/A'} -> Destino: ${d||'N/A'}\n\n` +
-                   `_Reporte generado por sistema C4_`;
+                   `🚛 *Unidad:* ${u}\n` +
+                   `📦 *Contenedores:* ${cont||'N/A'}` + 
+                   mapLink + `\n` +
+                   `⏱️ *Vel:* ${vel} km/h\n` +
+                   `🚦 *Estatus:* ${estNombre}\n` +
+                   `🏁 *Ruta:* ${o||'N/A'} -> Destino: ${d||'N/A'}`;
                    
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); 
     }
@@ -291,21 +294,19 @@
         
         let txt = `🛰️REPORTE GCOM GPS:🛰️\n${titulo}\n\n`;
                   
-        arrViajes.forEach(({v, u}) => {
+        arrViajes.forEach(({v, u, isExt}) => {
             let name = v.unidadN || "Desconocida";
             let est = window.estatusData[v.estatus]?.nombre || "En Trayecto";
             let pos = u ? u.pos : null; let vel = pos ? pos.s : 0;
-            let mapLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : (v.ubicacion_manual || "Manual");
+            let mapLink = pos ? `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}` : (v.ubicacion_manual || "Manual");
             
-            txt += `🚛 Unidad: ${name}\n` +
-                   `📦 Contenedores: ${v.contenedores||'N/A'}\n` +
-                   `📍 Ubicación: ${mapLink}\n` +
-                   `⏱️ Vel: ${vel} km/h\n` +
-                   `🚦 Estatus: ${est}\n` +
-                   `🏁 Origen: ${v.origen||'N/A'} -> Destino: ${v.destino||'N/A'}\n\n`;
+            txt += `🚛 *Unidad:* ${name}\n` +
+                   `📦 *Contenedores:* ${v.contenedores||'N/A'}\n` +
+                   `📍 *Ubicación:* ${mapLink}\n` +
+                   `⏱️ *Vel:* ${vel} km/h\n` +
+                   `🚦 *Estatus:* ${est}\n` +
+                   `🏁 *Ruta:* ${v.origen||'N/A'} -> Destino: ${v.destino||'N/A'}\n\n`;
         });
-        txt += `_Reporte generado por sistema C4_`;
-        
         window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
     }
 
@@ -413,12 +414,12 @@
         renderStatusTokens(); renderizarBitacora(); desencadenarGeocoding(); if(mapVisible) actualizarMarcadoresMapa();
     }
 
-    // GEOCODIFICACIÓN EXACTA (Tu código clásico + Geocercas Nativas)
+    // GEOCODIFICACIÓN (GEOCERCAS LOCALES + NOMINATIM AUTO-ARRIBO)
     function desencadenarGeocoding() {
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId];
             
-            // EMPAREJAMIENTO ROBUSTO (Ignora guiones y espacios en el nombre para evitar Modo Offline Falso)
+            // EMPAREJAMIENTO PERFECTO (Respeta guiones, solo quita espacios dobles)
             let nombreCamion = (v.unidadN || v.unidadFallback || "").trim().toUpperCase();
             let uIdGps = null;
             Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name.trim() === nombreCamion) uIdGps = k; });
@@ -440,7 +441,7 @@
                     return; 
                 }
 
-                // 2. NOMINATIM CLÁSICO (Con fila de espera anti-baneo)
+                // 2. NOMINATIM CLÁSICO (Fila de espera de 1 segundo)
                 let geoKey = `${u.pos.y.toFixed(4)}_${u.pos.x.toFixed(4)}`;
                 if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) {
                     geoQueue.push({ key: geoKey, y: u.pos.y, x: u.pos.x, vId: vId, dest: v.destino });
@@ -451,7 +452,7 @@
                     let a = geocodeCache[geoKey];
                     if(v.destino && !v.t_arribo && a.toUpperCase().includes(v.destino.toUpperCase())) {
                         db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now());
-                        registrarLog(vId, 'Arribo Automático (Por Caché GPS)');
+                        registrarLog(vId, 'Arribo Automático (Calle GPS)');
                     }
                 }
             }
@@ -463,14 +464,12 @@
         isGeocoding = true;
         let item = geoQueue.shift();
         
-        // Petición clásica a Nominatim (Tu código original)
+        // PETICIÓN CLÁSICA A NOMINATIM (1 Petición / segundo = Cero bloqueos)
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=16`)
             .then(r => r.json())
             .then(d => {
-                // Usamos el display_name completo como en tu ejemplo original
                 let fullAddr = d.display_name || "Sin dirección";
                 
-                // Lo cortamos ligeramente para que no desborde la tabla, máximo 4 partes
                 let parts = fullAddr.split(",");
                 if(parts.length > 4) fullAddr = parts.slice(0, 4).join(",");
                 
@@ -483,7 +482,7 @@
                 let elId = document.getElementById("addr_" + item.vId);
                 if(elId) elId.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${fullAddr}`;
 
-                // TU LÓGICA DE AUTO-ARRIBO
+                // AUTO-ARRIBO INTELIGENTE
                 if(item.dest && fullAddr.toUpperCase().includes(item.dest.toUpperCase())) {
                     let v = viajesActivos[item.vId];
                     if(v && !v.t_arribo) {
@@ -561,20 +560,28 @@
                 tree[cId][sId].forEach(({vId, u, v}) => {
                     let nombreCamion = (v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
                     
+                    // LECTURA DE PLATAFORMA EXTERNA VS WIALON
                     let uIdGps = null; Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name.trim() === nombreCamion) uIdGps = k; });
                     let uData = unidadesGlobales[uIdGps];
                     
-                    let pos = uData ? uData.pos : null; let speed = pos ? pos.s : 0; let isLost = !pos; 
-                    let geoKey = pos ? `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}` : 'none';
+                    let isExternal = !uData; // Si no está en Wialon es Plataforma Externa
+                    let pos = uData ? uData.pos : null; 
+                    let speed = pos ? pos.s : 0; 
+                    let isLost = uData && !pos; // Si está en Wialon pero apagado
                     
-                    let uText = isLost ? `<span class="unit-name text-danger" title="Sin señal GPS">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
+                    let geoKey = pos ? `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}` : 'none';
+                    let uText = (isLost || isExternal) ? `<span class="unit-name ${isExternal?'text-info':'text-danger'}" title="Sin señal Wialon">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
+                    
                     let speedBg = "#343a40"; if(speed > 0 && speed < 100) speedBg = "#198754"; if(speed >= 100) speedBg = "#dc3545"; 
                     
-                    let moveIcon = isLost ? '<i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i>' : (speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1 fs-5"></i>' : '<i class="fa-solid fa-truck text-secondary me-1 fs-5"></i>');
+                    // ICONOS DE MOVIMIENTO O DESCONEXIÓN
+                    let moveIcon = isExternal ? '<i class="fa-solid fa-globe text-info me-1 fs-6" title="Plataforma Externa"></i>' : 
+                                   (isLost ? '<i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i>' : 
+                                   (speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1 fs-5"></i>' : '<i class="fa-solid fa-truck text-secondary me-1 fs-5"></i>'));
 
                     let drvName = v.operador || ramDrivers[nombreCamion] || dbOperadores[nombreCamion] || "";
                     let addr = uData ? (geocodeCache[geoKey] || "<i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...") : "---";
-                    let mapsLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : '#';
+                    let mapsLink = pos ? `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}` : '#';
                     let posTextY = pos ? pos.y : null; let posTextX = pos ? pos.x : null;
 
                     let colEstatus = window.estatusData[v.estatus]?.col || '#000'; 
@@ -590,20 +597,26 @@
                             <span style="font-size:0.75rem;"><b class="text-primary">${logsArr[0].usr}:</b> ${logsArr[0].act} <span class="text-muted">${logsArr[0].det||''}</span></span>
                         </div>` : `<div style="font-size:0.7rem; color:#888;">Sin eventos</div>`;
 
-                    let timeAgoText = pos ? `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:700;">(hace ${timeAgo(pos.t)})</span>` : '<span class="text-danger fw-bold">Modo Offline</span>';
+                    let timeAgoText = isExternal ? '<span class="text-info fw-bold">Plataforma Externa</span>' : 
+                                      (pos ? `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:700;">(hace ${timeAgo(pos.t)})</span>` : 
+                                      '<span class="text-danger fw-bold">Modo Offline</span>');
                     
-                    let ubiControl = isLost ? 
+                    // UI DE UBICACIÓN
+                    let ubiControl = (isLost || isExternal) ? 
                         `<div class="d-flex align-items-center justify-content-center">
-                            <span class="text-danger fw-bold" style="font-size:0.75rem;"><i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL</span>
+                            <span class="${isExternal?'text-info':'text-danger'} fw-bold" style="font-size:0.75rem;">${isExternal?'<i class="fa-solid fa-globe"></i> GPS EXTERNO':'<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL'}</span>
                             <button class="btn btn-sm btn-link p-0 ms-2 text-primary" title="Editar ubicación manual" onclick="let u = prompt('Escribir ubicación manual para ${nombreCamion}:', '${v.ubicacion_manual||''}'); if(u !== null) { db.ref('viajes_activos/${vId}/ubicacion_manual').set(u.toUpperCase()); registrarLog('${vId}', 'Añadió Ubicación Manual', u.toUpperCase()); }"><i class="fa-solid fa-pencil"></i></button>
                         </div>
-                        <div style="font-size:0.75rem; color:#666; max-width:200px; margin:0 auto;" class="text-truncate">${v.ubicacion_manual||'--'}</div>` 
+                        <div style="font-size:0.85rem; color:#002a61; font-weight:bold; max-width:100%; margin:0 auto;" class="text-truncate">${v.ubicacion_manual||'--'}</div>` 
                         : `<a href="${mapsLink}" target="_blank" class="addr-link addr-span-${geoKey}" id="addr_${vId}" title="Abrir en Maps">${addr}</a>`;
 
                     let searchData = `${nombreCamion} ${drvName} ${v.origen} ${v.destino} ${v.contenedores} ${cliData.nombre} ${nomSub} ${window.estatusData[v.estatus]?.nombre}`.toLowerCase();
                     let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
-                    cliHtml += `<tr class="data-row ${isLost?'lost-connection-row':''}" data-search="${searchData}">
+                    // Fila Azul sutil para externos, Fila rojiza sutil para sin señal Wialon
+                    let rowClass = isExternal ? 'external-connection-row' : (isLost ? 'lost-connection-row' : '');
+
+                    cliHtml += `<tr class="data-row ${rowClass}" data-search="${searchData}">
                         <td class="col-unidad align-middle">${uText}</td>
                         <td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}">
                             <div class="d-flex flex-column gap-1">
@@ -635,7 +648,7 @@
                         </td>
                         <td class="col-gps align-middle">
                             <div class="d-flex flex-column align-items-center px-1">
-                                <div class="d-flex align-items-center mb-1">${moveIcon}<span class="speed-badge" style="background-color:${isLost?'#adb5bd':speedBg};">${speed} km/h</span></div>
+                                <div class="d-flex align-items-center mb-1">${moveIcon}<span class="speed-badge" style="background-color:${(isLost||isExternal)?'#adb5bd':speedBg};">${speed} km/h</span></div>
                                 <div class="w-100">${ubiControl}</div>
                                 <div style="font-size:0.75rem; color:#6c757d; margin-top:4px; font-weight:600;">${timeAgoText}</div>
                             </div>
@@ -649,7 +662,7 @@
                         </td>
                         <td class="col-accion align-middle">
                             <div class="d-flex flex-column gap-2 align-items-center">
-                                <button onclick="shareWA('${nombreCamion}', '${addr}', '${v.origen}', '${v.destino}', '${v.estatus}', '${v.contenedores}', '${cliData.nombre}', '${nomSub}', '${speed}', '${posTextY}', '${posTextX}')" class="btn btn-outline-success btn-sm p-1 shadow-sm" style="width: 28px; height: 28px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                                <button onclick="shareWA('${nombreCamion}', '${isExternal||isLost ? (v.ubicacion_manual||'Manual') : addr}', '${v.origen}', '${v.destino}', '${v.estatus}', '${v.contenedores}', '${cliData.nombre}', '${nomSub}', '${speed}', '${posTextY}', '${posTextX}')" class="btn btn-outline-success btn-sm p-1 shadow-sm" style="width: 28px; height: 28px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
                                 <button onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-primary btn-sm p-1 shadow-sm" style="width: 28px; height: 28px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
                                 <button onclick="finalizarViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-danger btn-sm p-1 shadow-sm" style="width: 28px; height: 28px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
                             </div>
