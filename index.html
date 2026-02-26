@@ -104,10 +104,25 @@
     </div>
 </div></div></div>
 
+<div class="modal fade" id="modalAdmin" tabindex="-1">
+    <div class="modal-dialog modal-xl"><div class="modal-content">
+        <div class="modal-header bg-danger text-white"><h6 class="modal-title fw-bold">ADMINISTRACIÓN</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body"><div class="row">
+            <div class="col-md-3 border-end"><h6>Tokens Wialon</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="tk_nom" class="form-control form-control-sm mb-1" placeholder="Nombre"><input type="text" id="tk_url" class="form-control form-control-sm mb-1" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-1" placeholder="Token"><button class="btn btn-success btn-sm w-100" onclick="agregarToken()">Guardar</button></div><ul class="list-group list-group-sm" id="listaTokens"></ul></div>
+            <div class="col-md-3 border-end"><h6>Operadores Manuales</h6><div class="p-2 bg-light border rounded mb-2"><input class="form-control form-control-sm mb-1" list="listaUnidadesTotales" id="op_unidad" placeholder="Unidad"><input type="text" id="op_nombre" class="form-control form-control-sm mb-1" placeholder="Operador"><button onclick="vincularOperador()" class="btn btn-primary btn-sm w-100">Vincular</button></div><ul class="list-group list-group-sm" id="listaOperadoresAdmin"></ul></div>
+            <div class="col-md-3 border-end"><h6>Clientes</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="cli_nombre" class="form-control form-control-sm mb-1" placeholder="Cliente"><button onclick="crearCliente()" class="btn btn-success btn-sm w-100">Añadir</button></div><ul class="list-group list-group-sm" id="listaClientesAdmin"></ul></div>
+            <div class="col-md-3"><h6>Subclientes</h6><div class="p-2 bg-light border rounded mb-2"><select id="sub_clientePadre" class="form-select form-select-sm mb-1"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-1" placeholder="Subcliente"><button onclick="crearSubcliente()" class="btn btn-success btn-sm w-100">Añadir</button></div><ul class="list-group list-group-sm" id="listaSubclientesAdmin"></ul></div>
+        </div></div>
+    </div></div>
+</div>
+
 <datalist id="listaGeocercas"></datalist><datalist id="listaConductores"></datalist><datalist id="listaUnidadesTotales"></datalist>
 
 <script type="text/javascript">
+    const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
     let currentUser = null, configSistema = { tokens: [] }, dataClientes = {}, viajesActivos = {}, dbOperadores = {};
     let unidadesGlobales = {}, ramDrivers = {}, geocercasNativas = [], activeSIDs = {}, pollingInterval = null;
     let lmap = null, mapMarkers = {}, geofenceLayer = null, mapVisible = false, geocodeCache = {};
@@ -231,7 +246,7 @@
                         <td><select class="form-select status-select" style="background:${estatusData[v.estatus]?.col||'#fff'}" onchange="db.ref('viajes_activos/${u.id}/estatus').set(this.value)">${Object.keys(estatusData).map(k=>`<option value="${k}" ${v.estatus===k?'selected':''}>${estatusData[k].nombre}</option>`).join('')}</select></td>
                         <td><span class="badge ${spB}">${sp} km/h</span><br><span style="font-size:9px; font-weight:bold;">${pos?formatTimeFriendly(pos.t):'Sin reporte'}</span><br><span id="addr_${u.id}" style="font-size:9px;">...</span></td>
                         <td>${v.alerta?v.alerta.txt:'OK'}</td>
-                        <td><button class="btn btn-primary btn-sm p-0 px-2">Nota</button></td>
+                        <td><button class="btn btn-primary btn-sm p-0 px-2" onclick="abrirAuditoria('${u.id}','${u.name}')">Nota</button></td>
                         <td><div class="d-flex flex-column gap-1"><button onclick="shareWA('${u.id}')" class="btn btn-outline-success btn-sm p-0"><i class="fa-brands fa-whatsapp"></i></button><button onclick="finalizarViaje('${u.id}', '${u.name}')" class="btn btn-outline-danger btn-sm p-0"><i class="fa-solid fa-box-archive"></i></button></div></td>
                     </tr>`;
                 });
@@ -258,11 +273,10 @@
         bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
     }
 
-    function finalizarViaje(id, n) { if(confirm('¿Archivar?')) { db.ref('viajes_activos/'+id).remove(); } }
     function cerrarSesion() { localStorage.clear(); location.reload(); }
+    function filtrarTabla() { let t = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#mainTable tbody tr").forEach(r => { if(r.classList.contains("header-cliente") || r.classList.contains("header-subcliente") || r.classList.contains("header-columnas")) return; r.style.display = r.innerText.toLowerCase().includes(t) ? "" : "none"; }); }
     function prepararNuevoViaje() { let s = document.getElementById("nv_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); cargarSubclientesEnSelect('nv_subcliente', s.value); }
     function cargarSubclientesEnSelect(e, c) { let s = document.getElementById(e); s.innerHTML = '<option value="">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k => s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
-    function filtrarTabla() { let t = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#mainTable tbody tr").forEach(r => { if(r.classList.contains("header-cliente") || r.classList.contains("header-subcliente") || r.classList.contains("header-columnas")) return; r.style.display = r.innerText.toLowerCase().includes(t) ? "" : "none"; }); }
 </script>
 </body>
 </html>
