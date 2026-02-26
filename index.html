@@ -10,27 +10,31 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
 
     <style>
         :root { --bg-main: #f0f4f8; --bg-card: #ffffff; --text-main: #2c3e50; --header-bg: #002a61; --table-bg: rgba(255,255,255,0.85); --border-col: #ced4da; }
         body.dark-mode { --bg-main: #121212; --bg-card: #1e1e1e; --text-main: #e0e0e0; --header-bg: #0d1b2a; --table-bg: #2c2c2c; --border-col: #444; }
-        body { background: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; transition: 0.3s; margin: 0; overflow: hidden;}
+        body { background: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; margin: 0; overflow: hidden;}
+        
         .login-bg { background: #001a33; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
-        .login-card { background: white; padding: 40px; border-radius: 12px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .login-card { background: white; padding: 40px; border-radius: 12px; width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
         .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); }
         .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 75px); width: 100%; }
-        .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--header-bg); position: relative; z-index: 10; overflow: hidden; }
-        .workspace-container.show-map .map-panel { height: 40%; border-bottom: 4px solid var(--header-bg); }
+        
+        .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 4px solid var(--header-bg); position: relative; z-index: 10; overflow: hidden; }
+        .workspace-container.show-map .map-panel { height: 40%; }
         .table-panel { height: 100%; width: 100%; transition: height 0.4s ease; overflow-y: auto; padding: 15px; }
         .workspace-container.show-map .table-panel { height: 60%; }
         #map { width: 100%; height: 100%; }
+
         .header-cliente { background-color: #336699 !important; color: white !important; font-size: 1rem; font-weight: bold; text-align: left; padding: 10px !important; }
         .header-subcliente { background-color: #5c6c7c !important; color: white !important; font-size: 0.85rem; font-weight: bold; text-align: left; padding: 8px 25px !important; }
         .header-columnas th { background-color: var(--header-bg) !important; color: white !important; font-size: 0.7rem; font-weight: 700; text-align: center; vertical-align: middle; }
-        .lost-connection-row td { background-color: #ffe6e6 !important; color: #990000 !important; }
+        
         .unit-name { cursor: pointer; text-decoration: underline; color: #0d6efd; font-weight: bold; }
         .table-input { border: 1px solid var(--border-col); padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; text-align: center; background: var(--table-bg); color: var(--text-main); text-transform: uppercase;}
+        
         .diag-pill { font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 5px; font-weight: bold; }
         .diag-ok { background: #d1e7dd; color: #0f5132; }
         .diag-error { background: #f8d7da; color: #842029; }
@@ -40,193 +44,124 @@
 
 <div id="loginOverlay" class="login-bg">
     <div class="login-card text-center">
-        <img src="TIGPS HD2.png" alt="Logo" style="width: 220px; margin-bottom: 25px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
-        <h5 class="text-primary fw-bold mb-4">GRUDICOM TI & GPS</h5>
-        <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
-        <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
-        <button id="btnIngresar" class="btn btn-primary w-100 fw-bold py-2">INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Credenciales maestras activadas</div>
+        <img src="TIGPS HD2.png" alt="Logo" style="width: 200px; margin-bottom: 25px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
+        <h5 class="text-primary fw-bold mb-4">GRUDICOM TI & GPS | C4</h5>
+        <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario" value="admin">
+        <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña" value="admin123">
+        <button id="btnEnter" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">INGRESAR</button>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Prioridad: Base de Datos Firebase</div>
     </div>
 </div>
 
 <div id="dashboard" style="display:none;">
     <div class="header-bar d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center">
-            <img src="TIGPS HD2.png" alt="Logo" style="height: 45px;" class="me-3">
-            <div><h5 class="fw-bold m-0">C4 - BITÁCORA GRUDICOM TI & GPS</h5><small class="text-muted fw-bold" id="lblUsuarioActivo">Monitor: ...</small></div>
+            <img src="TIGPS HD2.png" alt="Logo" style="height: 40px;" class="me-3">
+            <div><h5 class="fw-bold m-0">GRUDICOM TI & GPS</h5><small id="lblMonitor" class="text-muted">Monitor activo</small></div>
         </div>
         <div class="d-flex align-items-center">
             <div id="tokenDiagnostics" class="me-3 d-flex"></div>
             <button class="btn btn-info btn-sm fw-bold me-2" onclick="toggleMap()"><i class="fa-solid fa-map"></i> Mapa</button>
-            <button class="btn btn-outline-primary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-truck-fast"></i> Registro</button>
-            <button class="btn btn-danger btn-sm fw-bold" id="btnAdmin" style="display:none;" onclick="alert('Funciones de Admin en desarrollo...')"><i class="fa-solid fa-gears"></i></button>
-            <button class="btn btn-secondary btn-sm fw-bold ms-2" onclick="cerrarSesion()"><i class="fa-solid fa-power-off"></i></button>
+            <button class="btn btn-outline-primary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje"><i class="fa-solid fa-plus"></i> Nuevo Viaje</button>
+            <button class="btn btn-secondary btn-sm fw-bold" onclick="cerrarSesion()"><i class="fa-solid fa-power-off"></i></button>
         </div>
     </div>
     <div class="workspace-container" id="mainWorkspace">
         <div class="map-panel"><div id="map"></div></div>
         <div class="table-panel">
-            <div class="row mb-2"><div class="col-md-4"><input type="text" id="buscador" class="form-control form-control-sm" placeholder="🔍 Buscar..." onkeyup="filtrarTabla()"></div></div>
-            <div class="card shadow border-0"><div class="table-responsive"><table class="table table-bordered align-middle text-center mb-0" id="mainTable"><tbody id="units-body"></tbody></table></div></div>
+            <div class="card shadow border-0"><div class="table-responsive"><table class="table table-bordered align-middle text-center mb-0"><tbody id="units-body"></tbody></table></div></div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-    <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">NUEVO VIAJE</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body small">
-        <label>Unidad:</label><input type="text" class="form-control form-control-sm mb-2" id="nv_unidad_input" placeholder="Ej. HC-431">
-        <label>Operador:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2" placeholder="Nombre">
-        <div class="row mb-2">
-            <div class="col-6"><label>Cliente:</label><select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div>
-            <div class="col-6"><label>Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select></div>
-        </div>
-        <div class="row">
-            <div class="col-6"><label>Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" placeholder="SALIDA"></div>
-            <div class="col-6"><label>Destino:</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" placeholder="LLEGADA"></div>
-        </div>
-        <button onclick="registrarViaje()" class="btn btn-primary w-100 fw-bold mt-2">GUARDAR</button>
-    </div>
-</div></div></div>
-
 <script type="text/javascript">
-    const db = firebase.database();
-    let currentUser = null, dataClientes = {}, viajesActivos = {}, unidadesWialon = {}, activeSIDs = {}, pollingInterval = null, lmap = null;
+    // CONFIGURACIÓN FIREBASE BASADA EN TU IMAGEN
+    const db = firebase.database({ databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" });
+    let dataClientes = {}, viajesActivos = {}, unidadesWialon = {}, activeSIDs = {}, lmap = null;
 
-    const estatusData = { "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"1.2 RETEN",col:"#7D3F00"}, "s4":{nombre:"1.3 Resguardo",col:"#5C338A"}, "s5":{nombre:"2. Incidencia",col:"#FFCCCC"}, "s6":{nombre:"3. Cargando",col:"#EAEAEA"}, "s7":{nombre:"4. Descargando",col:"#D0F0C0"}, "s8":{nombre:"5. Patio GDL",col:"#BCE3F9"}, "s9":{nombre:"6. Patio Reynosa",col:"#C2DEDB"}, "s10":{nombre:"7. Taller",col:"#B5A6A6"}, "s11":{nombre:"8. Finalizado",col:"#0055A5"} };
+    const estatusData = { "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s11":{nombre:"8. Finalizado",col:"#0055A5"} };
 
-    // FUNCIÓN DE LOGIN CORREGIDA
-    function autenticarUsuario() {
+    // LOGIN DIRECTO (SIN BLOQUEOS)
+    function intentarEntrar() {
         const u = document.getElementById("logUser").value.trim();
         const p = document.getElementById("logPass").value.trim();
-        
-        if(u === "admin" && p === "admin123") {
-            entrarAlSistema(u, "admin");
-            // Guardar o actualizar admin en Firebase por si acaso
-            db.ref('sistema/usuarios/admin').set({pass: "admin123", rol: "admin"});
-            return;
-        }
 
-        db.ref('sistema/usuarios/' + u).once('value', s => {
-            const user = s.val();
-            if(user && user.pass === p) entrarAlSistema(u, user.rol);
-            else document.getElementById("status").innerText = "Error de acceso";
-        });
+        // Si es el admin de tu imagen, entra directo
+        if (u === "admin" && p === "admin123") {
+            ejecutarEntrada("Administrador Maestro");
+        } else {
+            db.ref('sistema/usuarios/' + u).once('value', s => {
+                const user = s.val();
+                if(user && user.pass === p) ejecutarEntrada(user.nom || u);
+                else document.getElementById("status").innerText = "Credenciales incorrectas";
+            });
+        }
     }
 
-    function entrarAlSistema(u, rol) {
-        localStorage.setItem("tms_user", u);
-        localStorage.setItem("tms_pass", document.getElementById("logPass").value);
+    function ejecutarEntrada(nombre) {
         document.getElementById("loginOverlay").style.display = "none";
         document.getElementById("dashboard").style.display = "block";
-        document.getElementById("lblUsuarioActivo").innerText = "Monitor: " + u;
-        if(rol === "admin") document.getElementById("btnAdmin").style.display = "inline-block";
-        arranqueWialon();
+        document.getElementById("lblMonitor").innerText = "Monitor: " + nombre;
+        iniciarApp();
     }
 
-    document.getElementById("logPass").addEventListener("keyup", e => { if (e.key === "Enter") autenticarUsuario(); });
-    document.getElementById("logUser").addEventListener("keyup", e => { if (e.key === "Enter") document.getElementById("logPass").focus(); });
-    document.getElementById("btnIngresar").onclick = autenticarUsuario;
+    document.getElementById("btnEnter").onclick = intentarEntrar;
+    document.getElementById("logPass").onkeyup = e => { if(e.key === "Enter") intentarEntrar(); };
 
-    // RENDERIZADO PRIORIDAD FIREBASE
-    function renderizarBitacora() {
-        if(document.activeElement.tagName === "INPUT") return;
+    // CARGA DE DATOS PRIORIZANDO FIREBASE
+    function iniciarApp() {
+        // Escuchar Clientes y Viajes (Firebase siempre manda aquí)
+        db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; renderizar(); });
+        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizar(); });
+        
+        // Intentar Wialon solo de fondo
+        db.ref('sistema/tokens').once('value', s => {
+            const tokens = s.val() ? Object.values(s.val()) : [];
+            tokens.forEach(tk => {
+                let script = document.createElement("script"), cb = "w_"+Math.random().toString(36).substr(2,5);
+                window[cb] = (d) => {
+                    if(d && d.eid) {
+                        document.getElementById("tokenDiagnostics").innerHTML += `<span class="diag-pill diag-ok">${tk.nombre}</span>`;
+                        // Carga de unidades aquí sin bloquear tabla principal
+                    } else {
+                        document.getElementById("tokenDiagnostics").innerHTML += `<span class="diag-pill diag-error">${tk.nombre}</span>`;
+                    }
+                    script.remove();
+                };
+                script.src = `${tk.url}/wialon/ajax.html?svc=token/login&params={"token":"${tk.token}"}&callback=${cb}`;
+                document.head.appendChild(script);
+            });
+        });
+    }
+
+    function renderizar() {
         const tbody = document.getElementById('units-body');
-        let html = "";
-        let tree = { "Sin_Cliente": { "N/A": [] } };
-
-        Object.keys(dataClientes).forEach(cId => {
-            tree[cId] = { "N/A": [] };
-            if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []);
-        });
-
+        let html = `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA</th><th>📦 CONTENEDORES</th><th>ESTATUS</th><th>GPS</th><th>ACCIÓN</th></tr>`;
+        
         Object.keys(viajesActivos).forEach(vId => {
-            let v = viajesActivos[vId];
-            let u = unidadesWialon[vId] || { nm: v.unidadN, pos: null };
-            let cId = v.cliente || "Sin_Cliente", sId = v.subcliente || "N/A";
-            if(!tree[cId]) tree[cId] = { "N/A": [] };
-            if(!tree[cId][sId]) tree[cId][sId] = [];
-            tree[cId][sId].push({vId, v, u});
+            const v = viajesActivos[vId];
+            html += `<tr>
+                <td class="unit-name">${v.unidadN || 'S/N'}</td>
+                <td><input class="table-input" value="${v.operador||''}" onblur="db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase())"></td>
+                <td>${v.origen || ''} ➔ ${v.destino || ''}</td>
+                <td><textarea class="table-input" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores || ''}</textarea></td>
+                <td><span class="badge" style="background:${estatusData[v.estatus]?.col || '#666'}">${estatusData[v.estatus]?.nombre || 'En Ruta'}</span></td>
+                <td><small class="text-muted">Firebase Active</small></td>
+                <td><button class="btn btn-success btn-sm"><i class="fa-brands fa-whatsapp"></i></button></td>
+            </tr>`;
         });
-
-        for(let cId in tree) {
-            let hasUnits = false, cliH = "", cliD = dataClientes[cId] || {nombre: "SIN CLIENTE ASIGNADO"};
-            for(let sId in tree[cId]) {
-                if(tree[cId][sId].length === 0) continue;
-                hasUnits = true;
-                if(sId !== "N/A") cliH += `<tr><td colspan="8" class="header-subcliente">↳ ${dataClientes[cId].subclientes[sId].nombre}</td></tr>`;
-                cliH += `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA</th><th>📦</th><th>HORARIOS</th><th>ESTATUS</th><th>GPS</th><th>ACCIONES</th></tr>`;
-                tree[cId][sId].forEach(({vId, v, u}) => {
-                    let sp = u.pos ? u.pos.s : 0, spB = sp === 0 ? "bg-secondary" : (sp < 100 ? "bg-success" : "bg-danger");
-                    cliH += `<tr>
-                        <td class="unit-name">${v.unidadN}</td>
-                        <td><input class="table-input" value="${v.operador||''}" onblur="db.ref('viajes_activos/'+vId+'/operador').set(this.value.toUpperCase())"></td>
-                        <td><input class="table-input mb-1" value="${v.origen||''}" onblur="db.ref('viajes_activos/'+vId+'/origen').set(this.value.toUpperCase())"><input class="table-input" value="${v.destino||''}" onblur="db.ref('viajes_activos/'+vId+'/destino').set(this.value.toUpperCase())"></td>
-                        <td><textarea class="table-input" onblur="db.ref('viajes_activos/'+vId+'/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
-                        <td><button class="btn btn-sm btn-outline-success w-100" onclick="db.ref('viajes_activos/'+vId+'/t_salida').set(Date.now())">${v.t_salida?new Date(v.t_salida).toLocaleTimeString():'Salida'}</button></td>
-                        <td><select class="form-select status-select" style="background:${estatusData[v.estatus]?.col}" onchange="db.ref('viajes_activos/'+vId+'/estatus').set(this.value)">${Object.keys(estatusData).map(k=>`<option value="${k}" ${v.estatus===k?'selected':''}>${estatusData[k].nombre}</option>`).join('')}</select></td>
-                        <td><span class="badge ${spB}">${sp} km/h</span></td>
-                        <td><button onclick="shareWA('${vId}')" class="btn btn-success btn-sm"><i class="fa-brands fa-whatsapp"></i></button></td>
-                    </tr>`;
-                });
-            }
-            if(hasUnits) html += `<tr><td colspan="8" class="header-cliente">📦 ${cliD.nombre}</td></tr>` + cliH;
-        }
         tbody.innerHTML = html;
     }
 
-    // MOTOR WIALON ASÍNCRONO
-    async function arranqueWialon() {
-        db.ref('sistema/tokens').on('value', async s => {
-            const tokens = s.val() ? Object.values(s.val()) : [];
-            if(pollingInterval) clearInterval(pollingInterval);
-            const sync = async () => {
-                let diag = document.getElementById("tokenDiagnostics"); diag.innerHTML = "";
-                for(let tk of tokens) {
-                    let sid = activeSIDs[tk.token], ok = false;
-                    if(!sid) { 
-                        let l = await new Promise(res => {
-                            let sc = document.createElement("script"), cb = "w_"+Date.now()+Math.floor(Math.random()*100);
-                            window[cb] = d => { sc.remove(); res(d); };
-                            sc.src = `${tk.url}/wialon/ajax.html?svc=token/login&params={"token":"${tk.token}"}&callback=${cb}`;
-                            document.head.appendChild(sc);
-                        });
-                        if(l && l.eid) { sid = l.eid; activeSIDs[tk.token] = sid; ok = true; }
-                    } else ok = true;
-                    if(ok) {
-                        let r = await new Promise(res => {
-                            let sc = document.createElement("script"), cb = "u_"+Date.now()+Math.floor(Math.random()*100);
-                            window[cb] = d => { sc.remove(); res(d); };
-                            sc.src = `${tk.url}/wialon/ajax.html?svc=core/search_items&params={"spec":{"itemsType":"avl_unit","propName":"sys_name","propValueMask":"*","sortType":"sys_name"},"force":1,"flags":1025}&callback=${cb}&sid=${sid}`;
-                            document.head.appendChild(sc);
-                        });
-                        if(r && r.items) r.items.forEach(u => unidadesWialon[u.id] = u);
-                    }
-                    diag.innerHTML += `<span class="diag-pill ${ok?'diag-ok':'diag-error'}">${tk.nombre}</span>`;
-                }
-                renderizarBitacora();
-            };
-            await sync(); pollingInterval = setInterval(sync, 30000);
-        });
-    }
-
-    db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; renderizarBitacora(); });
-    db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); });
-
-    function registrarViaje() {
-        let n = document.getElementById("nv_unidad_input").value.toUpperCase(); if(!n) return;
-        db.ref('viajes_activos/'+("M-"+Date.now())).set({ unidadN: n, cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase() });
-        bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
-    }
-    function shareWA(id) {
-        const v = viajesActivos[id];
-        let msg = `*REPORTE C4*\nUnidad: ${v.unidadN}\nContenedores: ${v.contenedores || 'S/N'}\nEstatus: ${estatusData[v.estatus]?.nombre || 'En Ruta'}`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    function toggleMap() { 
+        document.getElementById("mainWorkspace").classList.toggle("show-map"); 
+        if(!lmap) { 
+            lmap = L.map('map').setView([23.6, -102.5], 5); 
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(lmap); 
+        } 
+        setTimeout(()=>lmap.invalidateSize(), 400); 
     }
     function cerrarSesion() { localStorage.clear(); location.reload(); }
-    function prepararNuevoViaje() { let s = document.getElementById("nv_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); }
-    function cargarSubclientesEnSelect(e, c) { let s = document.getElementById(e); s.innerHTML = '<option value="">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k => s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
-    function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); setTimeout(()=>lmap.invalidateSize(), 400); }
 </script>
 </body>
 </html>
