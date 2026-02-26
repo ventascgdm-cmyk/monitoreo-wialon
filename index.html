@@ -7,8 +7,7 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="text/javascript" src="https://hst-api.wialon.com/wswialon/ajax.html?svc=core/helper/render_script&id=&lang=es"></script>
-
+    <script type="text/javascript" src="https://hst-api.wialon.com/wscommon/js/wialon.js"></script>
     <style>
         :root { --wialon-blue: #0045a5; }
         body { background-color: #f1f3f5; font-family: 'Segoe UI', sans-serif; }
@@ -87,17 +86,24 @@
     </div>
 
     <script>
-        let sess = wialon.core.Session.getInstance();
-        let myChart;
+    let sess; // Declarar la variable vacía al inicio
+    let myChart;
 
-        // Al cargar la página, verificar si hay un token guardado
-        window.onload = () => {
-            const savedToken = localStorage.getItem('wialon_token');
-            if(savedToken) {
-                document.getElementById('tokenInput').value = savedToken;
-                document.getElementById('rememberMe').checked = true;
-            }
-        };
+    window.onload = () => {
+        // Inicializar sess SÓLO cuando la página y el SDK estén listos
+        if (typeof wialon !== 'undefined') {
+            sess = wialon.core.Session.getInstance();
+            console.log("Wialon SDK cargado correctamente");
+        } else {
+            alert("Error: No se pudo cargar el SDK de Wialon. Verifica tu conexión.");
+        }
+        
+        const savedToken = localStorage.getItem('wialon_token');
+        if(savedToken) {
+            document.getElementById('tokenInput').value = savedToken;
+            document.getElementById('rememberMe').checked = true;
+        }
+    };
 
         function attemptLogin() {
     const token = document.getElementById('tokenInput').value;
@@ -206,3 +212,4 @@
 </body>
 
 </html>
+
