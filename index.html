@@ -86,16 +86,14 @@
     </div>
 
     <script>
-    let sess; // Declarar la variable vacía al inicio
-    let myChart;
+    let sess = null; // Iniciamos en null
+    let myChart = null;
 
+    // Esta función se ejecuta cuando TODO (incluyendo Wialon) cargó
     window.onload = () => {
-        // Inicializar sess SÓLO cuando la página y el SDK estén listos
         if (typeof wialon !== 'undefined') {
             sess = wialon.core.Session.getInstance();
-            console.log("Wialon SDK cargado correctamente");
-        } else {
-            alert("Error: No se pudo cargar el SDK de Wialon. Verifica tu conexión.");
+            console.log("SDK listo");
         }
         
         const savedToken = localStorage.getItem('wialon_token');
@@ -104,8 +102,12 @@
             document.getElementById('rememberMe').checked = true;
         }
     };
-
         function attemptLogin() {
+            if (!sess) {
+        alert("El sistema aún se está sincronizando con Wialon. Espera 2 segundos y reintenta.");
+        location.reload(); // Forzamos recarga si algo falló
+        return;
+    }
     const token = document.getElementById('tokenInput').value;
     const btn = document.getElementById('btnLogin');
     const errorMsg = document.getElementById('loginError');
@@ -212,4 +214,5 @@
 </body>
 
 </html>
+
 
