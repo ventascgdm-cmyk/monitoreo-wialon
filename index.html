@@ -7,19 +7,14 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    
-    <script type="text/javascript" src="https://sdk.wialon.com/library/js/wialon.js"></script>
 
     <style>
         :root { --blue: #0045a5; --green: #28a745; }
         body { background: #f4f7f6; font-size: 0.75rem; color: #333; }
         .header { background: var(--blue); color: white; padding: 15px; border-bottom: 4px solid var(--green); }
         .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; }
-        .table-input:focus { border-color: var(--blue); outline: none; background: #fff; }
         .address-text { font-size: 0.7rem; color: #666; font-style: italic; max-width: 180px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--blue); display:flex; align-items:center; justify-content:center; z-index:999; }
-        .badge-mov { background-color: var(--green); }
-        .badge-stop { background-color: #dc3545; }
         .card-login { width: 360px; border-radius: 20px; border: none; }
     </style>
 </head>
@@ -30,8 +25,8 @@
         <h4 class="fw-bold mb-3 text-primary">Logística Cloud</h4>
         <p class="small text-muted mb-4">Ingresa tu token de Wialon</p>
         <input type="password" id="tokenInput" class="form-control mb-3 text-center" placeholder="Wialon API Token">
-        <button onclick="login()" class="btn btn-primary w-100 fw-bold py-2">Sincronizar Sistema</button>
-        <div id="sdkStatus" class="mt-2 small text-muted">Verificando SDK...</div>
+        <button onclick="login()" class="btn btn-primary w-100 fw-bold py-2" id="loginBtn" disabled>Cargando Sistema...</button>
+        <div id="sdkStatus" class="mt-2 small text-primary fw-bold">Intentando conectar con Wialon...</div>
     </div>
 </div>
 
@@ -42,23 +37,14 @@
             <button onclick="exportarExcel()" class="btn btn-sm btn-light fw-bold shadow-sm">📥 Descargar Reporte</button>
         </div>
     </div>
-
     <div class="container-fluid">
         <div class="card shadow-sm border-0" style="border-radius: 12px;">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 text-center">
                     <thead class="table-dark">
                         <tr>
-                            <th>Unidad</th>
-                            <th>Cliente</th>
-                            <th>Subcliente</th>
-                            <th>Origen</th>
-                            <th>Destino</th>
-                            <th>Estatus</th>
-                            <th>Contenedores</th>
-                            <th>Velocidad</th>
-                            <th>Ubicación Actual</th>
-                            <th>Estado</th>
+                            <th>Unidad</th><th>Cliente</th><th>Subcliente</th><th>Origen</th><th>Destino</th>
+                            <th>Estatus</th><th>Contenedores</th><th>Velocidad</th><th>Ubicación</th><th>GPS</th>
                         </tr>
                     </thead>
                     <tbody id="unitList"></tbody>
@@ -69,7 +55,7 @@
 </div>
 
 <script>
-    // CONFIGURACIÓN DE FIREBASE
+    // 1. CONFIGURACIÓN DE FIREBASE
     const firebaseConfig = {
         databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/"
     };
@@ -78,25 +64,116 @@
 
     let sess = null;
 
-    // Verificar SDK al cargar la página
-    window.onload = () => {
-        setTimeout(() => {
-            if (typeof wialon !== 'undefined') {
-                sess = wialon.core.Session.getInstance();
-                document.getElementById('sdkStatus').innerText = "SDK Listo ✅";
-                document.getElementById('sdkStatus').classList.replace('text-muted', 'text-success');
-            } else {
-                document.getElementById('sdkStatus').innerText = "Error: SDK no cargó ❌";
-                document.getElementById('sdkStatus').classList.replace('text-muted', 'text-danger');
-            }
-        }, 1000);
-    };
+    // 2. CARGADOR DINÁMICO DE SDK (Para evitar el Error 404)
+    function loadSDK() {
+        const script = document.createElement('script');
+        // Usamos la ruta más compatible y directa
+        script.src = "https://sdk.wialon.com/library/js/wialon.js";
+        script.onload = () => {
+            console.log("SDK cargado correctamente");
+            initWialon();
+        };
+        script.onerror = () => {
+            document.getElementById('sdkStatus').innerText = "Reintentando por ruta alterna...";
+            // Si falla la primera, intentamos la segunda ruta oficial
+            const backup = document.createElement('script');
+            backup.src = "https://hst-api.wialon.com/wscommon/js/wialon.js";
+            backup.onload = initWialon;
+            document.head.appendChild(backup);
+        };
+        document.head.appendChild(script);
+    }
+
+    function initWialon() {
+        if (typeof wialon !== 'undefined') {
+            sess = wialon.core.Session.getInstance();
+            document.getElementById('sdkStatus').innerText = "SISTEMA LISTO ✅";
+            document.getElementById('sdkStatus').className = "mt-2 small text-success fw-bold";
+            document.getElementById('loginBtn').disabled = false;
+            document.getElementById('loginBtn').innerText = "Sincronizar Sistema";
+        }
+    }
+
+    window.onload = loadSDK;
 
     function login() {
         const token = document.getElementById('tokenInput').value;
         if(!token) return alert("Por favor ingresa tu token");
         
-        if(!sess) return alert("El sistema de Wialon no ha respondido. Refresca la página.");
-
         sess.initSession("https://hst-api.wialon.com");
-        sess.
+        sess.loginToken(token, "", (code) => {
+            if (code) return alert("Error: " + wialon.core.Errors.getErrorText(code));
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            iniciarMonitoreo();
+        });
+    }
+
+    function iniciarMonitoreo() {
+        sess.loadLibrary("itemUnit");
+        sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
+            renderizarTabla();
+            sess.addListener("dataUpdated", renderizarTabla);
+        });
+    }
+
+    function renderizarTabla() {
+        const units = sess.getItems("avl_unit") || [];
+        const tbody = document.getElementById('unitList');
+        tbody.innerHTML = "";
+        units.forEach(u => {
+            const id = u.getId();
+            const pos = u.getPosition();
+            const speed = pos ? pos.s : 0;
+            const mov = speed > 0;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="fw-bold text-primary">${u.getName()}</td>
+                <td><input id="cli_${id}" class="table-input" onchange="save('${id}','cliente',this.value)"></td>
+                <td><input id="sub_${id}" class="table-input" onchange="save('${id}','subcliente',this.value)"></td>
+                <td><input id="ori_${id}" class="table-input" onchange="save('${id}','origen',this.value)"></td>
+                <td><input id="des_${id}" class="table-input" onchange="save('${id}','destino',this.value)"></td>
+                <td>
+                    <select id="est_${id}" class="table-input" onchange="save('${id}','estatus',this.value)">
+                        <option value="Disponible">Disponible</option>
+                        <option value="En Tránsito">En Tránsito</option>
+                        <option value="Cargando">Cargando</option>
+                        <option value="Descargando">Descargando</option>
+                    </select>
+                </td>
+                <td><input id="con_${id}" class="table-input" onchange="save('${id}','contenedores',this.value)"></td>
+                <td class="fw-bold">${speed} km/h</td>
+                <td id="addr_${id}"><span class="address-text">Buscando...</span></td>
+                <td><span class="badge ${mov?'bg-success':'bg-danger'}">${mov?'MOV':'STOP'}</span></td>
+            `;
+            tbody.appendChild(row);
+            if (pos) {
+                wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], (code, address) => {
+                    const el = document.getElementById(`addr_${id}`);
+                    if (el && address) el.innerHTML = `<span class="address-text" title="${address[0]}">${address[0]}</span>`;
+                });
+            }
+            db.ref('viajes/' + id).once('value', (snapshot) => {
+                const val = snapshot.val();
+                if (val) {
+                    if(document.getElementById(`cli_${id}`)) document.getElementById(`cli_${id}`).value = val.cliente || "";
+                    if(document.getElementById(`sub_${id}`)) document.getElementById(`sub_${id}`).value = val.subcliente || "";
+                    if(document.getElementById(`ori_${id}`)) document.getElementById(`ori_${id}`).value = val.origen || "";
+                    if(document.getElementById(`des_${id}`)) document.getElementById(`des_${id}`).value = val.destino || "";
+                    if(document.getElementById(`est_${id}`)) document.getElementById(`est_${id}`).value = val.estatus || "Disponible";
+                    if(document.getElementById(`con_${id}`)) document.getElementById(`con_${id}`).value = val.contenedores || "";
+                }
+            });
+        });
+    }
+
+    function save(unitId, campo, valor) {
+        db.ref('viajes/' + unitId).update({ [campo]: valor });
+    }
+
+    function exportarExcel() {
+        let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,ORIGEN,DESTINO,ESTATUS,CONTENEDORES,VELOCIDAD,DIRECCIÓN\n";
+        document.querySelectorAll("#unitList tr").forEach(row => {
+            const inputs = row.querySelectorAll("input, select");
+            const addr = row.cells[8].innerText.replace(/,/g, ""); 
+            csv += `${row.cells[0].innerText},${inputs[0].value},${inputs[1].value},${inputs[2].value},${inputs[3].value},${inputs[4].value},${inputs[5].value},${
