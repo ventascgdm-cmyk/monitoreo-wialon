@@ -23,7 +23,7 @@
         .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); }
         .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 75px); width: 100%; overflow: hidden; }
         
-        .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--header-bg); position: relative; z-index: 10; overflow: hidden; }
+        .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--header-bg); position: relative; z-index: 10; }
         .workspace-container.show-map .map-panel { height: 40%; border-bottom: 4px solid var(--header-bg); }
         .table-panel { height: 100%; width: 100%; transition: height 0.4s ease; overflow-y: auto; padding: 15px; }
         .workspace-container.show-map .table-panel { height: 60%; }
@@ -45,11 +45,11 @@
 <div id="loginOverlay" class="login-bg">
     <div class="login-card text-center">
         <img src="TIGPS HD2.png" alt="Logo" style="width: 220px; margin-bottom: 25px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
-        <h5 class="text-primary fw-bold mb-4" style="letter-spacing: 1px;">GRUDICOM TI & GPS</h5>
-        <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario" autocomplete="username">
-        <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña" autocomplete="current-password">
+        <h5 class="text-primary fw-bold mb-4">GRUDICOM TI & GPS</h5>
+        <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
+        <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Presiona Enter para entrar</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Identifícate para entrar</div>
     </div>
 </div>
 
@@ -75,8 +75,8 @@
         <div class="map-panel"><div id="map"></div></div>
         <div class="table-panel">
             <div class="row mb-2">
-                <div class="col-md-4"><input type="text" id="buscador" class="form-control form-control-sm shadow-sm" placeholder="🔍 Buscar unidad, cliente..." onkeyup="filtrarTabla()"></div>
-                <div class="col-md-8 text-end"><span id="syncIndicator" class="badge bg-secondary">Iniciando conexión con flotas...</span></div>
+                <div class="col-md-4"><input type="text" id="buscador" class="form-control form-control-sm shadow-sm" placeholder="🔍 Buscar..." onkeyup="filtrarTabla()"></div>
+                <div class="col-md-8 text-end"><span id="syncIndicator" class="badge bg-secondary">Iniciando flotas...</span></div>
             </div>
             <div class="card shadow border-0 h-100">
                 <div class="table-responsive h-100">
@@ -88,19 +88,19 @@
 </div>
 
 <div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-    <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">REGISTRAR NUEVO VIAJE</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">NUEVO VIAJE</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
     <div class="modal-body small">
-        <label class="fw-bold">Unidad GPS:</label><input type="text" class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" placeholder="Buscar camión..." autocomplete="off">
-        <label class="fw-bold">Operador Asignado:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2 border-primary" list="listaConductores" placeholder="Nombre del chófer..." autocomplete="off">
+        <label class="fw-bold">Unidad GPS:</label><input type="text" class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off">
+        <label class="fw-bold">Operador:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2 border-primary" list="listaConductores" autocomplete="off">
         <div class="row mb-2">
             <div class="col-6"><label class="fw-bold">Cliente:</label><select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div>
             <div class="col-6"><label class="fw-bold">Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select></div>
         </div>
         <div class="row">
-            <div class="col-6"><label class="fw-bold">Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" list="listaGeocercas" placeholder="SALIDA"></div>
-            <div class="col-6"><label class="fw-bold">Destino:</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" list="listaGeocercas" placeholder="LLEGADA"></div>
+            <div class="col-6"><label class="fw-bold">Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" list="listaGeocercas" placeholder="Salida"></div>
+            <div class="col-6"><label class="fw-bold">Destino:</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" list="listaGeocercas" placeholder="Llegada"></div>
         </div>
-        <button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2 shadow-sm">REGISTRAR EN BITÁCORA</button>
+        <button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2">REGISTRAR</button>
     </div>
 </div></div></div>
 
@@ -125,7 +125,6 @@
         const u = unidadesGlobales[id] || { name: v.unidadFallback };
         const pos = u.pos || { y:0, x:0, s:0 };
         const estN = estatusData[v.estatus]?.nombre || "En Ruta";
-        
         let msg = `*Reporte de Viaje*\n` +
                   `🚛 *Unidad:* ${u.name}\n` +
                   `📦 *Contenedores:* ${v.contenedores || 'S/N'}\n` +
@@ -133,7 +132,6 @@
                   `⏱️ *Vel:* ${pos.s} km/h\n` +
                   `🚦 *Estatus:* ${estN}\n` +
                   `🏁 *Origen:* ${v.origen || 'N/A'} -> *Destino:* ${v.destino || 'N/A'}`;
-        
         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     }
 
@@ -178,7 +176,6 @@
     async function arranqueMotor() { if(pollingInterval) clearInterval(pollingInterval); await sincronizarFlotas(); pollingInterval = setInterval(sincronizarFlotas, 20000); }
 
     async function sincronizarFlotas() {
-        let ind = document.getElementById("syncIndicator");
         let tempUnits = {}, tempGeo = [], listDrv = new Set(), listUni = new Set();
         for(let tk of configSistema.tokens) {
             let sid = activeSIDs[tk.token];
@@ -188,7 +185,7 @@
             if(reqU && reqU.items) reqU.items.forEach(u => { let n = u.nm.toUpperCase(); tempUnits[u.id] = { id: u.id, name: n, pos: u.pos }; listUni.add(n); });
             let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353 }, sid);
             if(reqR && reqR.items) reqR.items.forEach(r => {
-                if(r.drv) Object.values(r.drv).forEach(d => { let dn = d.n.toUpperCase(); listDrv.add(dn); if(d.bu) ramDrivers[tempUnits[d.bu]?.name] = dn; });
+                if(r.drv) Object.values(r.drv).forEach(d => { let dn = d.n.toUpperCase(); listDrv.add(dn); if(d.bu && tempUnits[d.bu]) ramDrivers[tempUnits[d.bu].name] = dn; });
                 if(r.zl) Object.values(r.zl).forEach(z => tempGeo.push(z));
             });
         }
@@ -196,7 +193,7 @@
         document.getElementById("listaUnidadesTotales").innerHTML = Array.from(listUni).map(n => `<option value="${n}">`).join('');
         document.getElementById("listaConductores").innerHTML = Array.from(listDrv).map(n => `<option value="${n}">`).join('');
         document.getElementById("listaGeocercas").innerHTML = tempGeo.map(z => `<option value="${z.n.toUpperCase()}">`).join('');
-        ind.className = "badge bg-success"; ind.innerText = Object.keys(unidadesGlobales).length + " Unidades Conectadas";
+        document.getElementById("syncIndicator").className = "badge bg-success"; document.getElementById("syncIndicator").innerText = Object.keys(unidadesGlobales).length + " Camiones En Vivo";
         renderizarBitacora(); actualizarMarcadoresMapa(); updateAddresses();
     }
 
@@ -234,7 +231,7 @@
                         <td><select class="form-select status-select" style="background:${estatusData[v.estatus]?.col||'#fff'}" onchange="db.ref('viajes_activos/${u.id}/estatus').set(this.value)">${Object.keys(estatusData).map(k=>`<option value="${k}" ${v.estatus===k?'selected':''}>${estatusData[k].nombre}</option>`).join('')}</select></td>
                         <td><span class="badge ${spB}">${sp} km/h</span><br><span style="font-size:9px; font-weight:bold;">${pos?formatTimeFriendly(pos.t):'Sin reporte'}</span><br><span id="addr_${u.id}" style="font-size:9px;">...</span></td>
                         <td>${v.alerta?v.alerta.txt:'OK'}</td>
-                        <td><button class="btn btn-primary btn-sm p-0 px-2" onclick="abrirAuditoria('${u.id}', '${u.name}')">Nota</button></td>
+                        <td><button class="btn btn-primary btn-sm p-0 px-2">Nota</button></td>
                         <td><div class="d-flex flex-column gap-1"><button onclick="shareWA('${u.id}')" class="btn btn-outline-success btn-sm p-0"><i class="fa-brands fa-whatsapp"></i></button><button onclick="finalizarViaje('${u.id}', '${u.name}')" class="btn btn-outline-danger btn-sm p-0"><i class="fa-solid fa-box-archive"></i></button></div></td>
                     </tr>`;
                 });
@@ -242,14 +239,6 @@
             if(hasUnits) html += `<tr><td colspan="10" class="header-cliente shadow">📦 CLIENTE: ${cliData.nombre}</td></tr>` + cliHtml;
         }
         tbody.innerHTML = html;
-    }
-
-    function registrarViaje() {
-        let uN = document.getElementById("nv_unidad_input").value.toUpperCase(), uId = null;
-        Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === uN) uId = k; });
-        if(!uId) return alert("Unidad no encontrada.");
-        db.ref('viajes_activos/'+uId).set({ cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase(), unidadFallback: uN });
-        bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
     }
 
     function updateAddresses() {
@@ -261,10 +250,19 @@
         });
     }
 
+    function registrarViaje() {
+        let uN = document.getElementById("nv_unidad_input").value.toUpperCase(), uId = null;
+        Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === uN) uId = k; });
+        if(!uId) return alert("Unidad no encontrada.");
+        db.ref('viajes_activos/'+uId).set({ cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase(), unidadFallback: uN });
+        bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
+    }
+
+    function finalizarViaje(id, n) { if(confirm('¿Archivar?')) { db.ref('viajes_activos/'+id).remove(); } }
     function cerrarSesion() { localStorage.clear(); location.reload(); }
-    function filtrarTabla() { let t = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#mainTable tbody tr").forEach(r => { if(r.classList.contains("header-cliente") || r.classList.contains("header-subcliente") || r.classList.contains("header-columnas")) return; r.style.display = r.innerText.toLowerCase().includes(t) ? "" : "none"; }); }
     function prepararNuevoViaje() { let s = document.getElementById("nv_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); cargarSubclientesEnSelect('nv_subcliente', s.value); }
     function cargarSubclientesEnSelect(e, c) { let s = document.getElementById(e); s.innerHTML = '<option value="">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k => s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
+    function filtrarTabla() { let t = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#mainTable tbody tr").forEach(r => { if(r.classList.contains("header-cliente") || r.classList.contains("header-subcliente") || r.classList.contains("header-columnas")) return; r.style.display = r.innerText.toLowerCase().includes(t) ? "" : "none"; }); }
 </script>
 </body>
 </html>
