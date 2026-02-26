@@ -18,14 +18,12 @@
         body.dark-mode { --bg-main: #121212; --bg-card: #1e1e1e; --text-main: #e0e0e0; --header-bg: #0d1b2a; --table-bg: #2c2c2c; --border-col: #444; }
         
         body { background: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; transition: 0.3s; margin: 0; overflow-x: hidden;}
-        
         .login-bg { background: linear-gradient(135deg, #002a61 0%, #001122 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
         .login-card { background: var(--bg-card); color: var(--text-main); width: 380px; border-radius: 12px; padding: 40px; box-shadow: 0 15px 35px rgba(0,0,0,0.5);}
         
         .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .card { background: var(--bg-card); border: 1px solid var(--border-col); }
         
-        /* Pantalla Dividida (Tabla / Mapa) */
         .workspace-container { display: flex; height: calc(100vh - 70px); width: 100%; overflow: hidden; }
         .table-panel { width: 100%; transition: width 0.4s ease; overflow-y: auto; padding: 15px; }
         .map-panel { width: 0%; transition: width 0.4s ease; border-left: 3px solid var(--header-bg); display: none; position: relative;}
@@ -122,13 +120,13 @@
               </div>
               
               <div class="col-md-3 border-end">
-                  <h6 class="fw-bold text-primary"><i class="fa-solid fa-id-card"></i> Asignar Operadores</h6>
+                  <h6 class="fw-bold text-primary"><i class="fa-solid fa-id-card"></i> Asignar Manual/Corrección</h6>
                   <div class="p-2 bg-light border rounded mb-2 text-dark">
+                      <p class="small text-muted mb-1 border-bottom">El sistema baja los conductores automáticamente, pero puedes forzarlos aquí:</p>
                       <input class="form-control form-control-sm mb-1" list="listaUnidadesTotales" id="op_unidad" style="text-transform:uppercase;" placeholder="Unidad (Ej. HC-450)" autocomplete="off">
                       <input type="text" id="op_nombre" class="form-control form-control-sm mb-1" style="text-transform: uppercase;" placeholder="Nombre del Operador">
-                      <button onclick="vincularOperador()" class="btn btn-primary btn-sm w-100 fw-bold">Guardar Asignación</button>
+                      <button onclick="vincularOperadorManual()" class="btn btn-primary btn-sm w-100 fw-bold">Guardar Asignación</button>
                   </div>
-                  <ul class="list-group list-group-sm" id="listaOperadoresAdmin" style="font-size:10px; max-height: 250px; overflow-y: auto;"></ul>
               </div>
 
               <div class="col-md-3 border-end">
@@ -171,11 +169,12 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold"><i class="fa-solid fa-truck-fast"></i> Registrar Nuevo Viaje</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
             <div class="modal-body small">
-                <label class="fw-bold">Buscar Unidad (Multi-Token):</label>
-                <input class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" style="text-transform: uppercase;" placeholder="Escribe la unidad..." autocomplete="off">
                 
-                <label class="fw-bold text-primary"><i class="fa-solid fa-id-card"></i> Operador (De Base de Datos):</label>
-                <input type="text" id="nv_operador" class="form-control form-control-sm mb-2 border-primary" style="text-transform: uppercase;" placeholder="Automático o Escribir Manual..." autocomplete="off">
+                <label class="fw-bold">Buscar Unidad (En todos los Tokens):</label>
+                <input class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" style="text-transform: uppercase;" placeholder="Selecciona o escribe la unidad..." autocomplete="off">
+                
+                <label class="fw-bold text-primary"><i class="fa-solid fa-id-card"></i> Operador (Extraído de Wialon DB):</label>
+                <input type="text" id="nv_operador" class="form-control form-control-sm mb-2 border-primary" style="text-transform: uppercase;" placeholder="Se detectará automáticamente..." autocomplete="off">
 
                 <div class="row mb-2">
                     <div class="col-6">
@@ -189,10 +188,10 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-6"><label class="fw-bold">Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" style="text-transform: uppercase;" placeholder="Salida..." autocomplete="off"></div>
-                    <div class="col-6"><label class="fw-bold">Destino (Auto-Arribo):</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" style="text-transform: uppercase;" placeholder="Llegada..." autocomplete="off"></div>
+                    <div class="col-6"><label class="fw-bold">Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" style="text-transform: uppercase;" list="listaGeocercas" placeholder="Punto de Salida..." autocomplete="off"></div>
+                    <div class="col-6"><label class="fw-bold">Destino (Auto-Arribo):</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" style="text-transform: uppercase;" list="listaGeocercas" placeholder="Punto de Llegada..." autocomplete="off"></div>
                 </div>
-                <button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2"><i class="fa-solid fa-play"></i> Registrar Viaje</button>
+                <button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2"><i class="fa-solid fa-play"></i> Registrar Viaje en Bitácora</button>
             </div>
         </div>
     </div>
@@ -204,6 +203,7 @@
 
 <div class="modal fade" id="modalHistorial" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header bg-warning"><h6 class="modal-title fw-bold">Historial</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body small"><div class="table-responsive"><table class="table table-bordered table-striped text-center text-nowrap"><thead class="table-dark"><tr><th>Unidad</th><th>Cliente</th><th>Inicio</th><th>Fin</th><th>Origen ➔ Destino</th></tr></thead><tbody id="listaHistorial"></tbody></table></div></div></div></div></div>
 
+<datalist id="listaGeocercas"></datalist>
 <datalist id="listaUnidadesTotales"></datalist>
 
 <script type="text/javascript">
@@ -213,14 +213,17 @@
     const db = firebase.database();
 
     let currentUser = null; let configSistema = { tokens: [], usuarios: {} };
-    let dataClientes = {}; let viajesActivos = {}; let historialGlobal = {}; let dbOperadores = {}; 
+    let dataClientes = {}; let viajesActivos = {}; let historialGlobal = {}; 
     
-    // Motor Propio API
-    let unidadesGlobales = {}; // Aquí vivirán los camiones vivos
-    let mapUnidades = {}; // Para el buscador
+    // DB Maestras de Firebase (Clonadas de Wialon)
+    let catalogoUnidades = {};
+    let catalogoOperadores = {}; 
+    
+    // Motor Activo
+    let unidadesGlobales = {}; // Datos en vivo (coordenadas)
     let pollingInterval = null;
     
-    // Mapa y Geocoding
+    // Mapa
     let lmap = null; let mapMarkers = {}; let mapVisible = false; let geocodeCache = {};
 
     const estatusData = { "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"1.2 RETEN",col:"#7D3F00"}, "s4":{nombre:"1.3 Resguardo",col:"#5C338A"}, "s5":{nombre:"2. Incidencia",col:"#FFCCCC"}, "s6":{nombre:"3. Cargando",col:"#EAEAEA"}, "s7":{nombre:"4. Descargando",col:"#D0F0C0"}, "s8":{nombre:"5. Patio GDL",col:"#BCE3F9"}, "s9":{nombre:"6. Patio Reynosa",col:"#C2DEDB"}, "s10":{nombre:"7. Taller",col:"#B5A6A6"}, "s11":{nombre:"8. Finalizado",col:"#0055A5"} };
@@ -250,7 +253,13 @@
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
         
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); });
-        db.ref('operadores').on('value', s => { dbOperadores = s.val() || {}; renderizarAdmin(); });
+        
+        // LEEMOS LOS CATÁLOGOS MAESTROS DESDE FIREBASE
+        db.ref('catalogo_unidades').on('value', s => { 
+            catalogoUnidades = s.val() || {}; 
+            actualizarDatalistUnidades(); // Construye lista al instante
+        });
+        db.ref('catalogo_operadores').on('value', s => { catalogoOperadores = s.val() || {}; });
         
         db.ref('viajes_activos').on('value', s => { 
             viajesActivos = s.val() || {}; 
@@ -268,9 +277,10 @@
         document.getElementById("logPass").addEventListener("keyup", function(e) { if (e.key === "Enter") autenticarUsuario(); });
         document.getElementById("logUser").addEventListener("keyup", function(e) { if (event.key === "Enter") document.getElementById("logPass").focus(); });
 
+        // AUTO-OPERADOR DESDE FIREBASE
         document.getElementById("nv_unidad_input").addEventListener("input", function() {
             let val = this.value.trim().toUpperCase(); let opInput = document.getElementById("nv_operador");
-            if(dbOperadores[val]) { opInput.value = dbOperadores[val].toUpperCase(); } else { opInput.value = ""; }
+            if(catalogoOperadores[val]) { opInput.value = catalogoOperadores[val].toUpperCase(); } else { opInput.value = ""; }
         });
 
         let savedUser = localStorage.getItem("tms_user"); let savedPass = localStorage.getItem("tms_pass");
@@ -296,70 +306,82 @@
     function cerrarSesion() { localStorage.removeItem("tms_user"); localStorage.removeItem("tms_pass"); location.reload(); }
 
     // =========================================================================
-    // 3. MOTOR API FETCH (A prueba de bloqueos, rápido y estable)
+    // 3. MOTOR FETCH API (EXTRACCIÓN Y RESPALDO A FIREBASE)
     // =========================================================================
     async function wialonAPI(url, svc, params, sid=null) {
-        let fd = new URLSearchParams();
-        if(params) fd.append("params", JSON.stringify(params));
-        if(sid) fd.append("sid", sid);
-        try {
-            let res = await fetch(`${url}/wialon/ajax.html?svc=${svc}`, { method: 'POST', body: fd });
-            return await res.json();
-        } catch(e) { return null; }
+        let fd = new URLSearchParams(); if(params) fd.append("params", JSON.stringify(params)); if(sid) fd.append("sid", sid);
+        try { let res = await fetch(`${url}/wialon/ajax.html?svc=${svc}`, { method: 'POST', body: fd }); return await res.json(); } catch(e) { return null; }
     }
 
     async function arranqueCentral() {
         if(pollingInterval) clearInterval(pollingInterval);
         await descargarFlotas();
-        pollingInterval = setInterval(descargarFlotas, 20000); // 20 segs para no saturar 
+        pollingInterval = setInterval(descargarFlotas, 20000); 
     }
 
     async function descargarFlotas() {
         let ind = document.getElementById("syncIndicator");
-        if(Object.keys(unidadesGlobales).length === 0) ind.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Conectando API...";
+        if(Object.keys(unidadesGlobales).length === 0) ind.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Extrayendo DB...";
         
         if(!configSistema.tokens || configSistema.tokens.length === 0) { ind.className = "badge bg-danger"; ind.innerHTML = "Sin Tokens"; return; }
 
-        let tempUnidades = { ...unidadesGlobales }; // Respaldo por si falla internet
-        let successCount = 0;
+        let tempUnidades = {}; let successCount = 0;
 
         for (let tkObj of configSistema.tokens) {
-            let url = (tkObj.url || "https://hst-api.wialon.com").replace(/\/$/, ""); 
-            let tk = tkObj.token || tkObj;
+            let url = (tkObj.url || "https://hst-api.wialon.com").replace(/\/$/, ""); let tk = tkObj.token || tkObj;
             
-            let login = await wialonAPI(url, 'token/login', {token: tk});
-            if(login && login.eid) {
-                successCount++;
-                let sid = login.eid;
-                let req = await wialonAPI(url, 'core/search_items', {
-                    spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"},
-                    force: 1, flags: 1025, from: 0, to: 0
-                }, sid);
-                
-                if(req && req.items) {
-                    req.items.forEach(u => {
-                        tempUnidades[u.id] = { id: u.id, name: u.nm.toUpperCase(), pos: u.pos, tk: tkObj.nombre };
-                        mapUnidades[u.nm.toUpperCase()] = u.id; // Llenado seguro para buscador
-                    });
+            try {
+                let login = await wialonAPI(url, 'token/login', {token: tk});
+                if(login && login.eid) {
+                    successCount++; let sid = login.eid; let localUnitMap = {};
+                    
+                    // PASO 1: BAJAR UNIDADES
+                    let reqU = await wialonAPI(url, 'core/search_items', { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025, from: 0, to: 0 }, sid);
+                    if(reqU && reqU.items) {
+                        reqU.items.forEach(u => {
+                            let uName = u.nm.toUpperCase();
+                            localUnitMap[u.id] = uName;
+                            tempUnidades[u.id] = { id: u.id, name: uName, pos: u.pos };
+                            // Guardar en Firebase como Maestro
+                            db.ref(`catalogo_unidades/${uName}`).set({ id: u.id, tkName: tkObj.nombre });
+                        });
+                    }
+
+                    // PASO 2: BAJAR CONDUCTORES ASIGNADOS (bind_driver_to_unit logic)
+                    try {
+                        let reqR = await wialonAPI(url, 'core/search_items', { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 256, from: 0, to: 0 }, sid);
+                        if(reqR && reqR.items) {
+                            reqR.items.forEach(r => {
+                                if(r.drv) {
+                                    Object.values(r.drv).forEach(d => {
+                                        // Si el conductor tiene una unidad asignada (bu) y la unidad existe
+                                        if(d.bu && localUnitMap[d.bu]) {
+                                            let assignedUnitName = localUnitMap[d.bu];
+                                            db.ref(`catalogo_operadores/${assignedUnitName}`).set(d.n.toUpperCase());
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    } catch(e) { console.log("Token sin permisos de Operadores:", tkObj.nombre); }
+
+                    // Eventos Alertas Wialon
+                    wialonAPI(url, 'core/logout', {}, sid); 
                 }
-                wialonAPI(url, 'core/logout', {}, sid); // Logout limpio
-            }
+            } catch(e) {}
         }
 
         unidadesGlobales = tempUnidades;
-        actualizarDatalistUnidades(); 
-        
-        if(successCount > 0) {
-            ind.className = "badge bg-success"; ind.innerHTML = `<i class='fa-solid fa-check-double'></i> ${Object.keys(unidadesGlobales).length} Camiones`;
-        } else { ind.className = "badge bg-danger"; ind.innerHTML = "Error de Red"; }
+        if(successCount > 0) { ind.className = "badge bg-success"; ind.innerHTML = `<i class='fa-solid fa-check-double'></i> ${Object.keys(catalogoUnidades).length} Camiones`; } else { ind.className = "badge bg-danger"; ind.innerHTML = "Error de Red"; }
 
         renderizarBitacora(); actualizarMarcadoresMapa(); updateAddressesBackground();
     }
 
     function actualizarDatalistUnidades() {
         const dl = document.getElementById("listaUnidadesTotales"); dl.innerHTML = ""; 
-        Object.values(unidadesGlobales).forEach(u => {
-            if(!viajesActivos[u.id]) { let opt = document.createElement("option"); opt.value = u.name; dl.appendChild(opt); }
+        Object.keys(catalogoUnidades).forEach(uName => {
+            let uData = catalogoUnidades[uName];
+            if(!viajesActivos[uData.id]) { let opt = document.createElement("option"); opt.value = uName; dl.appendChild(opt); }
         });
     }
 
@@ -367,16 +389,11 @@
         Object.keys(viajesActivos).forEach(id => {
             let u = unidadesGlobales[id];
             if(u && u.pos && u.pos.x) {
-                let key = u.pos.y.toFixed(3) + "," + u.pos.x.toFixed(3);
-                let el = document.getElementById(`addr_${id}`);
-                
-                if(geocodeCache[key]) {
-                    if(el) el.innerText = geocodeCache[key]; checkArribo(id, viajesActivos[id], geocodeCache[key]);
-                } else {
+                let key = u.pos.y.toFixed(3) + "," + u.pos.x.toFixed(3); let el = document.getElementById(`addr_${id}`);
+                if(geocodeCache[key]) { if(el) el.innerText = geocodeCache[key]; checkArribo(id, viajesActivos[id], geocodeCache[key]); } 
+                else {
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.pos.y}&lon=${u.pos.x}&zoom=15&addressdetails=0`)
-                    .then(r => r.json()).then(d => {
-                        let addr = d.display_name || `${u.pos.y.toFixed(5)}, ${u.pos.x.toFixed(5)}`;
-                        geocodeCache[key] = addr; if(el) el.innerText = addr; checkArribo(id, viajesActivos[id], addr);
+                    .then(r => r.json()).then(d => { let addr = d.display_name || `${u.pos.y.toFixed(5)}, ${u.pos.x.toFixed(5)}`; geocodeCache[key] = addr; if(el) el.innerText = addr; checkArribo(id, viajesActivos[id], addr);
                     }).catch(()=>{ if(el) el.innerText = `Coord: ${u.pos.y.toFixed(4)}, ${u.pos.x.toFixed(4)}`; });
                 }
             }
@@ -384,12 +401,10 @@
     }
 
     function checkArribo(id, v, dirStr) {
-        if(v.destino && !v.t_arribo && dirStr.toUpperCase().includes(v.destino.toUpperCase())) {
-            registrarTiempo(id, 't_arribo'); auditoria(id, `AUTO-ARRIBO: Localizado en ${v.destino}`);
-        }
+        if(v.destino && !v.t_arribo && dirStr.toUpperCase().includes(v.destino.toUpperCase())) { registrarTiempo(id, 't_arribo'); auditoria(id, `AUTO-ARRIBO: Localizado en ${v.destino}`); }
     }
 
-    // 4. RENDERIZADO VISUAL A PRUEBA DE FALLOS
+    // 4. RENDERIZADO VISUAL
     function renderizarBitacora() {
         if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return; 
         const tbody = document.getElementById('units-body'); let html = "";
@@ -397,12 +412,9 @@
         let tree = { "Sin_Cliente": { "__n/a__": [] } };
         Object.keys(dataClientes).forEach(cId => { tree[cId] = { "__n/a__": [] }; if(dataClientes[cId].subclientes) { Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []); } });
 
-        // DIBUJAMOS LA TABLA BASÁNDONOS EN FIREBASE, ASÍ NUNCA SE BORRAN SI WIALON FALLA
         Object.keys(viajesActivos).forEach(id => {
             let v = viajesActivos[id]; 
-            // Si la API falló, rescatamos el nombre de Firebase, si no, usamos el vivo
             let u = unidadesGlobales[id] || { id: id, name: v.unidadFallback || "Sin Conexión", pos: null }; 
-            
             let cId = v.cliente || "Sin_Cliente"; let sId = v.subcliente || "__n/a__";
             if(!tree[cId]) tree[cId] = {"__n/a__": []}; if(!tree[cId][sId]) tree[cId][sId] = [];
             tree[cId][sId].push({u: u, v: v});
@@ -420,23 +432,19 @@
                 tree[cId][sId].forEach(item => {
                     const u = item.u; const v = item.v; const id = u.id; const pos = u.pos;
                     const rowClass = (pos && pos.t && ((Date.now()/1000 - pos.t) > 1800)) ? "inactive-row" : "";
-                    const speed = pos ? pos.s : 0; 
-                    const iconMotor = speed > 0 ? `<i class="fa-solid fa-bolt text-success"></i>` : `<i class="fa-regular fa-circle text-danger"></i>`;
+                    const speed = pos ? pos.s : 0; const iconMotor = speed > 0 ? `<i class="fa-solid fa-bolt text-success"></i>` : `<i class="fa-regular fa-circle text-danger"></i>`;
                     
                     let currentDriver = v.operador || ''; 
                     const tSal = v.t_salida ? `<div class="input-group input-group-sm mb-1"><span class="input-group-text bg-success text-white py-0 px-1" style="font-size:9px;">S</span><input type="datetime-local" class="form-control time-input py-0 px-1" value="${formatDateForInput(v.t_salida)}" onchange="modificarTiempo('${id}','t_salida',this.value)"></div>` : `<button class="btn btn-outline-success btn-sm py-0 mb-1 w-100 fw-bold" style="font-size:9px;" onclick="registrarTiempo('${id}','t_salida')">Salida</button>`;
                     const tArr = v.t_arribo ? `<div class="input-group input-group-sm"><span class="input-group-text bg-danger text-white py-0 px-1" style="font-size:9px;">A</span><input type="datetime-local" class="form-control time-input py-0 px-1" value="${formatDateForInput(v.t_arribo)}" onchange="modificarTiempo('${id}','t_arribo',this.value)"></div>` : `<button class="btn btn-outline-danger btn-sm py-0 w-100 fw-bold" style="font-size:9px;" onclick="registrarTiempo('${id}','t_arribo')">Arribo</button>`;
 
-                    let alertaUI = `<span class="text-muted small">OK</span>`;
-                    if(v.alerta) alertaUI = `<div class="text-danger fw-bold" style="font-size:9px; line-height:1;"><i class="fa-solid fa-bell fa-shake"></i> ${new Date(v.alerta.ts).toLocaleTimeString()}<br>${v.alerta.txt}</div>`;
+                    let alertaUI = `<span class="text-muted small">OK</span>`; if(v.alerta) alertaUI = `<div class="text-danger fw-bold" style="font-size:9px; line-height:1;"><i class="fa-solid fa-bell fa-shake"></i> ${new Date(v.alerta.ts).toLocaleTimeString()}<br>${v.alerta.txt}</div>`;
                     let ultLog = ""; if(v.bitacora) { let l = Object.values(v.bitacora).pop(); ultLog = `<div class="audit-log"><b class="text-primary">${l.autor}:</b> ${l.txt}</div>`; }
                     const bgSt = estatusData[v.estatus] ? estatusData[v.estatus].col : '#fff'; const fgSt = ['#EAEAEA','#FFCCCC','#D0F0C0','#BCE3F9'].includes(bgSt) ? '#333' : '#fff';
 
                     let clickMap = pos ? `onclick="centrarUnidadMapa(${pos.y}, ${pos.x})"` : "";
                     const mapLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : '#';
-                    
-                    let keyDir = pos ? (pos.y.toFixed(3) + "," + pos.x.toFixed(3)) : "";
-                    let dirActual = geocodeCache[keyDir] || (pos ? "Buscando..." : "Sin GPS");
+                    let keyDir = pos ? (pos.y.toFixed(3) + "," + pos.x.toFixed(3)) : ""; let dirActual = geocodeCache[keyDir] || (pos ? "Buscando..." : "Sin GPS");
 
                     cliHtml += `<tr class="${rowClass}">
                         <td class="fw-bold fs-6 unit-name" ${clickMap} title="Ver en el mapa">${u.name}</td>
@@ -469,29 +477,31 @@
     }
     function registrarViaje() {
         let uNom = document.getElementById("nv_unidad_input").value.trim().toUpperCase();
-        let uId = mapUnidades[uNom]; 
-        if (!uId) return alert("Unidad no encontrada en el sistema. Asegúrate de seleccionarla de la lista desplegable.");
+        let uData = catalogoUnidades[uNom]; // Leer de DB Maestra
+        if (!uData) return alert("Unidad no encontrada. Seleccione de la lista.");
         
-        db.ref('viajes_activos/' + uId).set({ 
+        db.ref('viajes_activos/' + uData.id).set({ 
             cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), estatus: "s1", operador: document.getElementById("nv_operador").value.trim().toUpperCase(), unidadFallback: uNom, bitacora: [{autor: currentUser.nom, fecha: Date.now(), txt: "Registró Viaje"}] 
         });
         bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); actualizarDatalistUnidades(); 
     }
     function abrirEditarViaje(uId, cC, cS) { document.getElementById("edit_viaje_id").value = uId; let selC = document.getElementById("ev_cliente"); selC.innerHTML = `<option value="">Sin Cliente</option>`; Object.keys(dataClientes).forEach(k => { let isSel = (k === cC) ? "selected" : ""; selC.innerHTML += `<option value="${k}" ${isSel}>${dataClientes[k].nombre}</option>`; }); cargarSubclientesEnSelect("ev_subcliente", cC, cS); new bootstrap.Modal(document.getElementById('modalEditarViaje')).show(); }
-    function guardarEdicionViaje() { let id = document.getElementById("edit_viaje_id").value; db.ref(`viajes_activos/${id}/cliente`).set(document.getElementById("ev_cliente").value); db.ref(`viajes_activos/${id}/subcliente`).set(document.getElementById("ev_subcliente").value); auditoria(id, "Reasignó cliente/grupo."); bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide(); }
+    function guardarEdicionViaje() { let id = document.getElementById("edit_viaje_id").value; db.ref(`viajes_activos/${id}/cliente`).set(document.getElementById("ev_cliente").value); db.ref(`viajes_activos/${id}/subcliente`).set(document.getElementById("ev_subcliente").value); auditoria(id, "Reasignó cliente."); bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide(); }
 
     // ADMIN 
     function renderizarAdmin() {
         let ulT = document.getElementById("listaTokens"); ulT.innerHTML = ""; (configSistema.tokens||[]).forEach((tk, i) => { ulT.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><b>${tk.nombre||'Plataforma'}</b><br><small class="text-muted">${tk.url||'Wialon'}</small></div><button class="btn btn-sm btn-danger py-0" onclick="borrarToken(${i})"><i class="fa-solid fa-trash"></i></button></li>`; });
         let ulU = document.getElementById("listaUsuarios"); ulU.innerHTML = ""; Object.keys(configSistema.usuarios).forEach(u => { ulU.innerHTML += `<li class="list-group-item d-flex justify-content-between"><b>${u}</b> (${configSistema.usuarios[u].rol}) <button class="btn btn-sm btn-danger py-0" onclick="db.ref('sistema/usuarios/${u}').remove()"><i class="fa-solid fa-trash"></i></button></li>`; });
-        let ulO = document.getElementById("listaOperadoresAdmin"); ulO.innerHTML = ""; Object.keys(dbOperadores).forEach(uni => { ulO.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><b class="text-primary">${uni}</b><br>${dbOperadores[uni]}</div><button class="btn btn-sm btn-outline-danger py-0" onclick="db.ref('operadores/${uni}').remove()"><i class="fa-solid fa-trash"></i></button></li>`; });
         actualizarListasAdmin();
     }
     function agregarToken() { let val = document.getElementById("tk_val").value.trim(); if(!val) return; let tokens = [...(configSistema.tokens || [])]; tokens.push({ nombre: document.getElementById("tk_nom").value.trim().toUpperCase() || "WIALON", url: document.getElementById("tk_url").value.trim() || "https://hst-api.wialon.com", token: val }); db.ref('sistema/tokens').set(tokens); document.getElementById("tk_nom").value=""; document.getElementById("tk_val").value=""; }
     function borrarToken(idx) { if(!confirm("¿Eliminar plataforma?")) return; let tokens = [...(configSistema.tokens || [])]; tokens.splice(idx,1); db.ref('sistema/tokens').set(tokens); }
     function crearCliente() { db.ref('clientes').push({ nombre: document.getElementById("cli_nombre").value.toUpperCase(), icono: document.getElementById("cli_icono").value || "🚛" }); document.getElementById("cli_nombre").value=""; }
     function crearSubcliente() { let cId = document.getElementById("sub_clientePadre").value; let sNom = document.getElementById("sub_nombre").value.toUpperCase(); if(!cId || !sNom) return; db.ref(`clientes/${cId}/subclientes`).push({ nombre: sNom }); document.getElementById("sub_nombre").value=""; }
-    function vincularOperador() { let uNom = document.getElementById("op_unidad").value.trim().toUpperCase(); let oNom = document.getElementById("op_nombre").value.trim().toUpperCase(); if(!uNom || !oNom) return; db.ref(`operadores/${uNom}`).set(oNom); document.getElementById("op_unidad").value = ""; document.getElementById("op_nombre").value = ""; }
+    
+    // VINCULACIÓN MANUAL OPERADOR
+    function vincularOperadorManual() { let uNom = document.getElementById("op_unidad").value.trim().toUpperCase(); let oNom = document.getElementById("op_nombre").value.trim().toUpperCase(); if(!uNom || !oNom) return; db.ref(`catalogo_operadores/${uNom}`).set(oNom); document.getElementById("op_unidad").value = ""; document.getElementById("op_nombre").value = ""; alert("Operador forzado en DB");}
+    
     function actualizarListasAdmin() {
         let lCli = document.getElementById("listaClientesAdmin"); lCli.innerHTML=""; let selPadre = document.getElementById("sub_clientePadre"); selPadre.innerHTML=`<option value="">Seleccionar Cliente...</option>`; let lSub = document.getElementById("listaSubclientesAdmin"); lSub.innerHTML="";
         Object.keys(dataClientes).forEach(cId => { lCli.innerHTML += `<li class="list-group-item d-flex justify-content-between"><span>${dataClientes[cId].icono} ${dataClientes[cId].nombre}</span><button onclick="db.ref('clientes/${cId}').remove()" class="btn btn-sm btn-danger py-0">X</button></li>`; selPadre.innerHTML += `<option value="${cId}">${dataClientes[cId].nombre}</option>`; if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => { lSub.innerHTML += `<li class="list-group-item d-flex justify-content-between"><span>[${dataClientes[cId].nombre}] -> ${dataClientes[cId].subclientes[sId].nombre}</span><button onclick="db.ref('clientes/${cId}/subclientes/${sId}').remove()" class="btn btn-sm btn-warning py-0">X</button></li>`; }); });
