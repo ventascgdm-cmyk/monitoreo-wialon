@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>GRUDICOM TI & GPS | C4 - LIVE</title>
+    <title>GRUDICOM TI & GPS | C4 - OPERATIVO FINAL</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -22,33 +22,37 @@
         .login-card { background: var(--bg-card); color: var(--text-main); width: 380px; border-radius: 12px; padding: 40px; box-shadow: 0 15px 35px rgba(0,0,0,0.5);}
         
         .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .card { background: var(--bg-card); border: 1px solid var(--border-col); }
         
         .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 70px); width: 100%; overflow: hidden; }
-        .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--header-bg); }
-        .workspace-container.show-map .map-panel { height: 40%; border-bottom: 4px solid var(--header-bg); }
+        .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--header-bg); position: relative;}
+        .workspace-container.show-map .map-panel { height: 45%; border-bottom: 4px solid var(--header-bg); }
         .table-panel { height: 100%; width: 100%; transition: height 0.4s ease; overflow-y: auto; padding: 15px; }
-        .workspace-container.show-map .table-panel { height: 60%; }
+        .workspace-container.show-map .table-panel { height: 55%; }
         #map { width: 100%; height: 100%; z-index: 1;}
         
         .table-input { border: 1px solid var(--border-col); padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; text-align: center; font-weight: 600; background: var(--table-bg); color: var(--text-main); text-transform: uppercase;}
         
+        /* ESTILOS DE ENCABEZADOS */
         .header-columnas th { background-color: var(--header-bg) !important; color: white !important; font-size: 0.60rem; font-weight: 700; text-align: center; vertical-align: middle; padding: 8px 4px; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); }
         .header-cliente { background-color: #336699 !important; color: white !important; font-size: 0.85rem; font-weight: bold; text-align: left; padding: 6px 15px !important; text-transform: uppercase; }
         .header-subcliente { background-color: #5c6c7c !important; color: white !important; font-size: 0.75rem; font-weight: bold; text-align: left; padding: 4px 25px !important; }
         
         .status-select { border-radius: 20px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.70rem; padding: 4px 15px; color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; }
-        
         .unit-name { cursor: pointer; text-decoration: underline; color: #2c3e50; font-weight: 900; font-size: 0.8rem; }
         .unit-lost { color: #dc3545; font-weight: bold; font-size: 0.8rem; }
+        .lost-connection-row td { background-color: #ffe6e6 !important; }
         
         .speed-badge { font-size: 0.85rem; font-weight: bold; border-radius: 6px; width: 80px; text-align: center; color: white; display: inline-block; padding: 4px 0; margin-bottom: 3px;}
-        .addr-link { font-size: 0.65rem; line-height: 1.1; color: #0d6efd; text-decoration: none; display: block; max-width: 140px; margin: 0 auto; font-weight: 600; }
+        .addr-link { font-size: 0.65rem; line-height: 1.1; color: #0d6efd; text-decoration: none; display: block; max-width: 150px; margin: 0 auto; font-weight: 600; text-align: center;}
         .addr-link:hover { text-decoration: underline; color: #0a58ca; }
         
         .input-group-text { background: transparent; border-right: none; font-size: 0.7rem; font-weight: bold; color: #555; padding: 2px 6px; }
         .ruta-input { border-left: none; padding: 2px 5px; font-size: 0.7rem; font-weight: bold; }
         .cp { cursor: pointer; }
+
+        /* Estilo para los tooltips del mapa */
+        .leaflet-tooltip.custom-tooltip { background: #2c3e50; color: #fff; border: none; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); font-weight: 500; font-size: 0.75rem; padding: 6px 10px; }
+        .leaflet-tooltip.custom-tooltip::before { border-top-color: #2c3e50; }
     </style>
 </head>
 <body>
@@ -60,7 +64,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host Persistente v7.0</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v8.0</div>
     </div>
 </div>
 
@@ -87,7 +91,7 @@
         <div class="map-panel"><div id="map"></div></div>
         <div class="table-panel">
             <div class="row mb-2 align-items-center">
-                <div class="col-md-4"><input type="text" id="buscador" class="form-control form-control-sm" placeholder="🔍 Buscar unidad, cliente, subcliente, destino..." onkeyup="filtrarTabla()"></div>
+                <div class="col-md-4"><input type="text" id="buscador" class="form-control form-control-sm border-primary" placeholder="🔍 Buscar unidad, destino, estatus..." onkeyup="filtrarTablaInteligente()"></div>
                 <div class="col-md-8 text-end"><span id="syncIndicator" class="badge bg-secondary">Cargando flotas...</span></div>
             </div>
             <div class="card shadow-sm border-0 h-100 bg-transparent">
@@ -103,17 +107,7 @@
 
 <div class="modal fade" id="modalStatusTokens" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-warning text-dark"><h6 class="modal-title fw-bold"><i class="fa-solid fa-satellite-dish"></i> ESTATUS DE CONEXIÓN GPS</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><ul class="list-group list-group-flush" id="listaStatusTokens"><li class="list-group-item text-muted text-center p-4">Esperando primera sincronización...</li></ul></div></div></div></div>
 
-<div class="modal fade" id="modalAdmin" tabindex="-1">
-  <div class="modal-dialog modal-xl"><div class="modal-content">
-      <div class="modal-header bg-danger text-white"><h6 class="modal-title fw-bold">ADMINISTRACIÓN MAESTRA</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body"><div class="row">
-          <div class="col-md-3 border-end"><h6>Tokens GPS (RACEL/DSG)</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="tk_nom" class="form-control form-control-sm mb-1" placeholder="Ej. RACEL"><input type="text" id="tk_url" class="form-control form-control-sm mb-1" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-1" placeholder="Token Largo"><button class="btn btn-success btn-sm w-100" onclick="agregarToken()">Guardar</button></div><ul class="list-group list-group-sm mt-2" id="listaTokensActivos"></ul></div>
-          <div class="col-md-3 border-end"><h6>Clientes</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="cli_nombre" class="form-control form-control-sm mb-1" placeholder="Empresa"><button onclick="crearCliente()" class="btn btn-success btn-sm w-100">Añadir</button></div><ul class="list-group list-group-sm" id="listaClientesAdmin"></ul></div>
-          <div class="col-md-3 border-end"><h6>Subclientes</h6><div class="p-2 bg-light border rounded mb-2"><select id="sub_clientePadre" class="form-select form-select-sm mb-1"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-1" placeholder="Sub-empresa"><button onclick="crearSubcliente()" class="btn btn-success btn-sm w-100">Añadir</button></div><ul class="list-group list-group-sm" id="listaSubclientesAdmin"></ul></div>
-          <div class="col-md-3"><h6>Monitoristas</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="usr_id" class="form-control form-control-sm mb-1" placeholder="Usuario (login)"><input type="text" id="usr_nom" class="form-control form-control-sm mb-1" placeholder="Nombre completo"><input type="text" id="usr_pass" class="form-control form-control-sm mb-1" placeholder="Contraseña"><button onclick="crearUsuario()" class="btn btn-success btn-sm w-100">Crear</button></div><ul class="list-group list-group-sm" id="listaUsuariosAdmin"></ul></div>
-      </div></div>
-  </div></div>
-</div>
+<div class="modal fade" id="modalAdmin" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header bg-danger text-white"><h6 class="modal-title fw-bold">ADMINISTRACIÓN MAESTRA</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row"><div class="col-md-3 border-end"><h6>Tokens GPS</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="tk_nom" class="form-control form-control-sm mb-1" placeholder="Ej. RACEL"><input type="text" id="tk_url" class="form-control form-control-sm mb-1" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-1" placeholder="Token Largo"><button class="btn btn-success btn-sm w-100" onclick="agregarToken()">Guardar</button></div><ul class="list-group list-group-sm mt-2" id="listaTokensActivos"></ul></div><div class="col-md-3 border-end"><h6>Clientes</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="cli_nombre" class="form-control form-control-sm mb-1" placeholder="Empresa"><button onclick="crearCliente()" class="btn btn-success btn-sm w-100">Añadir</button></div><ul class="list-group list-group-sm" id="listaClientesAdmin"></ul></div><div class="col-md-3 border-end"><h6>Subclientes</h6><div class="p-2 bg-light border rounded mb-2"><select id="sub_clientePadre" class="form-select form-select-sm mb-1"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-1" placeholder="Sub-empresa"><button onclick="crearSubcliente()" class="btn btn-success btn-sm w-100">Añadir</button></div><ul class="list-group list-group-sm" id="listaSubclientesAdmin"></ul></div><div class="col-md-3"><h6>Monitoristas</h6><div class="p-2 bg-light border rounded mb-2"><input type="text" id="usr_id" class="form-control form-control-sm mb-1" placeholder="Usuario (login)"><input type="text" id="usr_nom" class="form-control form-control-sm mb-1" placeholder="Nombre completo"><input type="text" id="usr_pass" class="form-control form-control-sm mb-1" placeholder="Contraseña"><button onclick="crearUsuario()" class="btn btn-success btn-sm w-100">Crear</button></div><ul class="list-group list-group-sm" id="listaUsuariosAdmin"></ul></div></div></div></div></div></div>
 
 <div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">REGISTRAR UNIDAD</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small"><label>Unidad GPS:</label><input type="text" class="form-control form-control-sm mb-2 border-primary fw-bold" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off" placeholder="Selecciona o escribe el nombre exacto..."><label>Operador:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2" list="listaConductores" autocomplete="off"><div class="row mb-2"><div class="col-6"><label>Cliente:</label><select id="nv_cliente" class="form-select form-select-sm" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div><div class="col-6"><label>Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm"><option value="">N/A</option></select></div></div><div class="row"><div class="col-6"><label>Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm mb-2" list="listaGeocercas"></div><div class="col-6"><label>Destino:</label><input type="text" id="nv_destino" class="form-control form-control-sm mb-2" list="listaGeocercas"></div></div><button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold mt-2">REGISTRAR EN BITÁCORA</button></div></div></div></div>
 
@@ -130,39 +124,61 @@
 
     let currentUser = null, configSistema = { tokens: [] }, dataClientes = {}, viajesActivos = {};
     let unidadesGlobales = {}, ramDrivers = {}, geocercasNativas = [], activeSIDs = {}, pollingInterval = null;
-    let lmap = null, mapVisible = false, geocodeCache = {};
+    let lmap = null, mapVisible = false, mapLayerGroup = null;
     let estadoTokens = {}; 
+
+    // SISTEMA DE CACHÉ Y COLA DE DIRECCIONES (Súper Rápido y Anti-Bloqueo)
+    let geocodeCache = {}; 
+    let geoQueue = [];
+    let isGeocoding = false;
 
     const estatusData = { 
         "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"1.2 RETEN",col:"#7D3F00"}, "s4":{nombre:"1.3 Resguardo",col:"#5C338A"}, "s5":{nombre:"1.4 REGRESANDO",col:"#D97706"}, "s6":{nombre:"2. Incidencia",col:"#DC2626"}, "s7":{nombre:"3. Cargando",col:"#EAEAEA"}, "s8":{nombre:"4. Descargando",col:"#D0F0C0"}, "s9":{nombre:"5. Patio GDL",col:"#BCE3F9"}, "s10":{nombre:"6. Patio Reynosa",col:"#C2DEDB"}, "s11":{nombre:"7. Taller",col:"#9CA3AF"}, "s12":{nombre:"8. Finalizado",col:"#0055A5"}, "s13":{nombre:"9. Baja cobertura",col:"#FBBF24"}, "s14":{nombre:"ALIMENTOS",col:"#F59E0B"} 
     };
 
-    function formatTimeFriendly(unixSecs) { if(!unixSecs) return "--:--"; let d = new Date(unixSecs * 1000); return d.toLocaleDateString('es-MX', {day:'2-digit', month:'2-digit'}) + " " + d.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}); }
+    function formatTimeFriendly(unixSecs) { 
+        if(!unixSecs) return "--:--"; 
+        let d = new Date(unixSecs * 1000); 
+        let now = new Date();
+        if(d.toDateString() === now.toDateString()) return d.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+        return d.toLocaleDateString('es-MX', {day:'2-digit', month:'2-digit'}) + " " + d.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}); 
+    }
+    
+    // CALCULA "HACE X MINUTOS" PARA EL MAPA
+    function timeAgo(unixSecs) {
+        if(!unixSecs) return "Desconocido";
+        let diff = Math.floor(Date.now()/1000) - unixSecs;
+        if(diff < 60) return `hace ${diff} seg`;
+        if(diff < 3600) return `hace ${Math.floor(diff/60)} min`;
+        return `hace ${Math.floor(diff/3600)} horas`;
+    }
+
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('tms_dark_mode', document.body.classList.contains('dark-mode')); }
-    function initMap() { lmap = L.map('map').setView([23.6, -102.5], 5); L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(lmap); }
-    function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) lmap.invalidateSize(); }, 400); }
-    function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 15), 400); }
-
-    function shareWA(u, loc, o, d, est) {
-        let estNombre = estatusData[est]?.nombre || "En Trayecto";
-        let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n🚛 *Unidad:* ${u}\n🛣️ *Ruta:* ${o||'N/A'} ➔ ${d||'N/A'}\n🚦 *Estatus:* ${estNombre}\n📍 *Ubicación:* ${loc}\n\n_Reporte C4_`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    
+    // INICIALIZACIÓN DEL MAPA CON CAPA DE MARCADORES
+    function initMap() { 
+        lmap = L.map('map').setView([23.6, -102.5], 5); 
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(lmap); 
+        mapLayerGroup = L.layerGroup().addTo(lmap);
     }
+    function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
+    function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
 
-    // SISTEMA CENTRAL DE LOGS DE AUDITORÍA
-    function registrarLog(viajeId, accion, detalle = "") {
-        let usrName = currentUser ? currentUser.nom : "Sistema";
-        db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle });
-    }
+    function shareWA(u, loc, o, d, est) { let estNombre = estatusData[est]?.nombre || "En Trayecto"; let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n🚛 *Unidad:* ${u}\n🛣️ *Ruta:* ${o||'N/A'} ➔ ${d||'N/A'}\n🚦 *Estatus:* ${estNombre}\n📍 *Ubicación:* ${loc}\n\n_Reporte C4_`; window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); }
+
+    function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
 
     window.onload = function () {
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
-        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); });
+        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); if(mapVisible) actualizarMarcadoresMapa(); });
         db.ref('sistema/tokens').on('value', s => { let tks = s.val() || {}; configSistema.tokens = Object.values(tks); actualizarListaTokensAdmin(tks); if(currentUser) arranqueMotor(); });
         document.getElementById("logPass").addEventListener("keyup", e => e.key === "Enter" && autenticarUsuario());
         document.getElementById("nv_unidad_input").addEventListener("input", function() { let uN = this.value.toUpperCase(); document.getElementById("nv_operador").value = ramDrivers[uN] || ""; });
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
+        
+        // Iniciar procesador de direcciones
+        setInterval(procesarFilaDirecciones, 1100); 
     };
 
     function autenticarUsuario(aU, aP) {
@@ -192,6 +208,7 @@
     }
 
     async function arranqueMotor() { if(pollingInterval) clearInterval(pollingInterval); await sincronizarFlotas(); pollingInterval = setInterval(sincronizarFlotas, 20000); }
+    
     function renderStatusTokens() {
         const lista = document.getElementById("listaStatusTokens"); let html = "";
         for(let tk in estadoTokens) { let stat = estadoTokens[tk]; let badge = stat.status === 'OK' ? '<span class="badge bg-success">ONLINE</span>' : '<span class="badge bg-danger">OFFLINE</span>'; html += `<li class="list-group-item d-flex justify-content-between align-items-center p-3"><div class="fw-bold">${tk}</div> <div><span class="badge bg-secondary me-2">${stat.count} Unidades</span> ${badge}</div></li>`; }
@@ -224,7 +241,37 @@
         
         if(conexionesExitosas > 0) { ind.className = "badge bg-success"; ind.innerText = Object.keys(unidadesGlobales).length + " Camiones En Vivo"; } 
         else { ind.className = "badge bg-danger"; ind.innerText = "Error GPS - Modo Manual"; }
-        renderStatusTokens(); renderizarBitacora(); updateAddresses();
+        renderStatusTokens(); renderizarBitacora(); desencadenarGeocoding(); if(mapVisible) actualizarMarcadoresMapa();
+    }
+
+    // DIBUJAR MARCADORES EN EL MAPA CON TOOLTIPS
+    function actualizarMarcadoresMapa() {
+        if(!lmap || !mapLayerGroup) return;
+        mapLayerGroup.clearLayers();
+        
+        Object.keys(viajesActivos).forEach(vId => {
+            let v = viajesActivos[vId];
+            let uIdGps = null;
+            Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === v.unidadN) uIdGps = k; });
+            let u = unidadesGlobales[uIdGps];
+            
+            if(u && u.pos) {
+                let colorIcon = u.pos.s > 0 ? 'green' : 'red';
+                let markerHtml = `<div style="background-color: ${colorIcon}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`;
+                let customIcon = L.divIcon({ html: markerHtml, className: '', iconSize: [14, 14], iconAnchor: [7, 7] });
+                
+                let tooltipContent = `
+                    <div style="text-align:center;">
+                        <b style="font-size:14px; color:#f39c12;">${u.name}</b><br>
+                        ${u.pos.s} km/h<br>
+                        <span style="color:#bdc3c7; font-size:10px;">${timeAgo(u.pos.t)}</span>
+                    </div>`;
+
+                L.marker([u.pos.y, u.pos.x], {icon: customIcon})
+                 .bindTooltip(tooltipContent, {className: 'custom-tooltip', direction: 'top', offset: [0, -10]})
+                 .addTo(mapLayerGroup);
+            }
+        });
     }
 
     function renderizarBitacora() {
@@ -235,42 +282,48 @@
         Object.keys(dataClientes).forEach(cId => { tree[cId] = { "N/A": [] }; if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []); });
         Object.keys(viajesActivos).forEach(vId => { let v = viajesActivos[vId], u = unidadesGlobales[vId] || null; let cId = v.cliente || "Sin_Cliente", sId = v.subcliente || "N/A"; if(!tree[cId]) tree[cId] = { "N/A": [] }; if(!tree[cId][sId]) tree[cId][sId] = []; tree[cId][sId].push({u, v}); });
 
-        const headerCols = `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA (O ➔ D)</th><th>CONTENEDORES</th><th>HORARIOS</th><th>ESTATUS</th><th>GPS & UBICACIÓN</th><th>ALERTAS</th><th>HISTORIAL DE SEGUIMIENTO</th><th>ACCIÓN</th></tr>`;
+        const headerCols = `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA (O ➔ D)</th><th>CONTENEDORES</th><th>HORARIOS</th><th>ESTATUS</th><th>GPS & UBICACIÓN</th><th>ALERTAS</th><th>HISTORIAL LOG</th><th>ACCIÓN</th></tr>`;
         
         for(let cId in tree) {
-            let cliData = dataClientes[cId] || {nombre: "SIN CLIENTE ASIGNADO"}, hasUnitsCli = false, cliHtml = "";
+            let cliData = dataClientes[cId] || {nombre: "SIN CLIENTE ASIGNADO"};
+            let cliHtml = "";
             for(let sId in tree[cId]) {
-                if(tree[cId][sId].length === 0) continue; hasUnitsCli = true;
+                if(tree[cId][sId].length === 0) continue;
                 let nomSub = sId !== "N/A" ? dataClientes[cId].subclientes[sId].nombre : "";
-                if(sId !== "N/A" && dataClientes[cId].subclientes) cliHtml += `<tr><td colspan="10" class="header-subcliente shadow-sm">↳ Subcliente: ${nomSub}</td></tr>`;
+                if(sId !== "N/A" && dataClientes[cId].subclientes) cliHtml += `<tr class="header-subcliente shadow-sm"><td colspan="10">↳ Subcliente: ${nomSub}</td></tr>`;
                 cliHtml += headerCols;
                 
                 tree[cId][sId].forEach(({u, v}) => {
                     let nombreCamion = v.unidadN || v.unidadFallback || "Desconocida";
-                    let pos = u ? u.pos : null; let speed = pos ? pos.s : 0; let isLost = !pos; 
+                    
+                    // Match con unidad GPS si existe
+                    let uIdGps = null;
+                    Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === nombreCamion) uIdGps = k; });
+                    let uData = unidadesGlobales[uIdGps];
+
+                    let pos = uData ? uData.pos : null; let speed = pos ? pos.s : 0; let isLost = !pos; 
+                    let geoKey = pos ? `${pos.y.toFixed(3)}_${pos.x.toFixed(3)}` : 'none';
                     
                     let uText = isLost ? `<span class="unit-name text-danger" title="Sin señal GPS">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
                     let speedBg = "#343a40"; if(speed > 0 && speed < 100) speedBg = "#198754"; if(speed >= 100) speedBg = "#dc3545"; 
                     
-                    let drv = v.operador || (u ? ramDrivers[u.name] : "") || "";
-                    let addr = u ? (geocodeCache[u.id] || "Buscando...") : "---";
-                    let mapsLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : '#';
+                    let drv = v.operador || (uData ? ramDrivers[uData.name] : "") || "";
+                    let addr = uData ? (geocodeCache[geoKey] || "Buscando...") : "---";
+                    let mapsLink = pos ? `https://maps.google.com/?q=$${pos.y},${pos.x}` : '#';
                     let colEstatus = estatusData[v.estatus]?.col || '#fff'; let colText = (v.estatus === "s7" || v.estatus === "s8" || v.estatus === "s9" || v.estatus === "s10") ? "#000" : "#fff";
 
                     let btnSalida = `<button class="btn btn-outline-success btn-sm w-100 py-0 mb-1 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${v.unidadN}', 'Marcó hora de SALIDA'); db.ref('viajes_activos/${v.unidadN}/t_salida').set(Date.now());">${v.t_salida ? formatTimeFriendly(v.t_salida/1000) : 'Salida'}</button>`;
                     let btnArribo = `<button class="btn btn-outline-danger btn-sm w-100 py-0 fw-bold" style="font-size:0.65rem;" onclick="registrarLog('${v.unidadN}', 'Marcó hora de ARRIBO'); db.ref('viajes_activos/${v.unidadN}/t_arribo').set(Date.now());">${v.t_arribo ? formatTimeFriendly(v.t_arribo/1000) : 'Arribo'}</button>`;
                     
-                    // HISTORIAL DE SEGUIMIENTO REPARADO
                     let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
-                    let lastLog = logsArr.length > 0 ? `<div class="text-start mb-1" style="font-size:0.60rem; line-height:1.1; color:#444;"><b class="text-primary">${logsArr[0].usr}:</b> ${logsArr[0].act} ${logsArr[0].det ? '- '+logsArr[0].det : ''}</div>` : `<div style="font-size:0.6rem; color:#888;">Sin eventos</div>`;
+                    let lastLog = logsArr.length > 0 ? `<div class="text-start mb-1 text-truncate" style="font-size:0.60rem; line-height:1.1; color:#444; max-width: 140px;"><b class="text-primary">${logsArr[0].usr}:</b> ${logsArr[0].act}</div>` : `<div style="font-size:0.6rem; color:#888;">Sin eventos</div>`;
 
-                    // UBICACIÓN EDITABLE EN MODO MANUAL
-                    let ubiControl = isLost ? `<input class="form-control form-control-sm text-center text-uppercase p-0 mt-1" style="font-size:0.60rem; height:18px;" value="${v.ubicacion_manual||''}" placeholder="Ubicación manual..." onblur="if(this.value !== '${v.ubicacion_manual||''}'){ registrarLog('${v.unidadN}', 'Actualizó ubicación manual', this.value); db.ref('viajes_activos/${v.unidadN}/ubicacion_manual').set(this.value.toUpperCase()); }">` : `<a href="${mapsLink}" target="_blank" class="addr-link"><i class="fa-solid fa-map-location-dot"></i> ${addr}</a>`;
+                    // UBICACIÓN EDITABLE
+                    let ubiControl = isLost ? `<input class="form-control form-control-sm text-center text-uppercase p-0 mt-1 shadow-sm border-danger" style="font-size:0.60rem; height:20px;" value="${v.ubicacion_manual||''}" placeholder="Escribir ubicación..." onblur="if(this.value !== '${v.ubicacion_manual||''}'){ registrarLog('${v.unidadN}', 'Ubicación manual', this.value); db.ref('viajes_activos/${v.unidadN}/ubicacion_manual').set(this.value.toUpperCase()); }">` : `<a href="${mapsLink}" target="_blank" class="addr-link addr-span-${geoKey}" title="Abrir en Maps"><i class="fa-solid fa-map-location-dot"></i> ${addr}</a>`;
 
-                    // STRING DE BÚSQUEDA INVISIBLE PARA EL FILTRO
-                    let searchData = `${nombreCamion} ${drv} ${v.origen} ${v.destino} ${v.contenedores} ${cliData.nombre} ${nomSub}`.toLowerCase();
+                    let searchData = `${nombreCamion} ${drv} ${v.origen} ${v.destino} ${v.contenedores} ${cliData.nombre} ${nomSub} ${estatusData[v.estatus]?.nombre}`.toLowerCase();
 
-                    cliHtml += `<tr class="${isLost?'lost-connection-row':''}" data-search="${searchData}">
+                    cliHtml += `<tr class="data-row ${isLost?'lost-connection-row':''}" data-search="${searchData}">
                         <td style="min-width: 90px; vertical-align: middle;">${uText}</td>
                         <td style="vertical-align: middle;"><input class="table-input border rounded p-1" value="${drv}" onblur="if(this.value.toUpperCase() !== '${drv.toUpperCase()}'){ registrarLog('${v.unidadN}', 'Cambió Operador', this.value); db.ref('viajes_activos/${v.unidadN}/operador').set(this.value.toUpperCase()); }"></td>
                         <td style="min-width:160px; vertical-align: middle;">
@@ -278,37 +331,115 @@
                             <div class="input-group input-group-sm border rounded"><span class="input-group-text">D</span><input class="form-control ruta-input text-uppercase" value="${v.destino||''}" onblur="db.ref('viajes_activos/${v.unidadN}/destino').set(this.value.toUpperCase())"></div>
                         </td>
                         <td style="vertical-align: middle;"><textarea class="table-input border rounded p-1 text-uppercase" style="min-height: 50px;" onblur="db.ref('viajes_activos/${v.unidadN}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
-                        <td style="vertical-align: middle; min-width: 100px;">${btnSalida}${btnArribo}</td>
+                        <td style="vertical-align: middle; min-width: 90px;">${btnSalida}${btnArribo}</td>
                         <td style="vertical-align: middle;"><select class="form-select status-select" style="background:${colEstatus}; color:${colText};" onchange="registrarLog('${v.unidadN}', 'Cambió estatus a', this.options[this.selectedIndex].text); db.ref('viajes_activos/${v.unidadN}/estatus').set(this.value)">${Object.keys(estatusData).map(k=>`<option value="${k}" ${v.estatus===k?'selected':''}>${estatusData[k].nombre}</option>`).join('')}</select></td>
-                        <td style="vertical-align: middle;">
+                        <td style="vertical-align: middle; min-width: 140px;">
                             <div class="d-flex flex-column align-items-center">
-                                <div><i class="fa-regular fa-circle text-${isLost?'danger':'success'} me-1"></i><span class="speed-badge" style="background-color:${isLost?'#adb5bd':speedBg};">${speed} km/h</span></div>
-                                <div class="mt-1 w-100">${ubiControl}<div style="font-size:8px; color:#555; margin-top:2px; font-weight:bold;">${pos ? formatTimeFriendly(pos.t) : 'Manual'}</div></div>
+                                <div><i class="fa-solid fa-signal text-${isLost?'danger':'success'} me-1" style="font-size:10px;"></i><span class="speed-badge" style="background-color:${isLost?'#adb5bd':speedBg};">${speed} km/h</span></div>
+                                <div class="mt-1 w-100">${ubiControl}<div style="font-size:8.5px; color:#666; margin-top:3px; font-weight:bold;">${pos ? formatTimeFriendly(pos.t) : '<span class="text-danger">Modo Manual</span>'}</div></div>
                             </div>
                         </td>
                         <td style="vertical-align: middle;">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.7rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.7rem;">OK</span>'}</td>
-                        <td style="min-width:140px; vertical-align: middle;">${lastLog}<button class="btn btn-primary btn-sm p-0 w-100 fw-bold" style="font-size:0.65rem;" onclick="abrirModalLog('${v.unidadN}', '${nombreCamion}')"><i class="fa-solid fa-list"></i> Ver/Añadir</button></td>
+                        <td style="min-width:130px; vertical-align: middle;">${lastLog}<button class="btn btn-dark btn-sm p-0 w-100 fw-bold" style="font-size:0.65rem;" onclick="abrirModalLog('${v.unidadN}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Ver / Añadir</button></td>
                         <td style="vertical-align: middle;">
                             <div class="d-flex flex-column gap-1 align-items-center">
-                                <button onclick="shareWA('${nombreCamion}', '${isLost?(v.ubicacion_manual||'Manual'):addr}', '${v.origen}', '${v.destino}', '${v.estatus}')" class="btn btn-outline-success btn-sm p-0" style="width: 25px; height: 25px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
-                                <button onclick="abrirEdicionViaje('${v.unidadN}', '${nombreCamion}')" class="btn btn-outline-primary btn-sm p-0" style="width: 25px; height: 25px;" title="Editar"><i class="fa-solid fa-pencil"></i></button>
-                                <button onclick="finalizarViaje('${v.unidadN}', '${nombreCamion}')" class="btn btn-outline-danger btn-sm p-0" style="width: 25px; height: 25px;" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                                <button onclick="shareWA('${nombreCamion}', '${isLost?(v.ubicacion_manual||'Ubicación manual no registrada'):addr}', '${v.origen}', '${v.destino}', '${v.estatus}')" class="btn btn-outline-success btn-sm p-0" style="width: 25px; height: 25px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                                <button onclick="abrirEdicionViaje('${v.unidadN}', '${nombreCamion}')" class="btn btn-outline-primary btn-sm p-0" style="width: 25px; height: 25px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
+                                <button onclick="finalizarViaje('${v.unidadN}', '${nombreCamion}')" class="btn btn-outline-danger btn-sm p-0" style="width: 25px; height: 25px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>`;
                 });
             }
-            if(hasUnitsCli) html += `<tr><td colspan="10" class="header-cliente shadow">📦 CLIENTE: ${cliData.nombre}</td></tr>` + cliHtml;
+            if(cliHtml !== "") html += `<tr class="header-cliente shadow"><td colspan="10">📦 CLIENTE: ${cliData.nombre}</td></tr>` + cliHtml;
         }
         tbody.innerHTML = html || '<tr><td colspan="10" class="p-5 text-muted fs-5">Aún no hay viajes activos en la bitácora.</td></tr>';
+        filtrarTablaInteligente(); // Aplicar filtro después de renderizar si hay texto
+    }
+
+    // FILTRO INTELIGENTE INVERSO
+    function filtrarTablaInteligente() {
+        let t = document.getElementById("buscador").value.toLowerCase();
+        let rows = Array.from(document.querySelectorAll("#mainTable tbody tr"));
+        
+        // Paso 1: Mostrar/Ocultar filas de datos
+        rows.forEach(r => {
+            if(r.classList.contains("data-row")) {
+                let sData = r.getAttribute("data-search") || "";
+                r.style.display = sData.includes(t) ? "" : "none";
+            }
+        });
+
+        // Paso 2: Escaneo inverso para ocultar encabezados sin hijos visibles
+        let datosVisiblesSub = 0, datosVisiblesCli = 0;
+        for (let i = rows.length - 1; i >= 0; i--) {
+            let r = rows[i];
+            if (r.classList.contains("data-row")) {
+                if (r.style.display !== "none") { datosVisiblesSub++; datosVisiblesCli++; }
+            } else if (r.classList.contains("header-columnas")) {
+                r.style.display = datosVisiblesSub > 0 ? "" : "none";
+            } else if (r.classList.contains("header-subcliente")) {
+                r.style.display = datosVisiblesSub > 0 ? "" : "none";
+                datosVisiblesSub = 0; // Reset
+            } else if (r.classList.contains("header-cliente")) {
+                r.style.display = datosVisiblesCli > 0 ? "" : "none";
+                datosVisiblesCli = 0; // Reset
+            }
+        }
+    }
+
+    // CACHÉ Y COLA DE DIRECCIONES (Anti-Baneo Nominatim)
+    function desencadenarGeocoding() {
+        Object.keys(viajesActivos).forEach(id => {
+            let v = viajesActivos[id];
+            let uIdGps = null;
+            Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === v.unidadN) uIdGps = k; });
+            let u = unidadesGlobales[uIdGps]; 
+            
+            if(u && u.pos) {
+                // Redondeamos coordenadas a 3 decimales (~111 metros) para usar memoria caché si está estacionado
+                let geoKey = `${u.pos.y.toFixed(3)}_${u.pos.x.toFixed(3)}`;
+                
+                if(!geocodeCache[geoKey]) {
+                    // Solo agregamos a la cola si no está ya esperando
+                    if(!geoQueue.find(i => i.key === geoKey)) {
+                        geoQueue.push({ key: geoKey, y: u.pos.y, x: u.pos.x });
+                    }
+                } else {
+                    // Ya está en caché, pintamos directo
+                    let els = document.querySelectorAll(`.addr-span-${geoKey}`);
+                    els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${geocodeCache[geoKey]}`);
+                }
+            }
+        });
+    }
+
+    function procesarFilaDirecciones() {
+        if(isGeocoding || geoQueue.length === 0) return;
+        isGeocoding = true;
+        let item = geoQueue.shift();
+        
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=16`)
+            .then(r => r.json())
+            .then(d => {
+                let addrFull = d.display_name || "Sin dirección";
+                // Cortamos la dirección para que no sea inmensa (ej. Calle, Colonia, Ciudad)
+                let shortAddr = addrFull.split(",").slice(0, 3).join(",");
+                geocodeCache[item.key] = shortAddr;
+                
+                let els = document.querySelectorAll(`.addr-span-${item.key}`);
+                els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${shortAddr}`);
+            })
+            .catch(e => console.log("Geocode err"))
+            .finally(() => { isGeocoding = false; });
     }
 
     // GESTIÓN DEL MODAL DE HISTORIAL (AUDITORÍA)
     function abrirModalLog(uId, uName) {
         document.getElementById("log_uid").value = uId; document.getElementById("log_uName").innerText = uName; document.getElementById("log_txt").value = "";
         let logsObj = viajesActivos[uId]?.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
-        let html = logsArr.map(l => `<div class="mb-1 border-bottom pb-1"><span class="text-muted fw-bold" style="font-size:0.65rem;">${new Date(l.t).toLocaleTimeString()} - ${l.usr}:</span> <b>${l.act}</b> <span class="text-primary">${l.det||''}</span></div>`).join('');
-        document.getElementById("log_container").innerHTML = html || '<div class="text-muted text-center p-3">No hay eventos registrados.</div>';
+        let html = logsArr.map(l => `<div class="mb-1 border-bottom pb-1"><span class="text-muted fw-bold" style="font-size:0.65rem;">${new Date(l.t).toLocaleDateString()} ${new Date(l.t).toLocaleTimeString()} - ${l.usr}:</span> <b class="text-dark">${l.act}</b> <span class="text-primary">${l.det||''}</span></div>`).join('');
+        document.getElementById("log_container").innerHTML = html || '<div class="text-muted text-center p-3 mt-4">Sin eventos. Escribe una nota abajo.</div>';
         new bootstrap.Modal(document.getElementById('modalLog')).show();
     }
     function guardarLogManual() {
@@ -326,36 +457,14 @@
         bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); document.getElementById("nv_unidad_input").value = "";
     }
 
-    // BÚSQUEDA Y FILTRO REPARADOS
-    function filtrarTabla() { 
-        let t = document.getElementById("buscador").value.toLowerCase(); 
-        document.querySelectorAll("#mainTable tbody tr").forEach(r => { 
-            if(r.classList.contains("header-cliente") || r.classList.contains("header-subcliente") || r.classList.contains("header-columnas")) return; 
-            let sData = r.getAttribute("data-search") || "";
-            r.style.display = sData.includes(t) ? "" : "none"; 
-        }); 
-    }
-
-    function updateAddresses() {
-        Object.keys(viajesActivos).forEach(id => {
-            let v = viajesActivos[id]; let uIdGps = null;
-            Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === v.unidadN) uIdGps = k; });
-            let u = unidadesGlobales[uIdGps]; if(!u || !u.pos) return;
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${u.pos.y}&lon=${u.pos.x}&zoom=16`).then(r=>r.json()).then(d => {
-                let a = d.display_name || "Sin dirección"; geocodeCache[u.id] = a; 
-                let addrEl = document.getElementById("addr_"+uIdGps); if(addrEl) addrEl.innerText = a;
-            }).catch(e => console.log("Nominatim delay"));
-        });
-    }
-
-    function finalizarViaje(id, n) { if(confirm('¿Eliminar/Archivar este viaje?')) { db.ref('viajes_activos/'+id).remove(); } }
+    function finalizarViaje(id, n) { if(confirm(`¿Archivar viaje de la unidad ${n}?`)) { registrarLog(id, "FINALIZÓ VIAJE", "Se archiva registro"); setTimeout(()=>db.ref('viajes_activos/'+id).remove(), 1000); } }
     function prepararNuevoViaje() { let s = document.getElementById("nv_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); cargarSubclientesEnSelect('nv_subcliente', s.value); }
     function cargarSubclientesEnSelect(e, c) { let s = document.getElementById(e); s.innerHTML = '<option value="">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k => s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
     function abrirEdicionViaje(uId, uName) { let v = viajesActivos[uId]; if(!v) return; document.getElementById("edU_id").value = uId; document.getElementById("edU_name").innerText = uName; document.getElementById("ed_operador").value = v.operador || ""; document.getElementById("ed_origen").value = v.origen || ""; document.getElementById("ed_destino").value = v.destino || ""; let s = document.getElementById("ed_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); s.value = v.cliente || ""; cargarSubclientesEnSelect('ed_subcliente', s.value); document.getElementById("ed_subcliente").value = v.subcliente || ""; new bootstrap.Modal(document.getElementById('modalEditarViaje')).show(); }
-    function guardarEdicionViaje() { let uId = document.getElementById("edU_id").value; registrarLog(uId, "Editó Datos de Viaje", "Modificó rutas/cliente"); db.ref('viajes_activos/' + uId).update({ cliente: document.getElementById("ed_cliente").value, subcliente: document.getElementById("ed_subcliente").value, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide(); }); }
+    function guardarEdicionViaje() { let uId = document.getElementById("edU_id").value; registrarLog(uId, "Editó Datos de Viaje", "Modificó rutas/cliente/operador"); db.ref('viajes_activos/' + uId).update({ cliente: document.getElementById("ed_cliente").value, subcliente: document.getElementById("ed_subcliente").value, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide(); }); }
     function cerrarSesion() { localStorage.clear(); location.reload(); }
 
-    // GESTIÓN ADMIN COMPLETA (Clientes, Subclientes, Usuarios, Tokens)
+    // GESTIÓN ADMIN (Con borrado)
     function crearCliente() { db.ref('clientes').push({nombre: document.getElementById("cli_nombre").value.toUpperCase()}); document.getElementById("cli_nombre").value = ""; }
     function crearSubcliente() { db.ref(`clientes/${document.getElementById("sub_clientePadre").value}/subclientes`).push({nombre: document.getElementById("sub_nombre").value.toUpperCase()}); document.getElementById("sub_nombre").value = ""; }
     function crearUsuario() { let id = document.getElementById("usr_id").value.trim().toLowerCase(), nom = document.getElementById("usr_nom").value.trim(), pass = document.getElementById("usr_pass").value.trim(); if(id && nom && pass) { db.ref(`sistema/usuarios/${id}`).set({nom: nom, pass: pass, rol: "monitor"}); document.getElementById("usr_id").value=""; document.getElementById("usr_nom").value=""; document.getElementById("usr_pass").value=""; } }
