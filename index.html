@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - EXPLORADOR DE FLOTAS</title>
+    <title>C4 | EXPLORADOR MAESTRO</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -11,11 +11,11 @@
 
     <style>
         :root { --blue-dark: #002a61; --blue-header: #336699; }
-        body { background: #f4f7f9; font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; margin: 0; }
+        body { background: #f4f7f9; font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; margin: 0; overflow: hidden; }
         .navbar-custom { background: white; padding: 10px 20px; border-bottom: 4px solid var(--blue-dark); display: flex; justify-content: space-between; align-items: center; }
-        .token-badge { font-size: 0.65rem; padding: 3px 8px; border-radius: 10px; margin-right: 5px; font-weight: bold; }
-        .table-scroll { height: calc(100vh - 120px); overflow-y: auto; }
+        .table-scroll { height: calc(100vh - 120px); overflow-y: auto; background: white; }
         .header-master { background: var(--blue-dark); color: white; position: sticky; top: 0; z-index: 10; }
+        .diag-pill { font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-right: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -23,10 +23,10 @@
 <div class="navbar-custom shadow-sm">
     <div class="d-flex align-items-center">
         <img src="TIGPS HD2.png" alt="Logo" style="height: 40px;" class="me-3">
-        <h5 class="m-0 fw-bold text-primary">C4 | MASTER FLOTA</h5>
+        <h5 class="m-0 fw-bold text-primary">C4 | MASTER EXPLORER</h5>
     </div>
-    <div class="d-flex align-items-center">
-        <div id="diagnostico-tokens" class="me-3"></div>
+    <div id="diagnostico-servidores" class="ms-3"></div>
+    <div class="d-flex">
         <button class="btn btn-danger btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalAdminTokens">ADMIN TOKENS</button>
         <button class="btn btn-primary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalViaje"><i class="fa-solid fa-plus"></i> NUEVO VIAJE</button>
         <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()"><i class="fa-solid fa-sync"></i></button>
@@ -36,44 +36,44 @@
 <div class="container-fluid mt-2">
     <div class="row">
         <div class="col-md-5 border-end">
-            <h6 class="fw-bold text-secondary"><i class="fa-solid fa-satellite"></i> UNIDADES ENCONTRADAS EN GPS</h6>
-            <div class="table-scroll card shadow-sm">
+            <h6 class="fw-bold text-secondary"><i class="fa-solid fa-satellite"></i> UNIDADES DISPONIBLES EN GPS</h6>
+            <div class="table-scroll border rounded">
                 <table class="table table-sm table-hover text-center mb-0">
                     <thead class="header-master">
-                        <tr><th>NOMBRE (COPIAR)</th><th>TOKEN</th><th>VEL.</th><th>ACCIÓN</th></tr>
+                        <tr><th>NOMBRE</th><th>TOKEN</th><th>VEL.</th><th>COPIAR</th></tr>
                     </thead>
-                    <tbody id="lista-maestra-gps">
-                        <tr><td colspan="4" class="p-4 text-muted">Conectando con servidores...</td></tr>
+                    <tbody id="lista-todas-gps">
+                        <tr><td colspan="4" class="p-4 text-muted">Sincronizando con Wialon y RACEL...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
         <div class="col-md-7">
-            <h6 class="fw-bold text-primary"><i class="fa-solid fa-truck-fast"></i> BITÁCORA DE VIAJES ACTIVOS</h6>
-            <div id="bitacora-container">
-                <div class="p-5 text-center text-muted">No hay viajes registrados.</div>
+            <h6 class="fw-bold text-primary"><i class="fa-solid fa-truck-fast"></i> BITÁCORA DE OPERACIÓN</h6>
+            <div id="bitacora-container" class="table-scroll border rounded p-2">
+                <div class="p-5 text-center text-muted">Sin registros activos.</div>
             </div>
         </div>
     </div>
 </div>
 
 <div class="modal fade" id="modalAdminTokens" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
-    <div class="modal-header bg-danger text-white"><h6>ADMINISTRADOR DE TOKENS Y CLIENTES</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-header bg-danger text-white"><h6>GESTIÓN DE TOKENS Y CLIENTES</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
     <div class="modal-body small">
         <div class="row">
             <div class="col-6 border-end">
-                <h6>1. Agregar Cliente</h6>
-                <div class="input-group mb-3"><input type="text" id="adm_c" class="form-control" placeholder="Nombre Cliente"><button class="btn btn-success" onclick="addCli()">Añadir</button></div>
-                <ul id="lista-clientes-admin" class="list-group list-group-sm"></ul>
+                <h6>1. Clientes</h6>
+                <div class="input-group mb-3"><input type="text" id="adm_c" class="form-control" placeholder="Nombre"><button class="btn btn-success" onclick="addCli()">Añadir</button></div>
+                <ul id="lista-clientes-adm" class="list-group list-group-sm"></ul>
             </div>
             <div class="col-6">
-                <h6>2. Configurar Token GPS</h6>
+                <h6>2. Tokens</h6>
                 <input type="text" id="t_nom" class="form-control mb-1" placeholder="Nombre (Ej. RACEL)">
-                <input type="text" id="t_val" class="form-control mb-1" placeholder="Token Largo">
-                <input type="text" id="t_url" class="form-control mb-2" placeholder="URL Host (Ej. https://hst-api.wialon.com)">
+                <input type="text" id="t_val" class="form-control mb-1" placeholder="Token">
+                <input type="text" id="t_url" class="form-control mb-2" placeholder="URL Host">
                 <button class="btn btn-primary w-100 mb-3" onclick="addTk()">Guardar Token</button>
-                <ul id="lista-tokens-admin" class="list-group list-group-sm"></ul>
+                <ul id="lista-tokens-adm" class="list-group list-group-sm"></ul>
             </div>
         </div>
     </div>
@@ -83,7 +83,7 @@
     <div class="modal-header bg-primary text-white"><h6>INICIAR VIAJE</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
     <div class="modal-body">
         <label>Cliente:</label><select id="v_cli" class="form-select mb-2"></select>
-        <label>Económico (Nombre exacto):</label><input type="text" id="v_uni" class="form-control mb-2" placeholder="Pegar nombre aquí">
+        <label>Nombre de Unidad (Exacto):</label><input type="text" id="v_uni" class="form-control mb-2">
         <label>Operador:</label><input type="text" id="v_ope" class="form-control mb-2">
         <button class="btn btn-primary w-100" onclick="guardarViaje()">REGISTRAR</button>
     </div>
@@ -94,53 +94,62 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let masterGPS = {}; // Aquí guardaremos TODAS las unidades de todos los tokens
+    let masterGPS = {}; 
     let dataClientes = {}, viajesActivos = {};
 
     function start() {
-        db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; refresh(); });
+        db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; refresh(); refreshAdmin(); });
         db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; refresh(); });
         
-        // MOTOR DE BÚSQUEDA GLOBAL
+        // MOTOR DE SINCRONIZACIÓN ANTIBLOQUEO (JSONP)
         db.ref('sistema/tokens').on('value', s => {
             const tokens = s.val() ? Object.values(s.val()) : [];
-            const diag = document.getElementById("diagnostico-tokens");
+            const diag = document.getElementById("diagnostico-servidores");
             diag.innerHTML = "";
             masterGPS = {};
 
             tokens.forEach(tk => {
-                fetch(`${tk.url}/wialon/ajax.html?svc=token/login&params={"token":"${tk.token}"}`)
-                .then(r => r.json()).then(d => {
-                    if(d.eid) {
-                        diag.innerHTML += `<span class="token-badge bg-success text-white">${tk.nombre} OK</span>`;
-                        // Flag 1025 para ver todo
-                        fetch(`${tk.url}/wialon/ajax.html?svc=core/search_items&sid=${d.eid}&params={"spec":{"itemsType":"avl_unit","propName":"sys_name","propValueMask":"*","sortType":"sys_name"},"force":1,"flags":1025}`)
-                        .then(r => r.json()).then(u => {
-                            if(u.items) u.items.forEach(item => { 
-                                masterGPS[item.nm.toUpperCase()] = { ...item, server: tk.nombre }; 
-                            });
-                            refreshMasterList();
-                            refresh();
-                        });
-                    } else diag.innerHTML += `<span class="token-badge bg-danger text-white">${tk.nombre} ERR</span>`;
-                });
+                const cb = "w_"+Math.random().toString(36).substr(2,5);
+                window[cb] = (d) => {
+                    if(d && d.eid) {
+                        diag.innerHTML += `<span class="diag-pill bg-success text-white">${tk.nombre} OK</span>`;
+                        fetchUnits(tk, d.eid);
+                    } else diag.innerHTML += `<span class="diag-pill bg-danger text-white">${tk.nombre} ERR</span>`;
+                };
+                let sc = document.createElement("script");
+                sc.src = `${tk.url}/wialon/ajax.html?svc=token/login&params={"token":"${tk.token}"}&callback=${cb}`;
+                document.head.appendChild(sc);
             });
         });
     }
 
-    function refreshMasterList() {
-        const tbody = document.getElementById("lista-maestra-gps");
+    function fetchUnits(tk, sid) {
+        const cb = "u_"+Math.random().toString(36).substr(2,5);
+        window[cb] = (d) => {
+            if(d && d.items) {
+                d.items.forEach(u => { masterGPS[u.nm.toUpperCase()] = { ...u, server: tk.nombre }; });
+                renderMasterList();
+                refresh();
+            }
+        };
+        let sc = document.createElement("script");
+        sc.src = `${tk.url}/wialon/ajax.html?svc=core/search_items&params={"spec":{"itemsType":"avl_unit","propName":"sys_name","propValueMask":"*","sortType":"sys_name"},"force":1,"flags":1025}&sid=${sid}&callback=${cb}`;
+        document.head.appendChild(sc);
+    }
+
+    function renderMasterList() {
+        const tbody = document.getElementById("lista-todas-gps");
         let html = "";
         Object.keys(masterGPS).sort().forEach(name => {
             const u = masterGPS[name];
             html += `<tr>
                 <td class="fw-bold text-start ps-3">${name}</td>
                 <td><span class="badge bg-secondary">${u.server}</span></td>
-                <td>${u.pos ? u.pos.s : 0}</td>
-                <td><button class="btn btn-link btn-sm p-0" onclick="copyToForm('${name}')"><i class="fa-solid fa-copy"></i></button></td>
+                <td><b class="text-primary">${u.pos ? u.pos.s : 0}</b></td>
+                <td><button class="btn btn-link btn-sm p-0 text-success" onclick="copyToForm('${name}')"><i class="fa-solid fa-circle-plus fa-lg"></i></button></td>
             </tr>`;
         });
-        tbody.innerHTML = html || '<tr><td colspan="4">No se encontraron unidades.</td></tr>';
+        tbody.innerHTML = html;
     }
 
     function refresh() {
@@ -168,17 +177,22 @@
         document.getElementById("v_cli").innerHTML = Object.keys(dataClientes).map(id => `<option value="${id}">${dataClientes[id].nombre}</option>`).join('');
     }
 
-    // GESTIÓN
+    function refreshAdmin() {
+        const lc = document.getElementById("lista-clientes-adm");
+        lc.innerHTML = Object.keys(dataClientes).map(id => `<li class="list-group-item d-flex justify-content-between">${dataClientes[id].nombre} <i class="fa-solid fa-trash text-danger" onclick="db.ref('clientes/${id}').remove()"></i></li>`).join('');
+    }
+
+    // ACCIONES
     function copyToForm(name) { document.getElementById("v_uni").value = name; bootstrap.Modal.getOrCreateInstance(document.getElementById('modalViaje')).show(); }
     function guardarViaje() {
         const u = document.getElementById("v_uni").value.toUpperCase();
         db.ref('viajes_activos/' + u).set({ unidadN: u, operador: document.getElementById("v_ope").value.toUpperCase(), cliente: document.getElementById("v_cli").value });
         bootstrap.Modal.getInstance(document.getElementById('modalViaje')).hide();
     }
-    function addCli() { db.ref('clientes').push({nombre: document.getElementById("adm_c").value.toUpperCase()}); }
+    function addCli() { const n = document.getElementById("adm_c").value.toUpperCase(); if(n) db.ref('clientes').push({nombre: n}); }
     function addTk() { 
         db.ref('sistema/tokens').push({nombre: document.getElementById("t_nom").value.toUpperCase(), token: document.getElementById("t_val").value, url: document.getElementById("t_url").value}); 
-        alert("Token Guardado");
+        alert("Token Guardado Correctamente");
     }
 
     start();
