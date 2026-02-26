@@ -2,42 +2,52 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Bitácora Logística - Control de Acceso</title>
+    <title>Bitácora Logística - Control de Acceso Maestro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
     
     <style>
-        body { background: #002a61; color: white; font-family: sans-serif; }
-        .login-card { background: white; color: #333; width: 420px; border-radius: 20px; padding: 40px; margin: 15vh auto; }
-        #dashboard { display:none; background: #f4f7f6; color: #333; min-height: 100vh; padding: 20px; }
-        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; }
+        body { background: #002a61; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .login-card { background: white; color: #333; width: 450px; border-radius: 25px; padding: 45px; margin: 12vh auto; }
+        #dashboard { display:none; background: #f8f9fa; color: #333; min-height: 100vh; padding: 25px; }
+        .table-input { border: 1px solid #dee2e6; padding: 5px; width: 100%; border-radius: 6px; font-size: 0.8rem; transition: 0.3s; }
+        .table-input:focus { border-color: #0045a5; outline: none; box-shadow: 0 0 5px rgba(0,69,165,0.2); }
+        .status-badge { font-size: 0.75rem; font-weight: 700; padding: 5px 10px; border-radius: 20px; }
     </style>
 </head>
 <body>
 
 <div id="loginOverlay">
     <div class="login-card shadow-lg text-center">
-        <h3 class="text-primary fw-bold mb-3">Logística Cloud</h3>
-        <p class="text-muted small mb-4">Ingresa tu token para autorizar la flota</p>
-        <input type="password" id="token" class="form-control mb-3 text-center" placeholder="Pega tu Wialon Token aquí">
-        <button onclick="autorizar()" id="btnIngresar" class="btn btn-primary w-100 fw-bold">AUTORIZAR Y CONECTAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Esperando token...</div>
+        <h2 class="text-primary fw-bold mb-3">Logística Cloud</h2>
+        <p class="text-muted mb-4">Ingresa tu token para autorizar la flota real-time</p>
+        <input type="password" id="token" class="form-control mb-4 text-center py-2" placeholder="Pega tu Wialon Token aquí">
+        <button onclick="autorizarSistema()" id="btnGo" class="btn btn-primary w-100 fw-bold py-2 shadow">AUTORIZAR E INGRESAR</button>
+        <div id="status" class="mt-4 small fw-bold text-secondary">Esperando autorización...</div>
     </div>
 </div>
 
 <div id="dashboard">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold text-primary m-0">BITÁCORA LOGÍSTICA EN TIEMPO REAL</h4>
-        <button onclick="exportarExcel()" class="btn btn-success btn-sm fw-bold shadow-sm">📥 Descargar Excel</button>
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+        <h4 class="fw-bold text-primary m-0">BITÁCORA LOGÍSTICA REAL-TIME</h4>
+        <button onclick="exportarExcel()" class="btn btn-success btn-sm fw-bold px-4">📥 Descargar Reporte Maestro</button>
     </div>
-    <div class="card shadow-sm border-0">
+    <div class="card shadow border-0 overflow-hidden">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 text-center">
                 <thead class="table-dark">
                     <tr>
-                        <th>Unidad</th><th>Cliente</th><th>Subcliente</th><th>Origen</th><th>Destino</th>
-                        <th>Estatus</th><th>Contenedores</th><th>Velocidad</th><th>Dirección Actual</th><th>Estado</th>
+                        <th width="12%">Unidad</th>
+                        <th width="10%">Cliente</th>
+                        <th width="10%">Subcliente</th>
+                        <th width="10%">Origen</th>
+                        <th width="10%">Destino</th>
+                        <th width="10%">Estatus</th>
+                        <th width="10%">Contenedores</th>
+                        <th width="8%">Velocidad</th>
+                        <th width="15%">Ubicación</th>
+                        <th width="5%">GPS</th>
                     </tr>
                 </thead>
                 <tbody id="units-body"></tbody>
@@ -47,65 +57,68 @@
 </div>
 
 <script type="text/javascript">
-    // 1. CONFIGURACIÓN FIREBASE (URL Verificada: image_d0861e.png)
+    // 1. CONFIGURACIÓN FIREBASE (image_d0861e.png)
     const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 2. PROCESO DE AUTORIZACIÓN (Tu flujo solicitado)
-    function autorizar() {
-        const tokenValue = document.getElementById("token").value;
-        if (!tokenValue) return alert("Por favor, ingresa tu token");
+    // 2. FUNCIÓN DE AUTORIZACIÓN (Basada en Playground Advanced)
+    function autorizarSistema() {
+        const tokenVal = document.getElementById("token").value;
+        if (!tokenVal) return alert("Por favor, ingresa tu token");
 
-        document.getElementById("status").innerText = "Validando acceso con Wialon...";
-        document.getElementById("status").className = "mt-3 small fw-bold text-warning";
+        document.getElementById("status").innerText = "Inyectando SDK y validando acceso...";
+        document.getElementById("status").className = "mt-4 small fw-bold text-warning";
 
-        // Inyectamos el SDK dinámicamente solo al presionar el botón
+        // Inyección dinámica para evitar bloqueos preventivos
         const script = document.createElement('script');
-        // Usamos la ruta oficial que usa el Playground para asegurar compatibilidad
+        // Ruta garantizada por el Playground
         script.src = "https://hst-api.wialon.com/wscommon/js/wialon.js"; 
         
         script.onload = () => {
-            console.log("SDK Inyectado exitosamente");
-            conectar(tokenValue);
+            console.log("SDK Cargado tras interacción de usuario");
+            iniciarSesion(tokenVal);
         };
         
         script.onerror = () => {
-            document.getElementById("status").innerText = "Error crítico de conexión ❌";
-            document.getElementById("status").className = "mt-3 small text-danger fw-bold";
-            alert("El navegador bloqueó la librería de Wialon. Intenta en modo incógnito.");
+            document.getElementById("status").innerText = "Error crítico: El navegador bloqueó el puente de datos ❌";
+            document.getElementById("status").className = "mt-4 small text-danger fw-bold";
+            alert("No se pudo cargar la librería. Revisa que no tengas un bloqueador de anuncios activo.");
         };
         
         document.head.appendChild(script);
     }
 
-    function conectar(token) {
+    function iniciarSesion(token) {
         if (typeof wialon === 'undefined') return;
         
         const sess = wialon.core.Session.getInstance();
+        // Inicializamos sesión antes de login
         sess.initSession("https://hst-api.wialon.com");
         
         sess.loginToken(token, "", (code) => {
             if (code) {
                 alert("Error de Acceso: " + wialon.core.Errors.getErrorText(code));
-                document.getElementById("status").innerText = "Token rechazado por el servidor ❌";
+                document.getElementById("status").innerText = "Token Inválido ❌";
                 return;
             }
             
-            // Éxito: Pasamos al Panel Maestro
+            // Éxito: Cambio de pantalla
             document.getElementById("loginOverlay").style.display = "none";
             document.getElementById("dashboard").style.display = "block";
             
-            // Cargar unidades
+            // Cargar recursos de la flota
             sess.loadLibrary("itemUnit");
+            // Solicitamos Nombre (1) y Posición/Velocidad (1024)
             sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
-                renderizarTabla();
-                sess.addListener("dataUpdated", renderizarTabla);
+                actualizarTabla();
+                // Escuchar cambios en tiempo real
+                sess.addListener("dataUpdated", actualizarTabla);
             });
         });
     }
 
-    function renderizarTabla() {
+    function actualizarTabla() {
         const sess = wialon.core.Session.getInstance();
         const units = sess.getItems("avl_unit") || [];
         let html = "";
@@ -118,25 +131,25 @@
 
             html += `<tr>
                 <td class="fw-bold text-primary">${u.getName()}</td>
-                <td><input id="cli_${id}" class="table-input" onchange="save('${id}','cliente',this.value)"></td>
-                <td><input id="sub_${id}" class="table-input" onchange="save('${id}','subcliente',this.value)"></td>
-                <td><input id="ori_${id}" class="table-input" onchange="save('${id}','origen',this.value)"></td>
-                <td><input id="des_${id}" class="table-input" onchange="save('${id}','destino',this.value)"></td>
+                <td><input id="cli_${id}" class="table-input" onchange="guardar('${id}','cliente',this.value)"></td>
+                <td><input id="sub_${id}" class="table-input" onchange="guardar('${id}','subcliente',this.value)"></td>
+                <td><input id="ori_${id}" class="table-input" onchange="guardar('${id}','origen',this.value)"></td>
+                <td><input id="des_${id}" class="table-input" onchange="guardar('${id}','destino',this.value)"></td>
                 <td>
-                    <select id="est_${id}" class="table-input" onchange="save('${id}','estatus',this.value)">
+                    <select id="est_${id}" class="table-input" onchange="guardar('${id}','estatus',this.value)">
                         <option value="Disponible">Disponible</option>
                         <option value="En Tránsito">En Tránsito</option>
                         <option value="Cargando">Cargando</option>
-                        <option value="Descargando">Descargando</option>
+                        <option value="Aduana">Aduana</option>
                     </select>
                 </td>
-                <td><input id="con_${id}" class="table-input" onchange="save('${id}','contenedores',this.value)"></td>
+                <td><input id="con_${id}" class="table-input" onchange="guardar('${id}','contenedores',this.value)"></td>
                 <td class="fw-bold text-dark">${speed} km/h</td>
-                <td id="addr_${id}" style="font-size:0.7rem; color:#666">Obteniendo dirección...</td>
-                <td><span class="badge ${mov?'bg-success':'bg-danger'}">${mov?'MOV':'STOP'}</span></td>
+                <td id="addr_${id}" style="font-size:0.7rem; color:#666; font-style:italic;">Buscando...</td>
+                <td><span class="status-badge ${mov?'bg-success text-white':'bg-danger text-white'}">${mov?'MOV':'STOP'}</span></td>
             </tr>`;
             
-            // Obtener dirección real (Geocodificación)
+            // Obtener dirección real (Geocodificación Inversa)
             if (pos) {
                 wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], (code, addr) => {
                     const el = document.getElementById(`addr_${id}`);
@@ -144,7 +157,7 @@
                 });
             }
 
-            // Sincronizar con Firebase por ID único
+            // Sincronizar datos individuales con Firebase
             db.ref('viajes/' + id).once('value', (s) => {
                 const v = s.val();
                 if (v) {
@@ -160,7 +173,7 @@
         document.getElementById("units-body").innerHTML = html;
     }
 
-    function save(id, campo, valor) {
+    function guardar(id, campo, valor) {
         db.ref('viajes/' + id).update({ [campo]: valor });
     }
 
@@ -173,7 +186,7 @@
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "Bitacora_RealTime.csv";
+        link.download = "Bitacora_Flota_Maestra.csv";
         link.click();
     }
 </script>
