@@ -2,56 +2,63 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - SINCRONIZACIÓN TOTAL</title>
+    <title>C4 - SINCRONIZACIÓN SDK</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-
     <style>
-        body { background: #f8f9fa; font-family: sans-serif; font-size: 0.75rem; }
-        .header { background: #002a61; color: white; padding: 10px; display: flex; justify-content: space-between; }
-        .badge-info { background: #17a2b8; font-size: 0.7rem; margin-right: 5px; }
+        body { background: #f0f4f8; font-family: sans-serif; font-size: 0.8rem; }
+        .status-bar { background: #002a61; color: white; padding: 10px; display: flex; justify-content: space-between; }
+        .unit-card { background: white; border-radius: 5px; margin-bottom: 10px; border-left: 5px solid #336699; }
     </style>
 </head>
 <body>
 
-<div class="header shadow">
-    <h6 class="m-0">GRUDICOM TI & GPS | C4 Operativo</h6>
-    <div id="diagnostico"></div>
-    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#mAdmin">ADMIN</button>
+<div class="status-bar shadow">
+    <span><b>GRUDICOM TI & GPS</b> | SDK Sync</span>
+    <div id="diagnostico-tokens"></div>
+    <button class="btn btn-danger btn-sm" onclick="location.reload()">RECARGAR</button>
 </div>
 
-<div class="container-fluid mt-3" id="tabla-logistica">
-    </div>
+<div class="container mt-3" id="main-view">
+    <div class="text-center p-5 text-muted">Conectando con Firebase y Wialon...</div>
+</div>
 
 <script>
-    // Inicialización Limpia (Corrige error de consola image_8994a9)
+    // Inicialización de tu Firebase
     const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let unidadesGPS = {};
+    let unidadesWialon = {}; // Aquí guardaremos todo lo que traiga el SDK
 
-    function iniciar() {
-        // 1. Escuchar Clientes y Viajes
-        db.ref('clientes').on('value', () => render());
+    function init() {
+        // 1. Escuchar los viajes que captures a mano
         db.ref('viajes_activos').on('value', () => render());
 
-        // 2. Motor de Recuperación Forzada
+        // 2. Conectar a Wialon (Lógica del SDK Playground)
         db.ref('sistema/tokens').once('value', s => {
             const tokens = s.val() ? Object.values(s.val()) : [];
             tokens.forEach(tk => {
-                // Forzamos conexión limpia ignorando errores previos
                 const url = `${tk.url}/wialon/ajax.html?svc=token/login&params={"token":"${tk.token}"}`;
-                fetch(url).then(r => r.json()).then(d => {
-                    if(d.eid) {
-                        document.getElementById("diagnostico").innerHTML += `<span class="badge badge-info">${tk.nombre} OK</span>`;
-                        // Pedimos TODAS las unidades sin filtros
-                        fetch(`${tk.url}/wialon/ajax.html?svc=core/search_items&sid=${d.eid}&params={"spec":{"itemsType":"avl_unit","propName":"sys_name","propValueMask":"*","sortType":"sys_name"},"force":1,"flags":1025}`)
-                        .then(r => r.json()).then(res => {
-                            if(res.items) res.items.forEach(u => { unidadesGPS[u.nm.toUpperCase()] = u; });
+                
+                fetch(url).then(r => r.json()).then(data => {
+                    if(data.eid) {
+                        document.getElementById("diagnostico-tokens").innerHTML += `<span class="badge bg-success me-1">${tk.nombre} OK</span>`;
+                        
+                        // Buscamos unidades con Flag 1025 (Nombre + Posición + Datos)
+                        const searchUrl = `${tk.url}/wialon/ajax.html?svc=core/search_items&sid=${data.eid}&params={"spec":{"itemsType":"avl_unit","propName":"sys_name","propValueMask":"*","sortType":"sys_name"},"force":1,"flags":1025}`;
+                        
+                        fetch(searchUrl).then(r => r.json()).then(res => {
+                            if(res.items) {
+                                res.items.forEach(item => {
+                                    unidadesWialon[item.nm.toUpperCase()] = item;
+                                });
+                            }
                             render();
                         });
+                    } else {
+                        document.getElementById("diagnostico-tokens").innerHTML += `<span class="badge bg-danger me-1">${tk.nombre} ERR</span>`;
                     }
                 });
             });
@@ -59,25 +66,37 @@
     }
 
     function render() {
-        const cont = document.getElementById("tabla-logistica");
         db.ref('viajes_activos').once('value', s => {
             const viajes = s.val() || {};
-            let html = '<table class="table table-bordered bg-white"><thead><tr><th>UNIDAD</th><th>ESTATUS</th><th>VELOCIDAD</th></tr></thead><tbody>';
+            const view = document.getElementById("main-view");
+            let html = "";
+
             Object.keys(viajes).forEach(id => {
                 const v = viajes[id];
-                const gps = unidadesGPS[v.unidadN.toUpperCase()] || null;
-                html += `<tr>
-                    <td><b>${v.unidadN}</b></td>
-                    <td><span class="badge bg-success">En Ruta</span></td>
-                    <td>${gps ? `<b class="text-primary">${gps.pos.s} km/h</b>` : '<span class="text-muted">Buscando señal...</span>'}</td>
-                </tr>`;
+                const economico = v.unidadN.toUpperCase();
+                const gps = unidadesWialon[economico] || null;
+
+                html += `<div class="unit-card p-3 shadow-sm d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="m-0 text-primary">${economico}</h6>
+                        <small class="text-muted">Operador: ${v.operador || 'No asignado'}</small>
+                    </div>
+                    <div class="text-center">
+                        <div class="fw-bold fs-5">${gps ? gps.pos.s : '--'} <small>km/h</small></div>
+                        <small class="${gps ? 'text-success' : 'text-danger'}">${gps ? '● Online' : '○ Desconectado'}</small>
+                    </div>
+                    <div class="text-end">
+                        <small class="d-block text-muted">Último Reporte:</small>
+                        <b>${gps ? new Date(gps.pos.t * 1000).toLocaleTimeString() : '--:--:--'}</b>
+                    </div>
+                </div>`;
             });
-            html += '</tbody></table>';
-            cont.innerHTML = html;
+
+            view.innerHTML = html || '<div class="text-center p-5 text-muted">No hay viajes activos en la bitácora.</div>';
         });
     }
 
-    iniciar();
+    init();
 </script>
 </body>
 </html>
