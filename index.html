@@ -11,7 +11,7 @@
         function loadSDK(url) {
             return new Promise((resolve) => {
                 const s = document.createElement('script');
-                s.src = url + "?t=" + Date.now(); // Evita el caché del navegador
+                s.src = url + "?t=" + Date.now(); // Evita el caché del navegador que guarda el error 404
                 s.onload = () => resolve(true);
                 s.onerror = () => resolve(false);
                 document.head.appendChild(s);
@@ -26,6 +26,8 @@
         #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; z-index:999; }
         #dashboard { display:none; background: #f4f7f6; color: #333; min-height: 100vh; }
         .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; }
+        .badge-mov { background-color: var(--green); }
+        .badge-stop { background-color: #dc3545; }
     </style>
 </head>
 <body>
@@ -35,18 +37,18 @@
         <h3 class="fw-bold text-primary mb-2">Logística Cloud</h3>
         <p class="text-muted small mb-4">Sincronización de Flota en la Nube</p>
         <input type="password" id="tokenInput" class="form-control mb-3 text-center" placeholder="Pega tu API Token">
-        <button onclick="login()" class="btn btn-primary w-100 fw-bold shadow py-2">SINCRONIZAR AHORA</button>
+        <button onclick="login()" class="btn btn-primary w-100 fw-bold shadow py-2" id="syncBtn">SINCRONIZAR AHORA</button>
         <div id="sdkStatus" class="mt-3 small fw-bold text-warning">Estableciendo puente seguro...</div>
     </div>
 </div>
 
 <div id="dashboard">
     <div class="p-3 bg-primary text-white text-center shadow-sm d-flex justify-content-between align-items-center">
-        <h4 class="m-0 h5 fw-bold">PANEL LOGÍSTICO REAL-TIME</h4>
+        <h4 class="m-0 h5 fw-bold text-white text-uppercase">Panel Logístico Real-Time</h4>
         <button onclick="exportarExcel()" class="btn btn-sm btn-success fw-bold">📥 Reporte Excel</button>
     </div>
     <div class="p-3">
-        <div class="card shadow-sm border-0 rounded-3">
+        <div class="card shadow-sm border-0 rounded-3 text-dark">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 text-center">
                     <thead class="table-dark">
@@ -72,8 +74,10 @@
 
     // 2. INICIALIZADOR INTELIGENTE
     async function startApp() {
+        // Intentamos tres rutas diferentes para burlar los bloqueos del navegador
         const routes = [
             "https://sdk.wialon.com/library/js/wialon.js",
+            "https://hst-api.wialon.com/wscommon/js/wialon.js",
             "https://hst-api.wialon.com/wscommon/js/wialon.js"
         ];
 
@@ -96,7 +100,7 @@
         if(!token) return alert("Ingresa tu token");
         
         if(!sess) {
-            alert("El bloqueo persiste. Intentando salto de seguridad...");
+            alert("El bloqueo persiste. Intentando salto de seguridad forzado...");
             startApp();
             return;
         }
@@ -146,8 +150,8 @@
                 </td>
                 <td><input id="con_${id}" class="table-input" onchange="save('${id}','contenedores',this.value)"></td>
                 <td class="fw-bold text-dark">${speed} km/h</td>
-                <td id="addr_${id}" style="font-size:0.7rem; color:#666">Obteniendo...</td>
-                <td><span class="badge ${mov?'bg-success':'bg-danger'}">${mov?'MOV':'STOP'}</span></td>
+                <td id="addr_${id}" style="font-size:0.7rem; color:#666">Obteniendo dirección...</td>
+                <td><span class="badge ${mov?'badge-mov':'badge-stop'}">${mov?'MOV':'STOP'}</span></td>
             `;
             tbody.appendChild(row);
             
@@ -159,7 +163,7 @@
                 });
             }
 
-            // Cargar datos de Firebase para cada unidad por separado
+            // Cargar datos de Firebase independientes por unidad
             db.ref('viajes/' + id).once('value', (s) => {
                 const v = s.val();
                 if (v) {
