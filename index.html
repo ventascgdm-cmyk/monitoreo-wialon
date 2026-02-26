@@ -104,7 +104,7 @@
                       <input type="text" id="tk_nom" class="form-control form-control-sm mb-1" placeholder="Nombre Plataforma">
                       <input type="text" id="tk_url" class="form-control form-control-sm mb-1" placeholder="URL Servidor" value="https://hst-api.wialon.com">
                       <input type="text" id="tk_val" class="form-control form-control-sm mb-1" placeholder="Token de Acceso">
-                      <button class="btn btn-success btn-sm w-100 fw-bold" onclick="agregarToken()">Añadir Token (Sincroniza Auto)</button>
+                      <button class="btn btn-success btn-sm w-100 fw-bold" onclick="agregarToken()">Añadir Token</button>
                   </div>
                   <ul class="list-group list-group-sm" id="listaTokens" style="font-size:10px;"></ul>
               </div>
@@ -143,7 +143,7 @@
             <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">Registrar Nuevo Viaje</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
             <div class="modal-body small">
                 <label class="fw-bold">Buscar Unidad (Multi-Token):</label>
-                <input class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="nv_unidad_input" placeholder="Escribe el nombre del camión...">
+                <input class="form-control form-control-sm mb-2 input-upper" list="listaUnidadesTotales" id="nv_unidad_input" placeholder="Escribe el nombre del camión..." onkeyup="this.value = this.value.toUpperCase()">
                 
                 <div class="row mb-2">
                     <div class="col-6">
@@ -196,7 +196,7 @@
           <div class="alert alert-warning p-2" id="msgUltimaNotif" style="font-size:11px; display:none;"></div>
           <div id="listaComentarios" class="mb-3" style="max-height: 250px; overflow-y: auto; padding: 5px;"></div>
           <div class="input-group">
-              <input type="text" id="nuevoComentario" class="form-control form-control-sm" placeholder="Registrar anomalía o novedad...">
+              <input type="text" id="nuevoComentario" class="form-control form-control-sm" placeholder="Escribe nota o atiende alerta...">
               <button class="btn btn-primary btn-sm fw-bold" onclick="guardarComentario()">Agregar</button>
           </div>
           <input type="hidden" id="comentario_unidad_id">
@@ -221,9 +221,8 @@
     let currentUser = null; 
     let configSistema = { tokens: [], usuarios: {} };
     let dataClientes = {}; let viajesActivos = {}; let unidadesWialon = []; let historialGlobal = {};
-    let mapUnidades = {}; // Buscador global
     let globalDriversMap = {}; 
-    let activeWialonSessions = []; // Para poder desconectarlas si se agrega un token
+    let activeWialonSessions = []; // Almacena sesiones activas para limpiarlas
 
     const estatusData = { "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"1.2 RETEN",col:"#7D3F00"}, "s4":{nombre:"1.3 Resguardo",col:"#5C338A"}, "s5":{nombre:"2. Incidencia",col:"#FFCCCC"}, "s6":{nombre:"3. Cargando",col:"#EAEAEA"}, "s7":{nombre:"4. Descargando",col:"#D0F0C0"}, "s8":{nombre:"5. Patio GDL",col:"#BCE3F9"}, "s9":{nombre:"6. Patio Reynosa",col:"#C2DEDB"}, "s10":{nombre:"7. Taller",col:"#B5A6A6"}, "s11":{nombre:"8. Finalizado",col:"#0055A5"} };
 
@@ -232,54 +231,87 @@
 
     window.onload = function () {
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
+        if (typeof wialon !== 'undefined') document.getElementById("status").innerHTML = "SDK Listo ✅";
+        
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); });
-        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; if(unidadesWialon.length>0) renderizarBitacora(); });
+        db.ref('viajes_activos').on('value', s => { 
+            viajesActivos = s.val() || {}; 
+            if(unidadesWialon.length>0) {
+                renderizarBitacora(); 
+                actualizarDatalistUnidades(); // Actualizar menú de registrar viaje para no duplicar
+            }
+        });
         db.ref('historial').on('value', s => { historialGlobal = s.val() || {}; });
         
-        // 2. ESCUCHADOR EN TIEMPO REAL PARA TOKENS
+        // ESCUCHADOR DE TOKENS (Sincronización en vivo sin F5)
         db.ref('sistema/tokens').on('value', s => {
             let nuevosTokens = s.val() || [];
-            // Si hay un cambio real en los tokens y hay sesión activa, reconectar
             if(currentUser && JSON.stringify(nuevosTokens) !== JSON.stringify(configSistema.tokens)) {
                 configSistema.tokens = nuevosTokens;
                 if(currentUser.rol === 'admin') renderizarAdmin();
-                iniciarMultiplesSesionesWialon(); // Sincroniza al instante
-            } else { configSistema.tokens = nuevosTokens; }
+                iniciarMultiplesSesionesWialon(); // Reconectar automáticamente
+            } else { 
+                configSistema.tokens = nuevosTokens; 
+            }
         });
+
+        // PERSISTENCIA DE SESIÓN
+        let savedUser = localStorage.getItem("tms_user");
+        let savedPass = localStorage.getItem("tms_pass");
+        if(savedUser && savedPass) autenticarUsuario(savedUser, savedPass);
     };
 
-    function autenticarUsuario() {
-        const u = document.getElementById("logUser").value.trim(); const p = document.getElementById("logPass").value.trim();
+    // 2. AUTENTICACIÓN
+    function autenticarUsuario(autoUser, autoPass) {
+        const u = autoUser || document.getElementById("logUser").value.trim(); 
+        const p = autoPass || document.getElementById("logPass").value.trim();
         if(!u || !p) return;
         document.getElementById("status").innerText = "Autenticando...";
+        
         db.ref('sistema').once('value', s => {
             let sys = s.val() || { usuarios: { admin: { pass: "admin123", rol: "admin", nom: "Admin" } }, tokens: [] };
             if(!s.val()) db.ref('sistema').set(sys);
+
             if(sys.usuarios[u] && sys.usuarios[u].pass === p) {
                 currentUser = sys.usuarios[u]; configSistema = sys;
+                
+                // Guardar en caché para no perder sesión en F5
+                localStorage.setItem("tms_user", u);
+                localStorage.setItem("tms_pass", p);
+
                 document.getElementById("loginOverlay").style.display = "none";
                 document.getElementById("dashboard").style.display = "block";
-                document.getElementById("lblUsuarioActivo").innerHTML += currentUser.nom;
+                document.getElementById("lblUsuarioActivo").innerHTML = `<i class="fa-solid fa-user-shield"></i> Monitor: ${currentUser.nom}`;
+                
                 if(currentUser.rol === "admin") document.getElementById("btnAdmin").style.display = "inline-block";
                 if(currentUser.rol === "admin") renderizarAdmin();
+                
                 iniciarMultiplesSesionesWialon();
-            } else { document.getElementById("status").innerHTML = "<span class='text-danger'>Credenciales incorrectas</span>"; }
+            } else { 
+                document.getElementById("status").innerHTML = "<span class='text-danger'>Credenciales incorrectas</span>";
+                localStorage.removeItem("tms_user"); localStorage.removeItem("tms_pass");
+            }
         });
     }
 
-    function cerrarSesion() { location.reload(); }
+    function cerrarSesion() {
+        localStorage.removeItem("tms_user");
+        localStorage.removeItem("tms_pass");
+        location.reload();
+    }
 
     // 3. SINCRONIZACIÓN MULTI-TOKEN PERFECTA
     async function iniciarMultiplesSesionesWialon() {
         let ind = document.getElementById("syncIndicator");
-        ind.className = "badge bg-warning text-dark"; ind.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Sincronizando Flotas...";
+        ind.className = "badge bg-warning text-dark"; ind.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Sincronizando...";
         
-        // Limpieza profunda
-        unidadesWialon = []; mapUnidades = {}; globalDriversMap = {};
-        document.getElementById("listaGeocercas").innerHTML = ""; document.getElementById("listaConductores").innerHTML = ""; document.getElementById("listaUnidadesTotales").innerHTML = "";
+        // Limpiar variables
+        unidadesWialon = []; globalDriversMap = {};
+        document.getElementById("listaGeocercas").innerHTML = ""; 
+        document.getElementById("listaConductores").innerHTML = "";
 
-        // Desloguear sesiones viejas para no duplicar datos
-        activeWialonSessions.forEach(sess => { try { sess.logout(); } catch(e){} });
+        // Desloguear sesiones anteriores para evitar cruce de datos
+        activeWialonSessions.forEach(sess => { try{sess.logout();}catch(e){} });
         activeWialonSessions = [];
 
         if(!configSistema.tokens || configSistema.tokens.length === 0) { ind.className = "badge bg-danger"; ind.innerHTML = "Sin Tokens"; return; }
@@ -287,7 +319,7 @@
         const promesas = configSistema.tokens.map((tkObj, idx) => {
             return new Promise((resolve) => {
                 let url = tkObj.url || "https://hst-api.wialon.com"; let tokenStr = tkObj.token || tkObj;
-                let sessName = "WialonSess_" + Date.now() + "_" + idx; // Nombre único para evitar colisiones
+                let sessName = "WialonSess_" + Date.now() + "_" + idx; 
                 let sess = wialon.core.Session.getInstance(sessName);
                 sess.initSession(url);
                 
@@ -304,17 +336,14 @@
             });
         });
 
-        const sesionesAprobadas = await Promise.all(promesas);
+        // Esperar a que TODOS los tokens respondan
+        const sesionesListas = await Promise.all(promesas);
         
-        // Extraer datos sincrónicamente después de que todas las plataformas respondan
-        sesionesAprobadas.forEach(sess => {
+        // Unir toda la información en las listas globales
+        sesionesListas.forEach(sess => {
             if(sess) {
                 let units = sess.getItems("avl_unit") || [];
-                units.forEach(u => {
-                    unidadesWialon.push(u);
-                    mapUnidades[u.getName()] = u.getId();
-                    document.getElementById("listaUnidadesTotales").innerHTML += `<option value="${u.getName()}">`;
-                });
+                units.forEach(u => unidadesWialon.push(u));
                 
                 let recursos = sess.getItems("avl_resource") || [];
                 recursos.forEach(r => {
@@ -326,7 +355,6 @@
                     }
                 });
 
-                // Alertas
                 sess.addListener("unboundEvents", function (event) {
                     if (event && event.type === 'notification') {
                         let uId = event.data.i; db.ref(`viajes_activos/${uId}/alerta`).set({ txt: event.data.t, ts: Date.now() });
@@ -336,8 +364,18 @@
             }
         });
 
+        actualizarDatalistUnidades(); // Actualizar opciones para "Registrar Viaje"
         ind.className = "badge bg-success"; ind.innerHTML = "<i class='fa-solid fa-check-double'></i> Sincronizado";
         renderizarBitacora();
+    }
+
+    // Actualiza el Datalist de Unidades excluyendo las que ya están en viaje
+    function actualizarDatalistUnidades() {
+        let htmlUnidades = "";
+        unidadesWialon.forEach(u => {
+            if(!viajesActivos[u.getId()]) { htmlUnidades += `<option value="${u.getName()}">`; }
+        });
+        document.getElementById("listaUnidadesTotales").innerHTML = htmlUnidades;
     }
 
     // 4. RENDERIZADO MAESTRO (ENCABEZADOS DINÁMICOS)
@@ -360,7 +398,6 @@
             tree[cId][sId].push({u: u, v: v});
         });
 
-        // HTML del Encabezado de Columnas (Punto 3)
         const headerColumnasHTML = `
             <tr class="header-columnas">
                 <th width="10%">UNIDAD</th><th width="10%">OPERADOR</th><th width="15%">RUTA (O ➔ D)</th>
@@ -382,8 +419,7 @@
                     cliHtml += `<tr><td colspan="10" class="header-subcliente shadow-sm">↳ Subcliente: ${subNom}</td></tr>`;
                 }
                 
-                // INYECTAR ENCABEZADOS DE COLUMNA DESPUÉS DEL GRUPO/SUBGRUPO
-                cliHtml += headerColumnasHTML;
+                cliHtml += headerColumnasHTML; // Encabezado dinámico
 
                 tree[cId][sId].forEach(item => {
                     const u = item.u; const v = item.v; const id = u.getId();
@@ -442,6 +478,7 @@
                         </td>
                     </tr>`;
                     
+                    // Geocoding & Auto-Arribo Inteligente
                     if (pos) {
                         wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], function(c, addr) { 
                             let el = document.getElementById(`addr_${id}`); 
@@ -464,7 +501,7 @@
         aplicarFiltroActual();
     }
 
-    // 5. REGISTRAR Y MODIFICAR VIAJES
+    // 5. REGISTRAR VIAJES (Buscador robusto)
     function prepararNuevoViaje() {
         let sel = document.getElementById("nv_cliente"); sel.innerHTML = `<option value="">Seleccione Cliente...</option>`;
         Object.keys(dataClientes).forEach(k => { sel.innerHTML += `<option value="${k}">${dataClientes[k].nombre}</option>`; });
@@ -482,21 +519,29 @@
     }
 
     function registrarViaje() {
-        let uNom = document.getElementById("nv_unidad_input").value;
-        let uId = mapUnidades[uNom];
-        if (!uId) return alert("Unidad no encontrada. Escriba correctamente el nombre.");
+        let uNom = document.getElementById("nv_unidad_input").value.trim().toUpperCase();
+        let uId = null;
+        
+        // Búsqueda robusta por nombre en todas las plataformas
+        for(let i=0; i<unidadesWialon.length; i++) {
+            if(unidadesWialon[i].getName().toUpperCase() === uNom) {
+                uId = unidadesWialon[i].getId(); break;
+            }
+        }
+
+        if (!uId) return alert("Unidad no encontrada en ninguna plataforma. Asegúrate de seleccionarla de la lista desplegable.");
+        
         db.ref('viajes_activos/' + uId).set({ 
             cliente: document.getElementById("nv_cliente").value, 
             subcliente: document.getElementById("nv_subcliente").value, 
             origen: document.getElementById("nv_origen").value.toUpperCase(), 
             destino: document.getElementById("nv_destino").value.toUpperCase(), 
             estatus: "s1", operador: globalDriversMap[uId] || "",
-            bitacora: [{autor:"Sistema", fecha: Date.now(), txt: "Registró Viaje"}] 
+            bitacora: [{autor: currentUser.nom, fecha: Date.now(), txt: "Registró Viaje"}] 
         });
         bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide();
     }
 
-    // EDITAR VIAJE (Cambiar Cliente)
     function abrirEditarViaje(uId, currentClient, currentSub) {
         document.getElementById("edit_viaje_id").value = uId;
         let selC = document.getElementById("ev_cliente"); selC.innerHTML = `<option value="">Sin Cliente</option>`;
@@ -516,7 +561,30 @@
         bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide();
     }
 
-    // DEMÁS FUNCIONES (Admin, Auditoría, Tiempos)
+    // ADMIN TOKENS CORREGIDO
+    function renderizarAdmin() {
+        let ulT = document.getElementById("listaTokens"); ulT.innerHTML = "";
+        (configSistema.tokens||[]).forEach((tk, i) => { ulT.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><b>${tk.nombre||'Plataforma'}</b><br><small class="text-muted">${tk.url||'Wialon'}</small></div><button class="btn btn-sm btn-danger py-0" onclick="borrarToken(${i})">X</button></li>`; });
+        let ulU = document.getElementById("listaUsuarios"); ulU.innerHTML = "";
+        Object.keys(configSistema.usuarios).forEach(u => { ulU.innerHTML += `<li class="list-group-item d-flex justify-content-between"><b>${u}</b> (${configSistema.usuarios[u].rol}) <button class="btn btn-sm btn-danger py-0" onclick="db.ref('sistema/usuarios/${u}').remove()">X</button></li>`; });
+        actualizarListasAdmin();
+    }
+    
+    // Al modificar los tokens, hacemos una copia profunda del array para forzar a Firebase a detectar el cambio
+    function agregarToken() { 
+        let val = document.getElementById("tk_val").value.trim(); if(!val) return; 
+        let tokens = [...(configSistema.tokens || [])]; 
+        tokens.push({ nombre: document.getElementById("tk_nom").value.trim() || "Wialon API", url: document.getElementById("tk_url").value.trim() || "https://hst-api.wialon.com", token: val }); 
+        db.ref('sistema/tokens').set(tokens); 
+        document.getElementById("tk_nom").value=""; document.getElementById("tk_val").value=""; 
+    }
+    function borrarToken(idx) { 
+        let tokens = [...(configSistema.tokens || [])]; 
+        tokens.splice(idx,1); 
+        db.ref('sistema/tokens').set(tokens); 
+    }
+
+    // DEMÁS FUNCIONES
     function crearCliente() { db.ref('clientes').push({ nombre: document.getElementById("cli_nombre").value.toUpperCase(), icono: document.getElementById("cli_icono").value || "🚛" }); document.getElementById("cli_nombre").value=""; }
     function crearSubcliente() { let cId = document.getElementById("sub_clientePadre").value; let sNom = document.getElementById("sub_nombre").value.toUpperCase(); if(!cId || !sNom) return; db.ref(`clientes/${cId}/subclientes`).push({ nombre: sNom }); document.getElementById("sub_nombre").value=""; }
     function actualizarListasAdmin() {
@@ -547,15 +615,6 @@
         setTimeout(() => abrirAuditoria(id, document.getElementById("tituloComentarios").innerText.replace("Auditoría: ",""), ""), 300);
     }
 
-    function renderizarAdmin() {
-        let ulT = document.getElementById("listaTokens"); ulT.innerHTML = "";
-        (configSistema.tokens||[]).forEach((tk, i) => { ulT.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center"><div><b>${tk.nombre||'Plataforma'}</b><br><small class="text-muted">${tk.url||'Wialon'}</small></div><button class="btn btn-sm btn-danger py-0" onclick="borrarToken(${i})">X</button></li>`; });
-        let ulU = document.getElementById("listaUsuarios"); ulU.innerHTML = "";
-        Object.keys(configSistema.usuarios).forEach(u => { ulU.innerHTML += `<li class="list-group-item d-flex justify-content-between"><b>${u}</b> (${configSistema.usuarios[u].rol}) <button class="btn btn-sm btn-danger py-0" onclick="db.ref('sistema/usuarios/${u}').remove()">X</button></li>`; });
-        actualizarListasAdmin();
-    }
-    function agregarToken() { let val = document.getElementById("tk_val").value.trim(); if(!val) return; let tokens = configSistema.tokens || []; tokens.push({ nombre: document.getElementById("tk_nom").value.trim() || "Local", url: document.getElementById("tk_url").value.trim(), token: val }); db.ref('sistema/tokens').set(tokens); document.getElementById("tk_nom").value=""; document.getElementById("tk_val").value=""; }
-    function borrarToken(idx) { let tokens = configSistema.tokens; tokens.splice(idx,1); db.ref('sistema/tokens').set(tokens); }
     function crearMonitor() { let u = document.getElementById("nu_user").value.trim(); let p = document.getElementById("nu_pass").value.trim(); if(!u||!p) return; db.ref(`sistema/usuarios/${u}`).set({ pass: p, rol: "monitor", nom: u.toUpperCase() }); }
     function finalizarViaje(id, nom) { if(!confirm(`¿Archivar viaje?`)) return; let v = viajesActivos[id]; v.unidad = nom; v.finTs = Date.now(); db.ref('historial').push(v); db.ref('viajes_activos/'+id).remove(); }
     
