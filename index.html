@@ -33,20 +33,28 @@
         .table-input { border: 1px solid var(--border-col); padding: 4px; width: 100%; border-radius: 4px; font-size: 0.70rem; text-align: center; font-weight: 600; background: var(--table-bg); color: var(--text-main); text-transform: uppercase;}
         
         #mainTableHeader { position: sticky; top: 0; z-index: 10; }
-        .header-columnas th { background-color: var(--header-bg) !important; color: white !important; font-size: 0.60rem; font-weight: 700; text-align: center; vertical-align: middle; padding: 8px 4px; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); resize: horizontal; overflow: hidden; position: relative; }
+        
+        /* COLUMNAS ARRASTRABLES Y FLEXIBLES */
+        .header-columnas th { 
+            background-color: var(--header-bg) !important; color: white !important; font-size: 0.60rem; font-weight: 700; text-align: center; vertical-align: middle; padding: 8px 4px; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); 
+            resize: horizontal; overflow: auto; position: relative; 
+        }
+        .header-columnas th::-webkit-scrollbar { height: 0px; width: 0px; } /* Oculta la barra de scroll del resize */
+        
         .header-cliente { background-color: #336699 !important; color: white !important; font-size: 0.85rem; font-weight: bold; text-align: left; padding: 6px 15px !important; text-transform: uppercase; }
         .header-subcliente { background-color: #5c6c7c !important; color: white !important; font-size: 0.75rem; font-weight: bold; text-align: left; padding: 4px 25px !important; }
         
-        .col-unidad { width: 8%; }
-        .col-operador { width: 9%; }
-        .col-ruta { width: 11%; }
-        .col-contenedores { width: 9%; }
-        .col-horarios { width: 10%; }
-        .col-estatus { width: 10%; }
-        .col-gps { width: 28%; }
-        .col-alertas { width: 4%; }
-        .col-historial { width: 8%; }
-        .col-accion { width: 3%; }
+        /* ANCHOS PREDETERMINADOS (Modificables al arrastrar) */
+        .col-unidad { min-width: 80px; }
+        .col-operador { min-width: 100px; }
+        .col-ruta { min-width: 130px; }
+        .col-contenedores { min-width: 90px; }
+        .col-horarios { min-width: 110px; }
+        .col-estatus { min-width: 100px; }
+        .col-gps { min-width: 200px; width: 260px; } /* Gran protagonismo inicial */
+        .col-alertas { min-width: 60px; }
+        .col-historial { min-width: 150px; width: 190px; } /* Más espacio inicial */
+        .col-accion { min-width: 45px; }
 
         .status-select { border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.70rem; padding: 4px; background-color: transparent; outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 100%; transition: all 0.2s;}
         
@@ -74,7 +82,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v10.0</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v10.1</div>
     </div>
 </div>
 
@@ -120,7 +128,7 @@
             </div>
             <div class="card shadow-sm border-0 h-100 bg-transparent">
                 <div class="table-responsive h-100">
-                    <table class="table table-bordered table-sm align-middle text-center mb-0 bg-white" id="mainTable">
+                    <table class="table table-bordered table-sm align-middle text-center mb-0 bg-white" id="mainTable" style="table-layout: auto;">
                         <thead id="mainTableHeader">
                             <tr class="header-columnas">
                                 <th class="col-unidad">UNIDAD</th>
@@ -189,12 +197,13 @@
         return (new Date(unixMillis - tzoffset)).toISOString().slice(0, 16);
     }
 
+    // Calcula hace cuántos segundos/minutos/horas se reportó el GPS
     function timeAgo(unixSecs) {
-        if(!unixSecs) return "Desconocido";
+        if(!unixSecs) return "N/A";
         let diff = Math.floor(Date.now()/1000) - unixSecs;
-        if(diff < 60) return `hace ${diff} seg`;
-        if(diff < 3600) return `hace ${Math.floor(diff/60)} min`;
-        return `hace ${Math.floor(diff/3600)} horas`;
+        if(diff < 60) return `${diff} seg`;
+        if(diff < 3600) return `${Math.floor(diff/60)} min`;
+        return `${Math.floor(diff/3600)} horas`;
     }
 
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('tms_dark_mode', document.body.classList.contains('dark-mode')); }
@@ -228,7 +237,6 @@
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
 
-    // PLANILLAS WHATSAPP EXACTAS (USANDO CONCATENACIÓN +)
     function shareWA(u, loc, o, d, est, cont, cli, sub, vel, posY, posX) { 
         let estNombre = window.estatusData[est]?.nombre || "En Trayecto"; 
         let subText = sub !== 'N/A' ? ` -> ${sub}` : '';
@@ -286,7 +294,7 @@
         document.getElementById("nv_unidad_input").addEventListener("input", function() { let uN = this.value.toUpperCase(); document.getElementById("nv_operador").value = ramDrivers[uN] || ""; });
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
         
-        // MOTOR NOMINATIM SEGURO (1 petición cada 1.1 seg para evitar bloqueos de IP)
+        // Fila de espera de 1 segundo
         setInterval(procesarFilaDirecciones, 1100); 
     };
 
@@ -365,7 +373,7 @@
         renderStatusTokens(); renderizarBitacora(); desencadenarGeocoding(); if(mapVisible) actualizarMarcadoresMapa();
     }
 
-    // GEOCODIFICACIÓN CON NOMINATIM (USANDO FILA DE ESPERA PARA EVITAR BANEO Y APLICAR AUTO-ARRIBO)
+    // GEOCODIFICACIÓN PRECISA A NIVEL DE CALLE (ZOOM=18)
     function desencadenarGeocoding() {
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId];
@@ -375,17 +383,15 @@
             if(u && u.pos) {
                 let geoKey = `${u.pos.y.toFixed(4)}_${u.pos.x.toFixed(4)}`;
                 if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) {
-                    // Agregamos a la fila con los datos necesarios para el Auto-Arribo
                     geoQueue.push({ key: geoKey, y: u.pos.y, x: u.pos.x, vId: vId, dest: v.destino });
                 } else if(geocodeCache[geoKey]) {
-                    // Si ya está en memoria caché, pintamos en el ID exacto y verificamos arribo
                     let el = document.getElementById("addr_" + vId);
                     if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${geocodeCache[geoKey]}`;
                     
                     let a = geocodeCache[geoKey];
                     if(v.destino && !v.t_arribo && a.toUpperCase().includes(v.destino.toUpperCase())) {
                         db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now());
-                        registrarLog(vId, 'Arribo Automático (Por Caché GPS)');
+                        registrarLog(vId, 'Arribo Automático (GPS)');
                     }
                 }
             }
@@ -397,26 +403,30 @@
         isGeocoding = true;
         let item = geoQueue.shift();
         
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=16`)
+        // ZOOM=18 y addressdetails=1 para obtener la calle exacta
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=18&addressdetails=1`)
             .then(r => r.json())
             .then(d => {
-                let fullAddr = d.display_name || "Sin dirección";
+                let a = d.address || {};
+                // Construimos la dirección: Calle + Número, Ciudad, Estado
+                let street = a.road || a.pedestrian || a.path || a.suburb || "Calle desconocida";
+                let ext = a.house_number ? ` ${a.house_number}` : '';
+                let city = a.city || a.town || a.village || a.county || "";
+                let state = a.state || "";
                 
-                // Cortamos un poco para que no sea inmensa en la tabla, pero conservamos la precisión
-                let shortAddr = fullAddr.split(",").slice(0, 3).join(",");
+                let shortAddr = `${street}${ext}, ${city}, ${state}`.replace(/, ,/g, ',').replace(/^, /, '').trim();
+                if(!shortAddr || shortAddr === ", ") shortAddr = d.display_name.split(",").slice(0, 3).join(",");
+                
                 geocodeCache[item.key] = shortAddr;
                 localStorage.setItem('tms_geoCache', JSON.stringify(geocodeCache));
                 
-                // Actualizamos todas las celdas de tabla que tengan esta coordenada (usando clases)
                 let els = document.querySelectorAll(`.addr-span-${item.key}`);
                 els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${shortAddr}`);
 
-                // También actualizamos el ID exacto que solicitaste
                 let elId = document.getElementById("addr_" + item.vId);
                 if(elId) elId.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${shortAddr}`;
 
-                // AUTO-ARRIBO MÁGICO
-                if(item.dest && fullAddr.toUpperCase().includes(item.dest.toUpperCase())) {
+                if(item.dest && shortAddr.toUpperCase().includes(item.dest.toUpperCase())) {
                     let v = viajesActivos[item.vId];
                     if(v && !v.t_arribo) {
                         db.ref('viajes_activos/'+item.vId+'/t_arribo').set(Date.now());
@@ -443,7 +453,7 @@
                     ? `<div style="transform: rotate(${course}deg); color: ${colorIcon}; font-size: 22px; text-shadow: 0 0 3px #fff;"><i class="fa-solid fa-location-arrow"></i></div>` 
                     : `<div style="color: ${colorIcon}; font-size: 22px; text-shadow: 0 0 3px #fff;"><i class="fa-solid fa-location-dot"></i></div>`;
                 let customIcon = L.divIcon({ html: markerHtml, className: '', iconSize: [22, 22], iconAnchor: [11, 11] });
-                let popupContent = `<div style="text-align:center; min-width: 130px;"><b style="font-size:15px; color:#f39c12;">${u.name}</b><br><b style="font-size:12px;">${u.pos.s} km/h</b><br><span style="color:#bdc3c7; font-size:10px;">${timeAgo(u.pos.t)}</span></div>`;
+                let popupContent = `<div style="text-align:center; min-width: 130px;"><b style="font-size:15px; color:#f39c12;">${u.name}</b><br><b style="font-size:12px;">${u.pos.s} km/h</b><br><span style="color:#bdc3c7; font-size:10px;">hace ${timeAgo(u.pos.t)}</span></div>`;
                 L.marker([u.pos.y, u.pos.x], {icon: customIcon}).bindPopup(popupContent, {className: 'custom-popup'}).addTo(mapLayerGroup);
             }
         });
@@ -483,7 +493,6 @@
                 
                 if(sId !== "N/A" && dataClientes[cId].subclientes) cliHtml += `<tr class="header-subcliente shadow-sm"><td colspan="10">↳ Subcliente: ${nomSub} ${btnWaSub}</td></tr>`;
                 
-                // ORDENAR POR ESTATUS
                 tree[cId][sId].sort((a, b) => { let estA = a.v.estatus || ""; let estB = b.v.estatus || ""; return estA.localeCompare(estB); });
 
                 tree[cId][sId].forEach(({vId, u, v}) => {
@@ -496,6 +505,9 @@
                     let uText = isLost ? `<span class="unit-name text-danger" title="Sin señal GPS">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
                     let speedBg = "#343a40"; if(speed > 0 && speed < 100) speedBg = "#198754"; if(speed >= 100) speedBg = "#dc3545"; 
                     
+                    // ÍCONO INTELIGENTE DE MOVIMIENTO
+                    let moveIcon = isLost ? '<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i>' : (speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1"></i>' : '<i class="fa-solid fa-truck text-secondary me-1"></i>');
+
                     let drvName = v.operador || (uData ? ramDrivers[uData.name] : "") || "";
                     let addr = uData ? (geocodeCache[geoKey] || "<i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...") : "---";
                     let mapsLink = pos ? `https://maps.google.com/?q=lat,lon{pos.y},${pos.x}` : '#';
@@ -507,14 +519,19 @@
                     let btnArribo = construirBotonHorario(vId, v.t_arribo, 't_arribo', 'ARRIBO', 'primary'); 
                     let btnFin = construirBotonHorario(vId, v.t_fin, 't_fin', 'FINALIZADO', 'dark');
                     
+                    // HISTORIAL LOG CON FECHA Y HORA
                     let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
-                    let lastLog = logsArr.length > 0 ? `<div class="text-start mb-1 text-wrap" style="font-size:0.60rem; line-height:1.1; color:#444; max-width: 100%;"><b class="text-primary">${logsArr[0].usr}:</b> ${logsArr[0].act} <span class="text-muted">${logsArr[0].det||''}</span></div>` : `<div style="font-size:0.6rem; color:#888;">Sin eventos</div>`;
+                    let lastLog = logsArr.length > 0 ? 
+                        `<div class="text-start mb-1 text-wrap" style="font-size:0.60rem; line-height:1.1; color:#444; max-width: 100%;">
+                            <div style="font-size:0.55rem; color:#777; font-weight:bold; margin-bottom:2px;"><i class="fa-regular fa-calendar"></i> ${formatTimeFriendly(logsArr[0].t/1000)}</div>
+                            <b class="text-primary">${logsArr[0].usr}:</b> ${logsArr[0].act} <span class="text-muted">${logsArr[0].det||''}</span>
+                        </div>` : `<div style="font-size:0.6rem; color:#888;">Sin eventos</div>`;
 
-                    // Aquí insertamos el ID exacto que solicitaste en el código
+                    // UBICACIÓN CON "HACE X SEG"
+                    let timeAgoText = pos ? `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary">(hace ${timeAgo(pos.t)})</span>` : '<span class="text-danger">Modo Manual</span>';
                     let ubiControl = isLost ? `<input class="form-control form-control-sm text-center text-uppercase p-0 mt-1 shadow-sm border-danger" style="font-size:0.60rem; height:20px;" value="${v.ubicacion_manual||''}" placeholder="Escribir ubicación..." onblur="if(this.value !== '${v.ubicacion_manual||''}'){ registrarLog('${vId}', 'Ubicación manual', this.value); db.ref('viajes_activos/${vId}/ubicacion_manual').set(this.value.toUpperCase()); }">` : `<a href="${mapsLink}" target="_blank" class="addr-link addr-span-${geoKey}" id="addr_${vId}" title="Abrir en Maps"><i class="fa-solid fa-map-location-dot"></i> ${addr}</a>`;
 
                     let searchData = `${nombreCamion} ${drvName} ${v.origen} ${v.destino} ${v.contenedores} ${cliData.nombre} ${nomSub} ${window.estatusData[v.estatus]?.nombre}`.toLowerCase();
-
                     let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
                     cliHtml += `<tr class="data-row ${isLost?'lost-connection-row':''}" data-search="${searchData}">
@@ -547,8 +564,8 @@
                         </td>
                         <td class="col-gps" style="vertical-align: middle;">
                             <div class="d-flex flex-column align-items-center">
-                                <div><i class="fa-solid fa-signal text-${isLost?'danger':'success'} me-1" style="font-size:10px;"></i><span class="speed-badge" style="background-color:${isLost?'#adb5bd':speedBg};">${speed} km/h</span></div>
-                                <div class="mt-1 w-100">${ubiControl}<div style="font-size:8.5px; color:#666; margin-top:3px; font-weight:bold;">${pos ? formatTimeFriendly(pos.t) : '<span class="text-danger">Modo Manual</span>'}</div></div>
+                                <div>${moveIcon}<span class="speed-badge" style="background-color:${isLost?'#adb5bd':speedBg};">${speed} km/h</span></div>
+                                <div class="mt-1 w-100">${ubiControl}<div style="font-size:8.5px; color:#666; margin-top:3px; font-weight:bold;">${timeAgoText}</div></div>
                             </div>
                         </td>
                         <td class="col-alertas ${hiddenCols['col-alertas'] ? 'd-none' : ''}" style="vertical-align: middle;">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.7rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.7rem;">OK</span>'}</td>
