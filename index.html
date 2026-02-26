@@ -33,18 +33,17 @@
         .table-input { border: 1px solid var(--border-col); padding: 4px; width: 100%; border-radius: 4px; font-size: 0.70rem; text-align: center; font-weight: 600; background: var(--table-bg); color: var(--text-main); text-transform: uppercase;}
         
         #mainTableHeader { position: sticky; top: 0; z-index: 10; }
-        .header-columnas th { background-color: var(--header-bg) !important; color: white !important; font-size: 0.60rem; font-weight: 700; text-align: center; vertical-align: middle; padding: 8px 4px; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); }
+        .header-columnas th { background-color: var(--header-bg) !important; color: white !important; font-size: 0.60rem; font-weight: 700; text-align: center; vertical-align: middle; padding: 8px 4px; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.2); resize: horizontal; overflow: hidden; position: relative; }
         .header-cliente { background-color: #336699 !important; color: white !important; font-size: 0.85rem; font-weight: bold; text-align: left; padding: 6px 15px !important; text-transform: uppercase; }
         .header-subcliente { background-color: #5c6c7c !important; color: white !important; font-size: 0.75rem; font-weight: bold; text-align: left; padding: 4px 25px !important; }
         
-        /* Ajuste fino de Anchos de Columna - Ubicación Protagonista */
         .col-unidad { width: 8%; }
         .col-operador { width: 9%; }
         .col-ruta { width: 11%; }
         .col-contenedores { width: 9%; }
         .col-horarios { width: 10%; }
         .col-estatus { width: 10%; }
-        .col-gps { width: 28%; } /* PROTAGONISTA */
+        .col-gps { width: 28%; }
         .col-alertas { width: 4%; }
         .col-historial { width: 8%; }
         .col-accion { width: 3%; }
@@ -75,7 +74,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v9.9</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v10.0</div>
     </div>
 </div>
 
@@ -163,12 +162,11 @@
     let estadoTokens = {}; 
     let datosAgrupadosGlobal = {}; 
 
-    // SISTEMA GEOCODING ULTRA RAPIDO Y CACHÉ
+    // SISTEMA GEOCODING NOMINATIM CON AUTO-ARRIBO Y CACHÉ
     let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
     let geoQueue = [];
     let isGeocoding = false;
 
-    // PREFERENCIAS DE COLUMNAS
     let hiddenCols = JSON.parse(localStorage.getItem('tms_hiddenCols')) || {
         'col-operador': false, 'col-ruta': false, 'col-contenedores': false, 'col-horarios': false, 'col-alertas': false, 'col-historial': false
     };
@@ -201,7 +199,6 @@
 
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('tms_dark_mode', document.body.classList.contains('dark-mode')); }
     
-    // CONTROL DE COLUMNAS
     function inicializarMenuColumnas() {
         let inputs = document.querySelectorAll('#colTogglerMenu input');
         inputs.forEach(inp => {
@@ -231,32 +228,49 @@
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
 
-    // PLANILLA WHATSAPP INDIVIDUAL (Corregida a la perfección)
+    // PLANILLAS WHATSAPP EXACTAS (USANDO CONCATENACIÓN +)
     function shareWA(u, loc, o, d, est, cont, cli, sub, vel, posY, posX) { 
         let estNombre = window.estatusData[est]?.nombre || "En Trayecto"; 
         let subText = sub !== 'N/A' ? ` -> ${sub}` : '';
-        let mapLink = posY && posX ? `\n📍 Ubicación: https://maps.google.com/?q=${posY},${posX}` : `\n📍 Ubicación: ${loc}`;
+        let mapLink = posY && posX ? `\n📍 *Ubicación:* https://maps.google.com/?q=lat,lon{posY},${posX}` : `\n📍 *Ubicación:* ${loc}`;
         
-        let text = `🛰️REPORTE GCOM GPS:🛰️\n${cli}${subText}\n\n🚛 Unidad: ${u}\n📦 Contenedores: ${cont||'N/A'}${mapLink}\n⏱️ Vel: ${vel} km/h\n🚦 Estatus: ${estNombre}\n🏁 Origen: ${o||'N/A'} -> Destino: ${d||'N/A'}`; 
-        
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank'); 
+        let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
+                   `🏢 *Cliente:* ${cli}${subText}\n\n` +
+                   `🚛 *Unidad:* ${u}\n` +
+                   `📦 *Contenedores:* ${cont||'N/A'}` + 
+                   mapLink + `\n` +
+                   `⏱️ *Vel:* ${vel} km/h\n` +
+                   `🚦 *Estatus:* ${estNombre}\n` +
+                   `🏁 *Ruta:* ${o||'N/A'} ➔ ${d||'N/A'}\n\n` +
+                   `_Reporte generado por sistema C4_`;
+                   
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); 
     }
 
-    // PLANILLA WHATSAPP GRUPAL
     function generarReporteGrupal(cId, sId, titulo) {
         if(!datosAgrupadosGlobal[cId] || !datosAgrupadosGlobal[cId][sId]) return;
         let arrViajes = datosAgrupadosGlobal[cId][sId];
-        let txt = `🛰️REPORTE GCOM GPS:🛰️\n${titulo}\n\n`;
+        
+        let txt = `*GRUDICOM TI & GPS - REPORTE DE FLOTA*\n` +
+                  `🏢 *${titulo}*\n\n`;
+                  
         arrViajes.forEach(({v, u}) => {
             let name = v.unidadN || "Desconocida";
             let est = window.estatusData[v.estatus]?.nombre || "En Trayecto";
             let pos = u ? u.pos : null;
             let vel = pos ? pos.s : 0;
-            let mapLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : (v.ubicacion_manual || "Manual");
+            let mapLink = pos ? `https://maps.google.com/?q=lat,lon{pos.y},${pos.x}` : (v.ubicacion_manual || "Manual");
             
-            txt += `🚛 Unidad: ${name}\n📦 Contenedores: ${v.contenedores||'N/A'}\n📍 Ubicación: ${mapLink}\n⏱️ Vel: ${vel} km/h\n🚦 Estatus: ${est}\n🏁 Origen: ${v.origen||'N/A'} -> Destino: ${v.destino||'N/A'}\n\n`;
+            txt += `🚛 *Unidad:* ${name}\n` +
+                   `📦 *Contenedores:* ${v.contenedores||'N/A'}\n` +
+                   `📍 *Ubicación:* ${mapLink}\n` +
+                   `⏱️ *Vel:* ${vel} km/h\n` +
+                   `🚦 *Estatus:* ${est}\n` +
+                   `🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n\n`;
         });
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
+        txt += `_Reporte generado por sistema C4_`;
+        
+        window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
     }
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
@@ -272,8 +286,8 @@
         document.getElementById("nv_unidad_input").addEventListener("input", function() { let uN = this.value.toUpperCase(); document.getElementById("nv_operador").value = ramDrivers[uN] || ""; });
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
         
-        // MOTOR DE UBICACIONES RÁPIDO
-        setInterval(procesarFilaDirecciones, 400); 
+        // MOTOR NOMINATIM SEGURO (1 petición cada 1.1 seg para evitar bloqueos de IP)
+        setInterval(procesarFilaDirecciones, 1100); 
     };
 
     function autenticarUsuario(aU, aP) {
@@ -351,20 +365,28 @@
         renderStatusTokens(); renderizarBitacora(); desencadenarGeocoding(); if(mapVisible) actualizarMarcadoresMapa();
     }
 
-    // GEOCODIFICACIÓN VELOZ (API BIG DATA CLOUD + CACHÉ)
+    // GEOCODIFICACIÓN CON NOMINATIM (USANDO FILA DE ESPERA PARA EVITAR BANEO Y APLICAR AUTO-ARRIBO)
     function desencadenarGeocoding() {
-        Object.keys(viajesActivos).forEach(id => {
-            let v = viajesActivos[id];
+        Object.keys(viajesActivos).forEach(vId => {
+            let v = viajesActivos[vId];
             let uIdGps = null; Object.keys(unidadesGlobales).forEach(k => { if(unidadesGlobales[k].name === v.unidadN) uIdGps = k; });
             let u = unidadesGlobales[uIdGps]; 
             
             if(u && u.pos) {
                 let geoKey = `${u.pos.y.toFixed(4)}_${u.pos.x.toFixed(4)}`;
                 if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) {
-                    geoQueue.push({ key: geoKey, y: u.pos.y, x: u.pos.x });
+                    // Agregamos a la fila con los datos necesarios para el Auto-Arribo
+                    geoQueue.push({ key: geoKey, y: u.pos.y, x: u.pos.x, vId: vId, dest: v.destino });
                 } else if(geocodeCache[geoKey]) {
-                    let els = document.querySelectorAll(`.addr-span-${geoKey}`);
-                    els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${geocodeCache[geoKey]}`);
+                    // Si ya está en memoria caché, pintamos en el ID exacto y verificamos arribo
+                    let el = document.getElementById("addr_" + vId);
+                    if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${geocodeCache[geoKey]}`;
+                    
+                    let a = geocodeCache[geoKey];
+                    if(v.destino && !v.t_arribo && a.toUpperCase().includes(v.destino.toUpperCase())) {
+                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now());
+                        registrarLog(vId, 'Arribo Automático (Por Caché GPS)');
+                    }
                 }
             }
         });
@@ -375,24 +397,37 @@
         isGeocoding = true;
         let item = geoQueue.shift();
         
-        // Usamos BigDataCloud API: Es gratis, veloz y sin trabas de Cross-Origin
-        fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${item.y}&longitude=${item.x}&localityLanguage=es`)
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=16`)
             .then(r => r.json())
             .then(d => {
-                let addr = "Desconocido";
-                if(d.locality || d.city) { addr = `${d.locality || d.city}, ${d.principalSubdivision}`; } 
-                else if(d.principalSubdivision) { addr = `${d.principalSubdivision}, ${d.countryName}`; }
+                let fullAddr = d.display_name || "Sin dirección";
                 
-                geocodeCache[item.key] = addr;
+                // Cortamos un poco para que no sea inmensa en la tabla, pero conservamos la precisión
+                let shortAddr = fullAddr.split(",").slice(0, 3).join(",");
+                geocodeCache[item.key] = shortAddr;
                 localStorage.setItem('tms_geoCache', JSON.stringify(geocodeCache));
+                
+                // Actualizamos todas las celdas de tabla que tengan esta coordenada (usando clases)
                 let els = document.querySelectorAll(`.addr-span-${item.key}`);
-                els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${addr}`);
+                els.forEach(el => el.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${shortAddr}`);
+
+                // También actualizamos el ID exacto que solicitaste
+                let elId = document.getElementById("addr_" + item.vId);
+                if(elId) elId.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> ${shortAddr}`;
+
+                // AUTO-ARRIBO MÁGICO
+                if(item.dest && fullAddr.toUpperCase().includes(item.dest.toUpperCase())) {
+                    let v = viajesActivos[item.vId];
+                    if(v && !v.t_arribo) {
+                        db.ref('viajes_activos/'+item.vId+'/t_arribo').set(Date.now());
+                        registrarLog(item.vId, 'Arribo Automático (GPS)');
+                    }
+                }
             })
             .catch(e => console.log("Geocode Err"))
             .finally(() => { isGeocoding = false; });
     }
 
-    // MAPA MEJORADO: ICONOS FLECHAS/CÍRCULOS Y POPUPS QUE SE QUEDAN ABIERTOS
     function actualizarMarcadoresMapa() {
         if(!lmap || !mapLayerGroup) return;
         mapLayerGroup.clearLayers();
@@ -404,15 +439,11 @@
                 let isMoving = u.pos.s > 0;
                 let colorIcon = isMoving ? '#28a745' : '#0d6efd';
                 let course = u.pos.c || 0;
-                
                 let markerHtml = isMoving 
                     ? `<div style="transform: rotate(${course}deg); color: ${colorIcon}; font-size: 22px; text-shadow: 0 0 3px #fff;"><i class="fa-solid fa-location-arrow"></i></div>` 
                     : `<div style="color: ${colorIcon}; font-size: 22px; text-shadow: 0 0 3px #fff;"><i class="fa-solid fa-location-dot"></i></div>`;
-                
                 let customIcon = L.divIcon({ html: markerHtml, className: '', iconSize: [22, 22], iconAnchor: [11, 11] });
                 let popupContent = `<div style="text-align:center; min-width: 130px;"><b style="font-size:15px; color:#f39c12;">${u.name}</b><br><b style="font-size:12px;">${u.pos.s} km/h</b><br><span style="color:#bdc3c7; font-size:10px;">${timeAgo(u.pos.t)}</span></div>`;
-                
-                // Usando bindPopup en lugar de bindTooltip para que se quede abierto al dar clic
                 L.marker([u.pos.y, u.pos.x], {icon: customIcon}).bindPopup(popupContent, {className: 'custom-popup'}).addTo(mapLayerGroup);
             }
         });
@@ -467,7 +498,7 @@
                     
                     let drvName = v.operador || (uData ? ramDrivers[uData.name] : "") || "";
                     let addr = uData ? (geocodeCache[geoKey] || "<i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...") : "---";
-                    let mapsLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : '#';
+                    let mapsLink = pos ? `https://maps.google.com/?q=lat,lon{pos.y},${pos.x}` : '#';
                     let posTextY = pos ? pos.y : null; let posTextX = pos ? pos.x : null;
 
                     let colEstatus = window.estatusData[v.estatus]?.col || '#000'; 
@@ -479,11 +510,11 @@
                     let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
                     let lastLog = logsArr.length > 0 ? `<div class="text-start mb-1 text-wrap" style="font-size:0.60rem; line-height:1.1; color:#444; max-width: 100%;"><b class="text-primary">${logsArr[0].usr}:</b> ${logsArr[0].act} <span class="text-muted">${logsArr[0].det||''}</span></div>` : `<div style="font-size:0.6rem; color:#888;">Sin eventos</div>`;
 
-                    let ubiControl = isLost ? `<input class="form-control form-control-sm text-center text-uppercase p-0 mt-1 shadow-sm border-danger" style="font-size:0.60rem; height:20px;" value="${v.ubicacion_manual||''}" placeholder="Escribir ubicación..." onblur="if(this.value !== '${v.ubicacion_manual||''}'){ registrarLog('${vId}', 'Ubicación manual', this.value); db.ref('viajes_activos/${vId}/ubicacion_manual').set(this.value.toUpperCase()); }">` : `<a href="${mapsLink}" target="_blank" class="addr-link addr-span-${geoKey}" title="Abrir en Maps"><i class="fa-solid fa-map-location-dot"></i> ${addr}</a>`;
+                    // Aquí insertamos el ID exacto que solicitaste en el código
+                    let ubiControl = isLost ? `<input class="form-control form-control-sm text-center text-uppercase p-0 mt-1 shadow-sm border-danger" style="font-size:0.60rem; height:20px;" value="${v.ubicacion_manual||''}" placeholder="Escribir ubicación..." onblur="if(this.value !== '${v.ubicacion_manual||''}'){ registrarLog('${vId}', 'Ubicación manual', this.value); db.ref('viajes_activos/${vId}/ubicacion_manual').set(this.value.toUpperCase()); }">` : `<a href="${mapsLink}" target="_blank" class="addr-link addr-span-${geoKey}" id="addr_${vId}" title="Abrir en Maps"><i class="fa-solid fa-map-location-dot"></i> ${addr}</a>`;
 
                     let searchData = `${nombreCamion} ${drvName} ${v.origen} ${v.destino} ${v.contenedores} ${cliData.nombre} ${nomSub} ${window.estatusData[v.estatus]?.nombre}`.toLowerCase();
 
-                    // SELECT MINIMALISTA
                     let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
                     cliHtml += `<tr class="data-row ${isLost?'lost-connection-row':''}" data-search="${searchData}">
