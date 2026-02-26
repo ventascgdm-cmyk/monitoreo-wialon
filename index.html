@@ -2,40 +2,44 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Bitácora Logística Inteligente - Wialon Cloud</title>
+    <title>Bitácora Logística Cloud - Sincronizada</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    <script type="text/javascript" src="https://hst-api.wialon.com/wscommon/js/wialon.js"></script>
+    
+    <script type="text/javascript" src="https://sdk.wialon.com/library/js/wialon.js"></script>
 
     <style>
         :root { --blue: #0045a5; --green: #28a745; }
         body { background: #f4f7f6; font-size: 0.75rem; color: #333; }
         .header { background: var(--blue); color: white; padding: 15px; border-bottom: 4px solid var(--green); }
-        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; transition: 0.2s; }
-        .table-input:focus { border-color: var(--blue); outline: none; background: #fff; box-shadow: 0 0 4px rgba(0,69,165,0.2); }
+        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; }
+        .table-input:focus { border-color: var(--blue); outline: none; background: #fff; }
         .address-text { font-size: 0.7rem; color: #666; font-style: italic; max-width: 180px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--blue); display:flex; align-items:center; justify-content:center; z-index:999; }
-        .badge-mov { background-color: var(--green); box-shadow: 0 0 5px var(--green); }
+        .badge-mov { background-color: var(--green); }
         .badge-stop { background-color: #dc3545; }
+        .card-login { width: 360px; border-radius: 20px; border: none; }
     </style>
 </head>
 <body>
 
 <div id="loginOverlay">
-    <div class="card p-4 text-center shadow-lg" style="width: 360px; border-radius: 20px;">
+    <div class="card card-login p-4 text-center shadow-lg">
         <h4 class="fw-bold mb-3 text-primary">Logística Cloud</h4>
-        <p class="small text-muted mb-4">Ingresa tu token para sincronizar la flota</p>
+        <p class="small text-muted mb-4">Ingresa tu token de Wialon</p>
         <input type="password" id="tokenInput" class="form-control mb-3 text-center" placeholder="Wialon API Token">
         <button onclick="login()" class="btn btn-primary w-100 fw-bold py-2">Sincronizar Sistema</button>
+        <div id="sdkStatus" class="mt-2 small text-muted">Verificando SDK...</div>
     </div>
 </div>
 
 <div id="dashboard" style="display:none;">
     <div class="header shadow-sm mb-3">
         <div class="container-fluid d-flex justify-content-between align-items-center">
-            <h5 class="m-0 fw-bold text-uppercase tracking-wider">Panel de Control Logístico Real-Time</h5>
-            <button onclick="exportarExcel()" class="btn btn-sm btn-light fw-bold shadow-sm">📥 Descargar Reporte Maestro</button>
+            <h5 class="m-0 fw-bold">PANEL DE CONTROL LOGÍSTICO REAL-TIME</h5>
+            <button onclick="exportarExcel()" class="btn btn-sm btn-light fw-bold shadow-sm">📥 Descargar Reporte</button>
         </div>
     </div>
 
@@ -45,16 +49,16 @@
                 <table class="table table-hover align-middle mb-0 text-center">
                     <thead class="table-dark">
                         <tr>
-                            <th width="10%">Unidad</th>
-                            <th width="10%">Cliente</th>
-                            <th width="10%">Subcliente</th>
-                            <th width="10%">Origen</th>
-                            <th width="10%">Destino</th>
-                            <th width="10%">Estatus</th>
-                            <th width="10%">Contenedores</th>
-                            <th width="8%">Velocidad</th>
-                            <th width="15%">Ubicación</th>
-                            <th width="7%">Estado</th>
+                            <th>Unidad</th>
+                            <th>Cliente</th>
+                            <th>Subcliente</th>
+                            <th>Origen</th>
+                            <th>Destino</th>
+                            <th>Estatus Viaje</th>
+                            <th>Contenedores</th>
+                            <th>Velocidad</th>
+                            <th>Ubicación Actual</th>
+                            <th>GPS</th>
                         </tr>
                     </thead>
                     <tbody id="unitList"></tbody>
@@ -65,26 +69,43 @@
 </div>
 
 <script>
-    // CONFIGURACIÓN DE TU FIREBASE (Pegar URL de la imagen d0e777.png)
+    // 1. CONFIGURACIÓN DE FIREBASE (Usa tu URL de la consola)
     const firebaseConfig = {
-        databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" 
+        databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" // <--- PEGA AQUÍ TU URL
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     let sess = null;
 
-    window.onload = () => { 
-        if (typeof wialon !== 'undefined') sess = wialon.core.Session.getInstance(); 
+    // Verificar que el SDK cargó correctamente al abrir la página
+    window.onload = () => {
+        setTimeout(() => {
+            if (typeof wialon !== 'undefined') {
+                sess = wialon.core.Session.getInstance();
+                document.getElementById('sdkStatus').innerText = "SDK Listo ✅";
+                document.getElementById('sdkStatus').className = "mt-2 small text-success fw-bold";
+            } else {
+                document.getElementById('sdkStatus').innerText = "Error: SDK no cargó ❌";
+                document.getElementById('sdkStatus').className = "mt-2 small text-danger";
+            }
+        }, 1000);
     };
 
     function login() {
         const token = document.getElementById('tokenInput').value;
         if(!token) return alert("Por favor ingresa tu token");
         
+        if(!sess) {
+            return alert("El sistema de Wialon no ha respondido. Refresca la página.");
+        }
+
         sess.initSession("https://hst-api.wialon.com");
         sess.loginToken(token, "", (code) => {
-            if (code) return alert("Error de Conexión: " + wialon.core.Errors.getErrorText(code));
+            if (code) {
+                alert("Error de Conexión: " + wialon.core.Errors.getErrorText(code));
+                return;
+            }
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             iniciarMonitoreo();
@@ -93,9 +114,10 @@
 
     function iniciarMonitoreo() {
         sess.loadLibrary("itemUnit");
-        // Flags: 1 (Nombre) + 1024 (Posición/Velocidad)
+        // Escuchamos Nombre (1) y Posición/Velocidad (1024)
         sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
             renderizarTabla();
+            // Actualización automática cuando las unidades se muevan
             sess.addListener("dataUpdated", renderizarTabla);
         });
     }
@@ -123,42 +145,41 @@
                         <option value="Disponible">Disponible</option>
                         <option value="En Tránsito">En Tránsito</option>
                         <option value="Cargando">Cargando</option>
-                        <option value="En Aduana">En Aduana</option>
                         <option value="Descargando">Descargando</option>
                     </select>
                 </td>
                 <td><input id="con_${id}" class="table-input" onchange="save('${id}','contenedores',this.value)"></td>
-                <td class="fw-bold text-dark">${speed} km/h</td>
-                <td id="addr_${id}"><span class="address-text">Obteniendo dirección...</span></td>
+                <td class="fw-bold">${speed} km/h</td>
+                <td id="addr_${id}"><span class="address-text">Buscando dirección...</span></td>
                 <td><span class="badge ${mov?'badge-mov':'badge-stop'}">${mov?'MOV':'STOP'}</span></td>
             `;
             tbody.appendChild(row);
 
-            // 📍 Obtener dirección real (Geocodificación)
+            // 📍 Obtener dirección real por coordenadas (Geocodificación)
             if (pos) {
                 wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], (code, address) => {
                     const el = document.getElementById(`addr_${id}`);
-                    if (el) el.innerHTML = `<span class="address-text" title="${address[0]}">${address[0] || "No detectada"}</span>`;
+                    if (el && address) el.innerHTML = `<span class="address-text" title="${address[0]}">${address[0]}</span>`;
                 });
             }
 
-            // ☁️ Cargar datos desde Firebase para este ID único
+            // ☁️ Cargar datos guardados en Firebase para esta unidad
             db.ref('viajes/' + id).once('value', (snapshot) => {
                 const val = snapshot.val();
                 if (val) {
-                    document.getElementById(`cli_${id}`).value = val.cliente || "";
-                    document.getElementById(`sub_${id}`).value = val.subcliente || "";
-                    document.getElementById(`ori_${id}`).value = val.origen || "";
-                    document.getElementById(`des_${id}`).value = val.destino || "";
-                    document.getElementById(`est_${id}`).value = val.estatus || "Disponible";
-                    document.getElementById(`con_${id}`).value = val.contenedores || "";
+                    if(document.getElementById(`cli_${id}`)) document.getElementById(`cli_${id}`).value = val.cliente || "";
+                    if(document.getElementById(`sub_${id}`)) document.getElementById(`sub_${id}`).value = val.subcliente || "";
+                    if(document.getElementById(`ori_${id}`)) document.getElementById(`ori_${id}`).value = val.origen || "";
+                    if(document.getElementById(`des_${id}`)) document.getElementById(`des_${id}`).value = val.destino || "";
+                    if(document.getElementById(`est_${id}`)) document.getElementById(`est_${id}`).value = val.estatus || "Disponible";
+                    if(document.getElementById(`con_${id}`)) document.getElementById(`con_${id}`).value = val.contenedores || "";
                 }
             });
         });
     }
 
+    // Función para guardar datos independientes por ID de unidad
     function save(unitId, campo, valor) {
-        // La clave es 'viajes/ID_UNIDAD' para que Nancy u otros datos sean independientes por vehículo
         db.ref('viajes/' + unitId).update({ [campo]: valor });
     }
 
@@ -166,13 +187,13 @@
         let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,ORIGEN,DESTINO,ESTATUS,CONTENEDORES,VELOCIDAD,DIRECCIÓN\n";
         document.querySelectorAll("#unitList tr").forEach(row => {
             const inputs = row.querySelectorAll("input, select");
-            const addr = row.cells[8].innerText.replace(/,/g, ""); // Limpiar comas para CSV
+            const addr = row.cells[8].innerText.replace(/,/g, ""); 
             csv += `${row.cells[0].innerText},${inputs[0].value},${inputs[1].value},${inputs[2].value},${inputs[3].value},${inputs[4].value},${inputs[5].value},${row.cells[7].innerText},${addr}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "Bitacora_Logistica_Cloud.csv";
+        link.download = "Reporte_Logistico.csv";
         link.click();
     }
 </script>
