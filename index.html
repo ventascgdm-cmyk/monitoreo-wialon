@@ -2,149 +2,167 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Viajes y Monitoreo - Wialon</title>
+    <title>Sistema Logístico Cloud - Wialon</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script type="text/javascript" src="https://hst-api.wialon.com/wscommon/js/wialon.js"></script>
+
     <style>
-        :root { --wialon-blue: #0045a5; }
-        body { background-color: #f4f7f6; font-size: 0.85rem; }
-        .header { background: var(--wialon-blue); color: white; padding: 15px; border-radius: 0 0 15px 15px; }
-        .table-input { border: none; background: #f8f9fa; text-align: center; font-size: 0.8rem; border-radius: 4px; padding: 4px; }
-        .table-input:focus { background: #fff; outline: 1px solid var(--wialon-blue); }
-        .status-badge { font-size: 0.7rem; }
-        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--wialon-blue); display:flex; align-items:center; justify-content:center; z-index:999; }
-        .login-card { background:white; padding:2rem; border-radius:15px; width:400px; text-align:center; }
+        :root { --blue: #0045a5; }
+        body { background: #f0f2f5; font-size: 0.85rem; }
+        .header { background: var(--blue); color: white; padding: 20px; border-bottom: 4px solid #00c853; }
+        .table-input { border: 1px solid #dee2e6; border-radius: 4px; padding: 5px; width: 100%; transition: 0.3s; }
+        .table-input:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 5px rgba(0,69,165,0.2); }
+        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--blue); display:flex; align-items:center; justify-content:center; z-index:999; }
     </style>
 </head>
 <body>
 
 <div id="loginOverlay">
-    <div class="login-card shadow-lg">
-        <h3 class="mb-3">Logística Real-Time</h3>
-        <p class="small text-muted">1. Activa el puente: <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">Aquí</a></p>
+    <div class="card p-4 shadow text-center" style="width: 350px;">
+        <h4 class="mb-3">Logística Pro</h4>
         <input type="password" id="tokenInput" class="form-control mb-3 text-center" placeholder="Token de Wialon">
         <button onclick="login()" id="btnGo" class="btn btn-primary w-100 fw-bold">Entrar al Sistema</button>
+        <div id="loadingSDK" class="mt-2 small text-primary">Sincronizando con Wialon...</div>
     </div>
 </div>
 
-<div id="dashboard" class="container-fluid" style="display:none;">
-    <div class="header shadow-sm mb-3 text-center">
-        <h4 class="mb-0">Panel de Control de Viajes</h4>
-        <div class="mt-2">
-            <button onclick="exportarExcel()" class="btn btn-sm btn-success">Descargar Reporte Logístico</button>
-        </div>
+<div id="dashboard" style="display:none;">
+    <div class="header shadow-sm mb-4 text-center">
+        <h2 class="h4">PANEL DE CONTROL LOGÍSTICO (CLOUD)</h2>
+        <button onclick="exportarExcel()" class="btn btn-sm btn-light fw-bold mt-2">Exportar Reporte Maestro</button>
     </div>
 
-    <div class="card shadow-sm table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-dark text-center">
-                <tr>
-                    <th>Unidad</th>
-                    <th>Cliente</th>
-                    <th>Subcliente</th>
-                    <th>Origen</th>
-                    <th>Destino</th>
-                    <th>Estatus Viaje</th>
-                    <th>Contenedores</th>
-                    <th>Velocidad</th>
-                    <th>Estado Real</th>
-                </tr>
-            </thead>
-            <tbody id="unitList"></tbody>
-        </table>
+    <div class="container-fluid">
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr class="text-center">
+                            <th>Unidad</th>
+                            <th>Cliente</th>
+                            <th>Subcliente</th>
+                            <th>Origen</th>
+                            <th>Destino</th>
+                            <th>Estatus</th>
+                            <th>Contenedores</th>
+                            <th>Velocidad</th>
+                            <th>GPS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="unitList"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    let sid = "";
-    const proxy = "https://cors-anywhere.herokuapp.com/";
-    const baseUrl = "https://hst-api.wialon.com/wialon/ajax.html";
+    // 1. CONFIGURACIÓN FIREBASE (Copia tus datos de la consola de Firebase)
+    const firebaseConfig = {
+        databaseURL: "TU_URL_DE_FIREBASE_AQUI" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let sess = null;
+
+    // Inicializar Wialon SDK
+    window.onload = () => {
+        if (typeof wialon !== 'undefined') {
+            sess = wialon.core.Session.getInstance();
+            document.getElementById('loadingSDK').innerText = "Wialon Listo";
+        }
+    };
 
     async function login() {
         const token = document.getElementById('tokenInput').value;
-        const btn = document.getElementById('btnGo');
-        if(!token) return alert("Ingresa tu token");
-
-        btn.disabled = true; btn.innerText = "Conectando...";
-
-        try {
-            const url = `${proxy}${baseUrl}?svc=token/login&params={"token":"${token}"}`;
-            const res = await fetch(url);
-            const data = await res.json();
-
-            if(data.eid) {
-                sid = data.eid;
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                actualizarViajes();
-                setInterval(actualizarViajes, 10000);
-            } else {
-                alert("Error de validación. Revisa el token o el puente CORS.");
-                btn.disabled = false; btn.innerText = "Entrar";
-            }
-        } catch (e) { alert("Error de red"); btn.disabled = false; }
+        sess.initSession("https://hst-api.wialon.com");
+        sess.loginToken(token, "", (code) => {
+            if (code) return alert("Error de Token");
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            initData();
+        });
     }
 
-    async function actualizarViajes() {
-        try {
-            const params = {
-                "spec": { "itemsType": "avl_unit", "propName": "sys_name", "propValueMask": "*", "sortType": "sys_name" },
-                "force": 1, "flags": 1 | 1024, "from": 0, "to": 0
-            };
-            const url = `${proxy}${baseUrl}?svc=core/search_items&params=${JSON.stringify(params)}&sid=${sid}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            const units = data.items || [];
-            
-            const tbody = document.getElementById('unitList');
-            tbody.innerHTML = "";
+    function initData() {
+        sess.loadLibrary("itemUnit");
+        sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
+            renderTable();
+            // Escuchar cambios de velocidad en tiempo real de Wialon
+            sess.addListener("dataUpdated", renderTable);
+        });
+    }
 
-            units.forEach(u => {
-                const id = u.i;
-                const pos = u.pos || { s: 0 };
-                const mov = pos.s > 0;
+    function renderTable() {
+        const units = sess.getItems("avl_unit") || [];
+        const tbody = document.getElementById('unitList');
+        tbody.innerHTML = "";
 
-                // Cargar datos persistentes
-                const getVal = (key) => localStorage.getItem(`${key}_${id}`) || "";
+        units.forEach(u => {
+            const id = u.getId();
+            const pos = u.getPosition();
+            const speed = pos ? pos.s : 0;
+            const mov = speed > 0;
 
-                tbody.innerHTML += `
-                    <tr class="text-center">
-                        <td class="fw-bold">${u.nm}</td>
-                        <td><input class="table-input w-100" value="${getVal('cli')}" onchange="save(${id},'cli',this.value)" placeholder="Cliente"></td>
-                        <td><input class="table-input w-100" value="${getVal('sub')}" onchange="save(${id},'sub',this.value)" placeholder="Subcliente"></td>
-                        <td><input class="table-input w-100" value="${getVal('ori')}" onchange="save(${id},'ori',this.value)" placeholder="Origen"></td>
-                        <td><input class="table-input w-100" value="${getVal('des')}" onchange="save(${id},'des',this.value)" placeholder="Destino"></td>
-                        <td>
-                            <select class="table-input w-100" onchange="save(${id},'stv',this.value)">
-                                <option value="En Tránsito" ${getVal('stv')=='En Tránsito'?'selected':''}>En Tránsito</option>
-                                <option value="Cargando" ${getVal('stv')=='Cargando'?'selected':''}>Cargando</option>
-                                <option value="Descargando" ${getVal('stv')=='Descargando'?'selected':''}>Descargando</option>
-                                <option value="Entrega Final" ${getVal('stv')=='Entrega Final'?'selected':''}>Entrega Final</option>
-                                <option value="Disponible" ${getVal('stv')=='Disponible'?'selected':''}>Disponible</option>
-                            </select>
-                        </td>
-                        <td><input class="table-input w-100" value="${getVal('con')}" onchange="save(${id},'con',this.value)" placeholder="Contenedores"></td>
-                        <td class="text-primary fw-bold">${pos.s} km/h</td>
-                        <td><span class="badge ${mov?'bg-success':'bg-danger'} status-badge">${mov?'MOV':'STOP'}</span></td>
-                    </tr>`;
+            // Fila de la tabla
+            const row = document.createElement('tr');
+            row.className = "text-center";
+            row.innerHTML = `
+                <td class="fw-bold">${u.getName()}</td>
+                <td><input id="cli_${id}" class="table-input" onchange="saveCloud(${id},'cliente',this.value)"></td>
+                <td><input id="sub_${id}" class="table-input" onchange="saveCloud(${id},'subcliente',this.value)"></td>
+                <td><input id="ori_${id}" class="table-input" onchange="saveCloud(${id},'origen',this.value)"></td>
+                <td><input id="des_${id}" class="table-input" onchange="saveCloud(${id},'destino',this.value)"></td>
+                <td>
+                    <select id="est_${id}" class="table-input" onchange="saveCloud(${id},'estatus',this.value)">
+                        <option value="Disponible">Disponible</option>
+                        <option value="En Tránsito">En Tránsito</option>
+                        <option value="Cargando">Cargando</option>
+                        <option value="Aduana">Aduana</option>
+                    </select>
+                </td>
+                <td><input id="con_${id}" class="table-input" onchange="saveCloud(${id},'contenedores',this.value)"></td>
+                <td class="text-primary fw-bold">${speed} km/h</td>
+                <td><span class="badge ${mov?'bg-success':'bg-danger'}">${mov?'MOV':'STOP'}</span></td>
+            `;
+            tbody.appendChild(row);
+
+            // Cargar datos desde Firebase para ESTA UNIDAD específica
+            db.ref('viajes/' + id).once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    if(data.cliente) document.getElementById(`cli_${id}`).value = data.cliente;
+                    if(data.subcliente) document.getElementById(`sub_${id}`).value = data.subcliente;
+                    if(data.origen) document.getElementById(`ori_${id}`).value = data.origen;
+                    if(data.destino) document.getElementById(`des_${id}`).value = data.destino;
+                    if(data.estatus) document.getElementById(`est_${id}`).value = data.estatus;
+                    if(data.contenedores) document.getElementById(`con_${id}`).value = data.contenedores;
+                }
             });
-        } catch (e) { console.error("Error sincronizando unidades"); }
+        });
     }
 
-    function save(id, key, val) { localStorage.setItem(`${key}_${id}`, val); }
+    // Guardar en la nube usando el ID de la unidad como llave única
+    function saveCloud(unitId, campo, valor) {
+        db.ref('viajes/' + unitId).update({
+            [campo]: valor,
+            ultima_actualizacion: new Date().toISOString()
+        });
+    }
 
     function exportarExcel() {
-        let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,ORIGEN,DESTINO,ESTATUS_VIAJE,CONTENEDORES,VELOCIDAD\n";
-        const rows = document.querySelectorAll("#unitList tr");
-        rows.forEach(row => {
+        let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,ORIGEN,DESTINO,ESTATUS,CONTENEDORES,VELOCIDAD\n";
+        document.querySelectorAll("#unitList tr").forEach(row => {
             const inputs = row.querySelectorAll("input, select");
-            const unitName = row.cells[0].innerText;
-            const velocity = row.cells[7].innerText;
-            csv += `${unitName},${inputs[0].value},${inputs[1].value},${inputs[2].value},${inputs[3].value},${inputs[4].value},${inputs[5].value},${velocity}\n`;
+            csv += `${row.cells[0].innerText},${inputs[0].value},${inputs[1].value},${inputs[2].value},${inputs[3].value},${inputs[4].value},${inputs[5].value},${row.cells[7].innerText}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = `Bitacora_Logistica_${new Date().toLocaleDateString()}.csv`;
+        link.download = "Reporte_Logistico_Master.csv";
         link.click();
     }
 </script>
