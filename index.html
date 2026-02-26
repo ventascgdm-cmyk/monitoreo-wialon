@@ -47,7 +47,6 @@
         .header-cliente { background-color: #336699 !important; color: white !important; font-size: 0.90rem; font-weight: bold; text-align: left; padding: 8px 15px !important; text-transform: uppercase; }
         .header-subcliente { background-color: #5c6c7c !important; color: white !important; font-size: 0.80rem; font-weight: bold; text-align: left; padding: 5px 25px !important; }
         
-        /* ANCHOS ÓPTIMOS */
         .col-unidad { min-width: 90px; }
         .col-operador { min-width: 120px; }
         .col-ruta { min-width: 160px; }
@@ -63,7 +62,9 @@
         
         .unit-name { cursor: pointer; color: #002a61; font-weight: 900; font-size: 1.15rem; letter-spacing: 0.5px; display: block; text-align: center; }
         .unit-name:hover { color: #0d6efd; text-decoration: underline; }
+        
         .lost-connection-row td { background-color: #fff5f5 !important; }
+        .external-connection-row td { background-color: #f0f8ff !important; } 
         
         .speed-badge { font-size: 0.95rem; font-weight: 900; border-radius: 6px; padding: 4px 10px; text-align: center; color: white; display: inline-block; margin-bottom: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);}
         .addr-link { font-size: 0.85rem; line-height: 1.2; color: #0d6efd; text-decoration: none; display: block; width: 100%; margin: 0 auto; font-weight: 700; text-align: center; transition: 0.2s;}
@@ -88,7 +89,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v11.2 (El Santo Grial)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v12.0 (Link Titanio)</div>
     </div>
 </div>
 
@@ -184,7 +185,7 @@
     const db = firebase.database();
 
     let currentUser = null, configSistema = { tokens: [] }, dataClientes = {}, viajesActivos = {};
-    let unidadesGlobales = {}, ramDrivers = {}, geocercasNativas = [], activeSIDs = {}, pollingInterval = null;
+    let unidadesGlobales = {}, ramDrivers = {}, dbOperadores = {}, geocercasNativas = [], activeSIDs = {}, pollingInterval = null;
     let lmap = null, mapVisible = false, mapLayerGroup = null;
     let estadoTokens = {}; 
     let datosAgrupadosGlobal = {}; 
@@ -202,28 +203,45 @@
         "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s3":{nombre:"1.2 RETEN",col:"#7D3F00"}, "s4":{nombre:"1.3 Resguardo",col:"#5C338A"}, "s5":{nombre:"1.4 REGRESANDO",col:"#D97706"}, "s6":{nombre:"2. Incidencia",col:"#DC2626"}, "s7":{nombre:"3. Cargando",col:"#5c6c7c"}, "s8":{nombre:"4. Descargando",col:"#336699"}, "s9":{nombre:"5. Patio GDL",col:"#17a2b8"}, "s10":{nombre:"6. Patio Reynosa",col:"#20c997"}, "s11":{nombre:"7. Taller",col:"#9CA3AF"}, "s12":{nombre:"8. Finalizado",col:"#0055A5"}, "s13":{nombre:"9. Baja cobertura",col:"#FBBF24"}, "s14":{nombre:"ALIMENTOS",col:"#F59E0B"} 
     };
 
-    // EL BUSCADOR UNIVERSAL (Repara el puente entre Firebase IDs y Wialon)
-    function encontrarUnidad(v, vId) {
-        if(v.wialonId && unidadesGlobales[v.wialonId]) return unidadesGlobales[v.wialonId];
-        let n = (v.unidadN || v.unidadFallback || "").trim().toUpperCase();
-        let norm = n.replace(/[\s\-]/g, "");
-        for(let k in unidadesGlobales) {
-            let uName = unidadesGlobales[k].name.trim().toUpperCase();
-            if(uName === n || uName.replace(/[\s\-]/g, "") === norm) return unidadesGlobales[k];
+    // MOTOR MATEMÁTICO DE GEOCERCAS WIALON 
+    function isInsidePolygon(point, vs) {
+        let x = point[0], y = point[1], inside = false;
+        for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+            let xi = vs[i].x, yi = vs[i].y, xj = vs[j].x, yj = vs[j].y;
+            let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
         }
-        if(unidadesGlobales[vId]) return unidadesGlobales[vId];
-        return null; 
+        return inside;
     }
 
-    // FECHAS
+    function getDistanceMeters(lat1, lon1, lat2, lon2) {
+        const R = 6371000; const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180;
+        const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function resolverGeocerca(lat, lon) {
+        if(!geocercasNativas || geocercasNativas.length === 0) return null;
+        for(let z of geocercasNativas) {
+            if(!z.p) continue;
+            if(z.b) { if(lon < z.b.min_x || lon > z.b.max_x || lat < z.b.min_y || lat > z.b.max_y) continue; }
+            if(z.t === 3) { let r = z.p[0].r || 50; if(getDistanceMeters(lat, lon, z.p[0].y, z.p[0].x) <= r) return z.n; } 
+            else { if(isInsidePolygon([lon, lat], z.p)) return z.n; }
+        }
+        return null;
+    }
+
+    // FECHAS Y TIEMPO
     function formatearFechaElegante(ms) {
         if (!ms) return "--:--"; let d = new Date(ms); let meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
         return `${String(d.getDate()).padStart(2, '0')} ${meses[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
+
     function getLocalISO(unixMillis) {
         if(!unixMillis) return ""; let tzoffset = (new Date()).getTimezoneOffset() * 60000;
         return (new Date(unixMillis - tzoffset)).toISOString().slice(0, 16);
     }
+
     function timeAgo(unixSecs) {
         if(!unixSecs) return "N/A"; let diff = Math.floor(Date.now()/1000) - unixSecs;
         if(diff < 60) return `${diff} seg`; if(diff < 3600) return `${Math.floor(diff/60)} min`;
@@ -254,7 +272,7 @@
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
 
-    // PLANILLA WHATSAPP EXACTA CONCATENADA
+    // PLANILLA WHATSAPP
     function shareWA(u, loc, o, d, est, cont, cli, sub, vel, posY, posX) { 
         let estNombre = window.estatusData[est]?.nombre || "En Trayecto"; 
         let subText = sub !== 'N/A' ? ` -> ${sub}` : '';
@@ -305,14 +323,16 @@
         inicializarMenuColumnas();
         
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
+        db.ref('operadores').on('value', s => { dbOperadores = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
         db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); if(mapVisible) actualizarMarcadoresMapa(); });
         db.ref('sistema/tokens').on('value', s => { let tks = s.val() || {}; configSistema.tokens = Object.values(tks); actualizarListaTokensAdmin(tks); if(currentUser) arranqueMotor(); });
         
         document.getElementById("logPass").addEventListener("keyup", e => e.key === "Enter" && autenticarUsuario());
+        document.getElementById("nv_unidad_input").addEventListener("input", function() { let uN = this.value.toUpperCase(); document.getElementById("nv_operador").value = ramDrivers[uN] || dbOperadores[uN] || ""; });
         
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
         
-        // Fila de espera Anti-Baneo de Nominatim
+        // MOTOR DE UBICACIONES ESPACIADO (Evita Baneos de IP)
         setInterval(procesarFilaDirecciones, 1100); 
     };
 
@@ -400,25 +420,73 @@
         renderStatusTokens(); renderizarBitacora(); desencadenarGeocoding(); if(mapVisible) actualizarMarcadoresMapa();
     }
 
-    // GEOCODIFICACIÓN (Con Auto-Arribo y Actualización Directa a ID)
+    // REGISTRO DE VIAJE (Con Inyección del ID Numérico de Wialon)
+    function registrarViaje() {
+        let uN = document.getElementById("nv_unidad_input").value.trim().toUpperCase(); if(!uN) return;
+        let existe = Object.values(viajesActivos).some(v => (v.unidadN||"").toUpperCase() === uN);
+        if(existe && !confirm(`La unidad ${uN} ya tiene un viaje. ¿Agregar uno simultáneo?`)) return;
+
+        // BÚSQUEDA DEL ID REAL DE WIALON (O se marca como EXTERNO)
+        let wId = "EXTERNO";
+        let nNorm = uN.replace(/[\s\-]/g, "");
+        for(let k in unidadesGlobales){ 
+            if(unidadesGlobales[k].name.replace(/[\s\-]/g, "") === nNorm) {
+                wId = k; 
+                uN = unidadesGlobales[k].name; // Autocorrige el nombre escrito por el usuario
+                break;
+            }
+        }
+
+        let refPush = db.ref('viajes_activos').push();
+        refPush.set({ wialonId: wId, cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase(), unidadFallback: uN, unidadN: uN });
+        registrarLog(refPush.key, "REGISTRÓ VIAJE", "Registró unidad en bitácora");
+        
+        let modalEl = document.getElementById('modalNuevoViaje');
+        let modalInst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        if(modalInst) { modalInst.hide(); document.body.classList.remove('modal-open'); document.querySelectorAll('.modal-backdrop').forEach(el=>el.remove()); }
+        
+        document.getElementById("nv_unidad_input").value = ""; document.getElementById("nv_operador").value = "";
+    }
+
+    // GEOCODIFICACIÓN EXACTA LEYENDO EL wialonId (Puente de Titanio)
     function desencadenarGeocoding() {
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId];
-            let u = encontrarUnidad(v, vId); 
             
-            if(u && u.pos) {
-                let geoKey = `${u.pos.y.toFixed(4)}_${u.pos.x.toFixed(4)}`;
+            let uData = null;
+            if(v.wialonId && v.wialonId !== "EXTERNO" && unidadesGlobales[v.wialonId]) {
+                uData = unidadesGlobales[v.wialonId];
+            } else if (v.wialonId !== "EXTERNO") {
+                // Curación automática de IDs viejos
+                let nNorm = (v.unidadN || "").toUpperCase().replace(/[\s\-]/g, "");
+                for(let k in unidadesGlobales) {
+                    if(unidadesGlobales[k].name.replace(/[\s\-]/g, "") === nNorm) {
+                        uData = unidadesGlobales[k];
+                        db.ref('viajes_activos/'+vId+'/wialonId').set(k); 
+                        break;
+                    }
+                }
+            }
+
+            if(uData && uData.pos) {
+                let zonaGeo = resolverGeocerca(uData.pos.y, uData.pos.x);
+                if(zonaGeo) {
+                    let el = document.getElementById("addr_" + vId);
+                    if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-success"></i> <b class="text-success">[GEOCERCA] ${zonaGeo}</b>`;
+                    if(v.destino && !v.t_arribo && zonaGeo.toUpperCase().includes(v.destino.toUpperCase())) {
+                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); registrarLog(vId, 'Arribo Automático (Geocerca)');
+                    }
+                    return; 
+                }
+
+                let geoKey = `${uData.pos.y.toFixed(4)}_${uData.pos.x.toFixed(4)}`;
                 if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) {
-                    geoQueue.push({ key: geoKey, y: u.pos.y, x: u.pos.x, vId: vId, dest: v.destino });
+                    geoQueue.push({ key: geoKey, y: uData.pos.y, x: uData.pos.x, vId: vId, dest: v.destino });
                 } else if(geocodeCache[geoKey]) {
-                    // Pinta directamente en el elemento de la tabla sin importar si se refresca
                     let el = document.getElementById("addr_" + vId);
                     if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
-                    
-                    let a = geocodeCache[geoKey];
-                    if(v.destino && !v.t_arribo && a.toUpperCase().includes(v.destino.toUpperCase())) {
-                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now());
-                        registrarLog(vId, 'Arribo Automático (GPS)');
+                    if(v.destino && !v.t_arribo && geocodeCache[geoKey].toUpperCase().includes(v.destino.toUpperCase())) {
+                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); registrarLog(vId, 'Arribo Automático (Caché GPS)');
                     }
                 }
             }
@@ -460,17 +528,23 @@
         mapLayerGroup.clearLayers();
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId];
-            let u = encontrarUnidad(v, vId);
-            if(u && u.pos) {
-                let isMoving = u.pos.s > 0;
+            let uData = null;
+            if(v.wialonId && v.wialonId !== "EXTERNO" && unidadesGlobales[v.wialonId]) uData = unidadesGlobales[v.wialonId];
+            else if (v.wialonId !== "EXTERNO") {
+                let nNorm = (v.unidadN || "").toUpperCase().replace(/[\s\-]/g, "");
+                for(let k in unidadesGlobales) { if(unidadesGlobales[k].name.replace(/[\s\-]/g, "") === nNorm) { uData = unidadesGlobales[k]; break; } }
+            }
+
+            if(uData && uData.pos) {
+                let isMoving = uData.pos.s > 0;
                 let colorIcon = isMoving ? '#28a745' : '#0d6efd';
-                let course = u.pos.c || 0;
+                let course = uData.pos.c || 0;
                 let markerHtml = isMoving 
                     ? `<div style="transform: rotate(${course}deg); color: ${colorIcon}; font-size: 22px; text-shadow: 0 0 3px #fff;"><i class="fa-solid fa-location-arrow"></i></div>` 
                     : `<div style="color: ${colorIcon}; font-size: 22px; text-shadow: 0 0 3px #fff;"><i class="fa-solid fa-location-dot"></i></div>`;
                 let customIcon = L.divIcon({ html: markerHtml, className: '', iconSize: [22, 22], iconAnchor: [11, 11] });
-                let popupContent = `<div style="text-align:center; min-width: 130px;"><b style="font-size:15px; color:#f39c12;">${u.name}</b><br><b style="font-size:12px;">${u.pos.s} km/h</b><br><span style="color:#bdc3c7; font-size:10px;">hace ${timeAgo(u.pos.t)}</span></div>`;
-                L.marker([u.pos.y, u.pos.x], {icon: customIcon}).bindPopup(popupContent, {className: 'custom-popup'}).addTo(mapLayerGroup);
+                let popupContent = `<div style="text-align:center; min-width: 130px;"><b style="font-size:15px; color:#f39c12;">${uData.name}</b><br><b style="font-size:12px;">${uData.pos.s} km/h</b><br><span style="color:#bdc3c7; font-size:10px;">hace ${timeAgo(uData.pos.t)}</span></div>`;
+                L.marker([uData.pos.y, uData.pos.x], {icon: customIcon}).bindPopup(popupContent, {className: 'custom-popup'}).addTo(mapLayerGroup);
             }
         });
     }
@@ -497,7 +571,7 @@
         let tree = { "Sin_Cliente": { "N/A": [] } };
         
         Object.keys(dataClientes).forEach(cId => { tree[cId] = { "N/A": [] }; if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []); });
-        Object.keys(viajesActivos).forEach(vId => { let v = viajesActivos[vId]; let cId = v.cliente || "Sin_Cliente", sId = v.subcliente || "N/A"; if(!tree[cId]) tree[cId] = { "N/A": [] }; if(!tree[cId][sId]) tree[cId][sId] = []; tree[cId][sId].push({vId, u: encontrarUnidad(v, vId), v}); });
+        Object.keys(viajesActivos).forEach(vId => { let v = viajesActivos[vId]; let cId = v.cliente || "Sin_Cliente", sId = v.subcliente || "N/A"; if(!tree[cId]) tree[cId] = { "N/A": [] }; if(!tree[cId][sId]) tree[cId][sId] = []; tree[cId][sId].push({vId, v}); });
         
         datosAgrupadosGlobal = tree; 
 
@@ -515,18 +589,33 @@
                 
                 tree[cId][sId].sort((a, b) => { let estA = a.v.estatus || ""; let estB = b.v.estatus || ""; return estA.localeCompare(estB); });
 
-                tree[cId][sId].forEach(({vId, u, v}) => {
-                    let nombreCamion = (v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
+                tree[cId][sId].forEach(({vId, v}) => {
+                    let nombreCamion = (v.unidadN || v.unidadFallback || "Desconocida").toUpperCase();
                     
-                    let pos = u ? u.pos : null; let speed = pos ? pos.s : 0; let isLost = !pos; 
+                    // BUSQUEDA DE DATOS SEGUROS
+                    let uData = null;
+                    if(v.wialonId && v.wialonId !== "EXTERNO" && unidadesGlobales[v.wialonId]) {
+                        uData = unidadesGlobales[v.wialonId];
+                    } else if (v.wialonId !== "EXTERNO") {
+                        let nNorm = nombreCamion.replace(/[\s\-]/g, "");
+                        for(let k in unidadesGlobales) { if(unidadesGlobales[k].name.replace(/[\s\-]/g, "") === nNorm) { uData = unidadesGlobales[k]; break; } }
+                    }
+                    
+                    let isExternal = v.wialonId === "EXTERNO"; 
+                    let pos = uData ? uData.pos : null; 
+                    let speed = pos ? pos.s : 0; 
+                    let isLost = uData && !pos; 
+                    
                     let geoKey = pos ? `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}` : 'none';
+                    let uText = (isLost || isExternal) ? `<span class="unit-name ${isExternal?'text-info':'text-danger'}" title="${isExternal?'GPS Externo':'Sin señal Wialon'}">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
                     
-                    let uText = isLost ? `<span class="unit-name text-danger" title="Sin señal GPS">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
                     let speedBg = "#343a40"; if(speed > 0 && speed < 100) speedBg = "#198754"; if(speed >= 100) speedBg = "#dc3545"; 
-                    let moveIcon = isLost ? '<i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i>' : (speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1 fs-5"></i>' : '<i class="fa-solid fa-truck text-secondary me-1 fs-5"></i>');
+                    let moveIcon = isExternal ? '<i class="fa-solid fa-globe text-info me-1 fs-6" title="Plataforma Externa"></i>' : 
+                                   (isLost ? '<i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i>' : 
+                                   (speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1 fs-5"></i>' : '<i class="fa-solid fa-truck text-secondary me-1 fs-5"></i>'));
 
-                    let drvName = v.operador || "";
-                    let addr = u ? (geocodeCache[geoKey] || "<i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...") : "---";
+                    let drvName = v.operador || ramDrivers[nombreCamion] || dbOperadores[nombreCamion] || "";
+                    let addr = uData ? (geocodeCache[geoKey] || "<i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...") : "---";
                     let mapsLink = pos ? `https://maps.google.com/?q=20.xxx,-103.xxx{pos.y},${pos.x}` : '#';
                     let posTextY = pos ? pos.y : null; let posTextX = pos ? pos.x : null;
 
@@ -543,11 +632,13 @@
                             <span style="font-size:0.75rem;"><b class="text-primary">${logsArr[0].usr}:</b> ${logsArr[0].act} <span class="text-muted">${logsArr[0].det||''}</span></span>
                         </div>` : `<div style="font-size:0.7rem; color:#888;">Sin eventos</div>`;
 
-                    let timeAgoText = pos ? `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:700;">(hace ${timeAgo(pos.t)})</span>` : '<span class="text-danger fw-bold">Modo Offline</span>';
+                    let timeAgoText = isExternal ? '<span class="text-info fw-bold">Plataforma Externa</span>' : 
+                                      (pos ? `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:700;">(hace ${timeAgo(pos.t)})</span>` : 
+                                      '<span class="text-danger fw-bold">Modo Offline</span>');
                     
-                    let ubiControl = isLost ? 
+                    let ubiControl = (isLost || isExternal) ? 
                         `<div class="d-flex align-items-center justify-content-center">
-                            <span class="text-danger fw-bold" style="font-size:0.75rem;"><i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL</span>
+                            <span class="${isExternal?'text-info':'text-danger'} fw-bold" style="font-size:0.75rem;">${isExternal?'<i class="fa-solid fa-globe"></i> GPS EXTERNO':'<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL'}</span>
                             <button class="btn btn-sm btn-link p-0 ms-2 text-primary" title="Editar ubicación manual" onclick="let u = prompt('Escribir ubicación manual para ${nombreCamion}:', '${v.ubicacion_manual||''}'); if(u !== null) { db.ref('viajes_activos/${vId}/ubicacion_manual').set(u.toUpperCase()); registrarLog('${vId}', 'Añadió Ubicación Manual', u.toUpperCase()); }"><i class="fa-solid fa-pencil"></i></button>
                         </div>
                         <div style="font-size:0.85rem; color:#002a61; font-weight:bold; max-width:100%; margin:0 auto;" class="text-truncate">${v.ubicacion_manual||'--'}</div>` 
@@ -559,7 +650,9 @@
                     let searchData = `${nombreCamion} ${drvName} ${v.origen} ${v.destino} ${v.contenedores} ${cliData.nombre} ${nomSub} ${window.estatusData[v.estatus]?.nombre}`.toLowerCase();
                     let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
-                    cliHtml += `<tr class="data-row ${isLost?'lost-connection-row':''}" data-search="${searchData}">
+                    let rowClass = isExternal ? 'external-connection-row' : (isLost ? 'lost-connection-row' : '');
+
+                    cliHtml += `<tr class="data-row ${rowClass}" data-search="${searchData}">
                         <td class="col-unidad align-middle">${uText}</td>
                         <td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}">
                             <div class="d-flex flex-column gap-1">
@@ -591,7 +684,7 @@
                         </td>
                         <td class="col-gps align-middle">
                             <div class="d-flex flex-column align-items-center px-1">
-                                <div class="d-flex align-items-center mb-1">${moveIcon}<span class="speed-badge" style="background-color:${isLost?'#adb5bd':speedBg};">${speed} km/h</span></div>
+                                <div class="d-flex align-items-center mb-1">${moveIcon}<span class="speed-badge" style="background-color:${(isLost||isExternal)?'#adb5bd':speedBg};">${speed} km/h</span></div>
                                 <div class="w-100">${ubiControl}</div>
                                 <div style="font-size:0.75rem; color:#6c757d; margin-top:4px; font-weight:600;">${timeAgoText}</div>
                             </div>
@@ -646,33 +739,22 @@
         bootstrap.Modal.getInstance(document.getElementById('modalLog')).hide();
     }
 
-    // REGISTRO DE VIAJE (Con cerrado forzado para evitar fallas)
-    function registrarViaje() {
-        let uN = document.getElementById("nv_unidad_input").value.toUpperCase(); if(!uN) return;
-        let existe = Object.values(viajesActivos).some(v => (v.unidadN||"").toUpperCase() === uN);
-        if(existe && !confirm(`La unidad ${uN} ya tiene un viaje. ¿Agregar uno simultáneo?`)) return;
-
-        let wId = null;
-        let nNorm = uN.replace(/[\s\-]/g, "");
-        for(let k in unidadesGlobales){ if(unidadesGlobales[k].name.toUpperCase().replace(/[\s\-]/g, "") === nNorm) wId = k; }
-
-        let refPush = db.ref('viajes_activos').push();
-        refPush.set({ wialonId: wId || null, cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase(), unidadFallback: uN, unidadN: uN });
-        registrarLog(refPush.key, "REGISTRÓ VIAJE", "Registró unidad en bitácora");
-        
-        let modalEl = document.getElementById('modalNuevoViaje');
-        let modalInst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-        if(modalInst) { modalInst.hide(); document.body.classList.remove('modal-open'); document.querySelectorAll('.modal-backdrop').forEach(el=>el.remove()); }
-        
-        document.getElementById("nv_unidad_input").value = ""; document.getElementById("nv_operador").value = "";
-    }
-
     function finalizarViaje(id, n) { if(confirm(`¿Archivar viaje de la unidad ${n}?`)) { registrarLog(id, "FINALIZÓ VIAJE", "Se archiva registro"); setTimeout(()=>db.ref('viajes_activos/'+id).remove(), 1000); } }
     function prepararNuevoViaje() { let s = document.getElementById("nv_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); cargarSubclientesEnSelect('nv_subcliente', s.value); }
     function cargarSubclientesEnSelect(e, c) { let s = document.getElementById(e); s.innerHTML = '<option value="">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k => s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
     function abrirEdicionViaje(uId, uName) { let v = viajesActivos[uId]; if(!v) return; document.getElementById("edU_id").value = uId; document.getElementById("edU_name").innerText = uName; document.getElementById("ed_operador").value = v.operador || ""; document.getElementById("ed_origen").value = v.origen || ""; document.getElementById("ed_destino").value = v.destino || ""; let s = document.getElementById("ed_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); s.value = v.cliente || ""; cargarSubclientesEnSelect('ed_subcliente', s.value); document.getElementById("ed_subcliente").value = v.subcliente || ""; new bootstrap.Modal(document.getElementById('modalEditarViaje')).show(); }
-    function guardarEdicionViaje() { let uId = document.getElementById("edU_id").value; registrarLog(uId, "Editó Datos de Viaje", "Modificó rutas/cliente/operador"); db.ref('viajes_activos/' + uId).update({ cliente: document.getElementById("ed_cliente").value, subcliente: document.getElementById("ed_subcliente").value, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { let m=bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')); if(m)m.hide(); }); }
+    function guardarEdicionViaje() { let uId = document.getElementById("edU_id").value; registrarLog(uId, "Editó Datos de Viaje", "Modificó rutas/cliente/operador"); db.ref('viajes_activos/' + uId).update({ cliente: document.getElementById("ed_cliente").value, subcliente: document.getElementById("ed_subcliente").value, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide(); }); }
     function cerrarSesion() { localStorage.clear(); location.reload(); }
+
+    function vincularOperador() {
+        let u = document.getElementById("op_unidad").value.toUpperCase();
+        let n = document.getElementById("op_nombre").value.toUpperCase();
+        if(u && n) {
+            db.ref(`operadores/${u}`).set(n);
+            document.getElementById("op_unidad").value = "";
+            document.getElementById("op_nombre").value = "";
+        }
+    }
 
     function crearCliente() { db.ref('clientes').push({nombre: document.getElementById("cli_nombre").value.toUpperCase()}); document.getElementById("cli_nombre").value = ""; }
     function crearSubcliente() { db.ref(`clientes/${document.getElementById("sub_clientePadre").value}/subclientes`).push({nombre: document.getElementById("sub_nombre").value.toUpperCase()}); document.getElementById("sub_nombre").value = ""; }
@@ -683,6 +765,9 @@
         document.getElementById("listaClientesAdmin").innerHTML = Object.keys(dataClientes).map(k => `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8">${dataClientes[k].nombre} <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Cliente?')) db.ref('clientes/${k}').remove()"></i></li>`).join('');
         let subHtml = ""; Object.keys(dataClientes).forEach(cId => { if(dataClientes[cId].subclientes) { Object.keys(dataClientes[cId].subclientes).forEach(sId => { subHtml += `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8"><b>${dataClientes[cId].nombre}</b> - ${dataClientes[cId].subclientes[sId].nombre} <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Subcliente?')) db.ref('clientes/${cId}/subclientes/${sId}').remove()"></i></li>`; }); } }); document.getElementById("listaSubclientesAdmin").innerHTML = subHtml;
         db.ref('sistema/usuarios').once('value', snap => { let usrs = snap.val() || {}; document.getElementById("listaUsuariosAdmin").innerHTML = Object.keys(usrs).map(k => k === 'admin' ? `<li class="list-group-item p-1 fs-8"><b>admin</b> (Maestro)</li>` : `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8"><b>${k}</b> <span class="text-truncate ps-1">${usrs[k].nom}</span> <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Usuario?')) db.ref('sistema/usuarios/${k}').remove()"></i></li>`).join(''); });
+        
+        const listaOp = document.getElementById("listaOperadoresAdmin");
+        if(listaOp) listaOp.innerHTML = Object.keys(dbOperadores).map(k => `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8"><b>${k}</b> <span class="text-truncate ps-1">${dbOperadores[k]}</span> <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Operador?')) db.ref('operadores/${k}').remove()"></i></li>`).join('');
     }
     
     function agregarToken() { db.ref('sistema/tokens').push({nombre:document.getElementById("tk_nom").value.toUpperCase(), token:document.getElementById("tk_val").value, url:document.getElementById("tk_url").value}); alert("Token Guardado"); document.getElementById("tk_nom").value=""; document.getElementById("tk_val").value=""; }
