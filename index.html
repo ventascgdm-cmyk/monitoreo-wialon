@@ -2,51 +2,59 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Bitácora Logística Inteligente</title>
+    <title>Bitácora Logística Inteligente - Wialon Cloud</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
     <script type="text/javascript" src="https://hst-api.wialon.com/wscommon/js/wialon.js"></script>
 
     <style>
-        :root { --blue: #0045a5; }
-        body { background: #f8f9fa; font-size: 0.8rem; }
-        .header { background: var(--blue); color: white; padding: 15px; border-bottom: 4px solid #28a745; }
-        .table-input { border: 1px solid #ddd; padding: 4px; width: 100%; border-radius: 4px; }
+        :root { --blue: #0045a5; --green: #28a745; }
+        body { background: #f4f7f6; font-size: 0.75rem; color: #333; }
+        .header { background: var(--blue); color: white; padding: 15px; border-bottom: 4px solid var(--green); }
+        .table-input { border: 1px solid #ced4da; padding: 4px; width: 100%; border-radius: 4px; font-size: 0.75rem; transition: 0.2s; }
+        .table-input:focus { border-color: var(--blue); outline: none; background: #fff; box-shadow: 0 0 4px rgba(0,69,165,0.2); }
+        .address-text { font-size: 0.7rem; color: #666; font-style: italic; max-width: 180px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--blue); display:flex; align-items:center; justify-content:center; z-index:999; }
+        .badge-mov { background-color: var(--green); box-shadow: 0 0 5px var(--green); }
+        .badge-stop { background-color: #dc3545; }
     </style>
 </head>
 <body>
 
 <div id="loginOverlay">
-    <div class="card p-4 text-center shadow" style="width: 350px;">
-        <h4 class="mb-3">Logística Cloud</h4>
-        <input type="password" id="tokenInput" class="form-control mb-3 text-center" placeholder="Token de Wialon">
-        <button onclick="login()" class="btn btn-primary w-100 fw-bold">Entrar al Sistema</button>
+    <div class="card p-4 text-center shadow-lg" style="width: 360px; border-radius: 20px;">
+        <h4 class="fw-bold mb-3 text-primary">Logística Cloud</h4>
+        <p class="small text-muted mb-4">Ingresa tu token para sincronizar la flota</p>
+        <input type="password" id="tokenInput" class="form-control mb-3 text-center" placeholder="Wialon API Token">
+        <button onclick="login()" class="btn btn-primary w-100 fw-bold py-2">Sincronizar Sistema</button>
     </div>
 </div>
 
 <div id="dashboard" style="display:none;">
-    <div class="header shadow-sm mb-3 text-center">
-        <h4 class="m-0">PANEL DE CONTROL DE VIAJES (BASE DE DATOS REAL)</h4>
-        <button onclick="exportarExcel()" class="btn btn-sm btn-success mt-2">Descargar Reporte</button>
+    <div class="header shadow-sm mb-3">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <h5 class="m-0 fw-bold text-uppercase tracking-wider">Panel de Control Logístico Real-Time</h5>
+            <button onclick="exportarExcel()" class="btn btn-sm btn-light fw-bold shadow-sm">📥 Descargar Reporte Maestro</button>
+        </div>
     </div>
 
     <div class="container-fluid">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0" style="border-radius: 12px;">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 text-center">
                     <thead class="table-dark">
                         <tr>
-                            <th>Unidad</th>
-                            <th>Cliente</th>
-                            <th>Subcliente</th>
-                            <th>Origen</th>
-                            <th>Destino</th>
-                            <th>Estatus</th>
-                            <th>Contenedores</th>
-                            <th>Velocidad</th>
-                            <th>Estado</th>
+                            <th width="10%">Unidad</th>
+                            <th width="10%">Cliente</th>
+                            <th width="10%">Subcliente</th>
+                            <th width="10%">Origen</th>
+                            <th width="10%">Destino</th>
+                            <th width="10%">Estatus</th>
+                            <th width="10%">Contenedores</th>
+                            <th width="8%">Velocidad</th>
+                            <th width="15%">Ubicación</th>
+                            <th width="7%">Estado</th>
                         </tr>
                     </thead>
                     <tbody id="unitList"></tbody>
@@ -57,22 +65,26 @@
 </div>
 
 <script>
-    // Configuración de tu Firebase
+    // CONFIGURACIÓN DE TU FIREBASE (Pegar URL de la imagen d0e777.png)
     const firebaseConfig = {
-        databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" // <--- PEGA AQUÍ TU URL
+        databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" 
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     let sess = null;
 
-    window.onload = () => { if (typeof wialon !== 'undefined') sess = wialon.core.Session.getInstance(); };
+    window.onload = () => { 
+        if (typeof wialon !== 'undefined') sess = wialon.core.Session.getInstance(); 
+    };
 
     function login() {
         const token = document.getElementById('tokenInput').value;
+        if(!token) return alert("Por favor ingresa tu token");
+        
         sess.initSession("https://hst-api.wialon.com");
         sess.loginToken(token, "", (code) => {
-            if (code) return alert("Token Inválido");
+            if (code) return alert("Error de Conexión: " + wialon.core.Errors.getErrorText(code));
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             iniciarMonitoreo();
@@ -81,7 +93,7 @@
 
     function iniciarMonitoreo() {
         sess.loadLibrary("itemUnit");
-        // Flags para obtener nombre y posición en tiempo real
+        // Flags: 1 (Nombre) + 1024 (Posición/Velocidad)
         sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
             renderizarTabla();
             sess.addListener("dataUpdated", renderizarTabla);
@@ -101,7 +113,7 @@
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="fw-bold">${u.getName()}</td>
+                <td class="fw-bold text-primary">${u.getName()}</td>
                 <td><input id="cli_${id}" class="table-input" onchange="save('${id}','cliente',this.value)"></td>
                 <td><input id="sub_${id}" class="table-input" onchange="save('${id}','subcliente',this.value)"></td>
                 <td><input id="ori_${id}" class="table-input" onchange="save('${id}','origen',this.value)"></td>
@@ -111,44 +123,56 @@
                         <option value="Disponible">Disponible</option>
                         <option value="En Tránsito">En Tránsito</option>
                         <option value="Cargando">Cargando</option>
+                        <option value="En Aduana">En Aduana</option>
+                        <option value="Descargando">Descargando</option>
                     </select>
                 </td>
                 <td><input id="con_${id}" class="table-input" onchange="save('${id}','contenedores',this.value)"></td>
-                <td class="text-primary fw-bold">${speed} km/h</td>
-                <td><span class="badge ${mov?'bg-success':'bg-danger'}">${mov?'MOV':'STOP'}</span></td>
+                <td class="fw-bold text-dark">${speed} km/h</td>
+                <td id="addr_${id}"><span class="address-text">Obteniendo dirección...</span></td>
+                <td><span class="badge ${mov?'badge-mov':'badge-stop'}">${mov?'MOV':'STOP'}</span></td>
             `;
             tbody.appendChild(row);
 
-            // Cargar datos DESDE LA NUBE para este ID específico
+            // 📍 Obtener dirección real (Geocodificación)
+            if (pos) {
+                wialon.util.Gis.getLocations([{lon: pos.x, lat: pos.y}], (code, address) => {
+                    const el = document.getElementById(`addr_${id}`);
+                    if (el) el.innerHTML = `<span class="address-text" title="${address[0]}">${address[0] || "No detectada"}</span>`;
+                });
+            }
+
+            // ☁️ Cargar datos desde Firebase para este ID único
             db.ref('viajes/' + id).once('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    document.getElementById(`cli_${id}`).value = data.cliente || "";
-                    document.getElementById(`sub_${id}`).value = data.subcliente || "";
-                    document.getElementById(`ori_${id}`).value = data.origen || "";
-                    document.getElementById(`des_${id}`).value = data.destino || "";
-                    document.getElementById(`est_${id}`).value = data.estatus || "Disponible";
-                    document.getElementById(`con_${id}`).value = data.contenedores || "";
+                const val = snapshot.val();
+                if (val) {
+                    document.getElementById(`cli_${id}`).value = val.cliente || "";
+                    document.getElementById(`sub_${id}`).value = val.subcliente || "";
+                    document.getElementById(`ori_${id}`).value = val.origen || "";
+                    document.getElementById(`des_${id}`).value = val.destino || "";
+                    document.getElementById(`est_${id}`).value = val.estatus || "Disponible";
+                    document.getElementById(`con_${id}`).value = val.contenedores || "";
                 }
             });
         });
     }
 
     function save(unitId, campo, valor) {
-        // Guardamos usando el ID de la unidad como carpeta única
+        // La clave es 'viajes/ID_UNIDAD' para que Nancy u otros datos sean independientes por vehículo
         db.ref('viajes/' + unitId).update({ [campo]: valor });
     }
 
     function exportarExcel() {
-        let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,ORIGEN,DESTINO,ESTATUS,CONTENEDORES,VELOCIDAD\n";
+        let csv = "\uFEFFUNIDAD,CLIENTE,SUBCLIENTE,ORIGEN,DESTINO,ESTATUS,CONTENEDORES,VELOCIDAD,DIRECCIÓN\n";
         document.querySelectorAll("#unitList tr").forEach(row => {
             const inputs = row.querySelectorAll("input, select");
-            csv += `${row.cells[0].innerText},${inputs[0].value},${inputs[1].value},${inputs[2].value},${inputs[3].value},${inputs[4].value},${inputs[5].value},${row.cells[7].innerText}\n`;
+            const addr = row.cells[8].innerText.replace(/,/g, ""); // Limpiar comas para CSV
+            csv += `${row.cells[0].innerText},${inputs[0].value},${inputs[1].value},${inputs[2].value},${inputs[3].value},${inputs[4].value},${inputs[5].value},${row.cells[7].innerText},${addr}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "Bitacora_Cloud.csv";
+        link.download = "Bitacora_Logistica_Cloud.csv";
         link.click();
     }
 </script>
