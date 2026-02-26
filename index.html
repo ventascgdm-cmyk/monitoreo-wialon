@@ -17,9 +17,9 @@
         body { background: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; margin: 0; overflow: hidden;}
         
         .login-bg { background: #001a33; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
-        .login-card { background: white; padding: 40px; border-radius: 12px; width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .login-card { background: white; padding: 40px; border-radius: 12px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         
-        .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-bar { background: var(--bg-card); padding: 10px 20px; border-bottom: 4px solid var(--header-bg); }
         .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 75px); width: 100%; }
         
         .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--header-bg); position: relative; z-index: 10; overflow: hidden; }
@@ -44,8 +44,8 @@
 
 <div id="loginOverlay" class="login-bg">
     <div class="login-card text-center">
-        <img src="TIGPS HD2.png" alt="Logo" style="width: 200px; margin-bottom: 25px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
-        <h5 class="text-primary fw-bold mb-4">SISTEMA C4 LOGÍSTICA</h5>
+        <img src="TIGPS HD2.png" alt="Logo" style="width: 220px; margin-bottom: 25px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3063/3063822.png'">
+        <h5 class="text-primary fw-bold mb-4">GRUDICOM TI & GPS</h5>
         <input type="text" id="logUser" class="form-control mb-3 text-center" placeholder="Usuario" value="admin">
         <input type="password" id="logPass" class="form-control mb-4 text-center" placeholder="Contraseña" value="admin123">
         <button id="btnEnter" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">INGRESAR</button>
@@ -56,124 +56,146 @@
 <div id="dashboard" style="display:none;">
     <div class="header-bar d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center">
-            <img src="TIGPS HD2.png" alt="Logo" style="height: 40px;" class="me-3">
+            <img src="TIGPS HD2.png" alt="Logo" style="height: 45px;" class="me-3">
             <div><h5 class="fw-bold m-0">GRUDICOM TI & GPS</h5><small id="lblMonitor" class="text-muted">Conectado</small></div>
         </div>
         <div class="d-flex align-items-center">
             <div id="tokenDiagnostics" class="me-3 d-flex"></div>
             <button class="btn btn-info btn-sm fw-bold me-2" onclick="toggleMap()"><i class="fa-solid fa-map"></i> Mapa</button>
-            <button class="btn btn-outline-primary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje"><i class="fa-solid fa-plus"></i> Nuevo</button>
+            <button class="btn btn-outline-primary btn-sm fw-bold me-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-plus"></i> Registro</button>
             <button class="btn btn-secondary btn-sm fw-bold" onclick="location.reload()"><i class="fa-solid fa-power-off"></i></button>
         </div>
     </div>
     <div class="workspace-container" id="mainWorkspace">
         <div class="map-panel"><div id="map"></div></div>
         <div class="table-panel">
+            <div class="row mb-2"><div class="col-md-4"><input type="text" id="buscador" class="form-control form-control-sm" placeholder="🔍 Filtrar..." onkeyup="filtrarTabla()"></div></div>
             <div class="card shadow border-0"><div class="table-responsive"><table class="table table-bordered align-middle text-center mb-0" id="mainTable"><tbody id="units-body"></tbody></table></div></div>
         </div>
     </div>
 </div>
 
 <div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-    <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">NUEVO REGISTRO</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+    <div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold">REGISTRAR VIAJE</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
     <div class="modal-body small">
-        <label>Unidad:</label><input type="text" id="nv_u" class="form-control form-control-sm mb-2" placeholder="RACEL-01">
-        <label>Operador:</label><input type="text" id="nv_o" class="form-control form-control-sm mb-2" placeholder="Nombre">
-        <button onclick="registrarViaje()" class="btn btn-primary w-100 fw-bold mt-2">GUARDAR EN FIREBASE</button>
+        <label>Unidad:</label><input type="text" id="nv_u" class="form-control form-control-sm mb-2" list="dl_u" placeholder="RACEL-01">
+        <label>Operador:</label><input type="text" id="nv_o" class="form-control form-control-sm mb-2" list="dl_d">
+        <div class="row mb-2">
+            <div class="col-6"><label>Cliente:</label><select id="nv_c" class="form-select form-select-sm" onchange="actualizarSubSelect(this.value)"></select></div>
+            <div class="col-6"><label>Subcliente:</label><select id="nv_s" class="form-select form-select-sm"></select></div>
+        </div>
+        <button onclick="registrarViaje()" class="btn btn-primary w-100 fw-bold mt-2">GUARDAR</button>
     </div>
 </div></div></div>
 
+<datalist id="dl_u"></datalist><datalist id="dl_d"></datalist>
+
 <script type="text/javascript">
-    // FIREBASE URL DIRECTA
     const db = firebase.database({ databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" });
-    let dataClientes = {}, viajesActivos = {}, unidadesGPS = {}, lmap = null;
+    let dataClientes = {}, viajesActivos = {}, unidadesWialon = {}, activeSIDs = {}, lmap = null;
 
     const estatusData = { "s1":{nombre:"1. Ruta",col:"#0F7D42"}, "s2":{nombre:"1.1 PARADO",col:"#B50000"}, "s11":{nombre:"8. Finalizado",col:"#0055A5"} };
 
-    // LOGIN BYPASS (INSTANTÁNEO)
+    // 1. LOGIN BLINDADO
     function intentarEntrar() {
         const u = document.getElementById("logUser").value.trim();
         const p = document.getElementById("logPass").value.trim();
-
         if (u === "admin" && p === "admin123") {
-            ejecutarEntrada("Administrador Maestro");
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("dashboard").style.display = "block";
+            db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarModals(); renderizar(); });
+            db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizar(); });
+            conectarTokens();
         } else {
-            db.ref('sistema/usuarios/' + u).once('value', s => {
-                const user = s.val();
-                if(user && user.pass === p) ejecutarEntrada(user.nom || u);
-                else document.getElementById("status").innerText = "Credenciales incorrectas";
-            });
+            document.getElementById("status").innerText = "Credenciales incorrectas";
         }
     }
-
-    function ejecutarEntrada(nombre) {
-        document.getElementById("loginOverlay").style.display = "none";
-        document.getElementById("dashboard").style.display = "block";
-        document.getElementById("lblMonitor").innerText = "Monitor: " + nombre;
-        activarSistema();
-    }
-
     document.getElementById("btnEnter").onclick = intentarEntrar;
     document.getElementById("logPass").onkeyup = e => { if(e.key === "Enter") intentarEntrar(); };
 
-    // CARGA DE DATOS (FIREBASE MANDA)
-    function activarSistema() {
-        db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; renderizar(); });
-        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizar(); });
-        
-        // Carga Wialon solo de fondo (Asíncrona)
+    // 2. CONEXIÓN GPS EN SEGUNDO PLANO
+    function conectarTokens() {
         db.ref('sistema/tokens').once('value', s => {
-            const tokens = s.val() ? Object.values(s.val()) : [];
-            tokens.forEach(tk => {
-                let script = document.createElement("script"), cb = "w_"+Math.random().toString(36).substr(2,5);
+            const tks = s.val() ? Object.values(s.val()) : [];
+            tks.forEach(tk => {
+                let sc = document.createElement("script"), cb = "w_"+Math.random().toString(36).substr(2,5);
                 window[cb] = (d) => {
                     const diag = document.getElementById("tokenDiagnostics");
                     if(d && d.eid) {
                         diag.innerHTML += `<span class="diag-pill diag-ok">${tk.nombre}</span>`;
-                    } else {
-                        diag.innerHTML += `<span class="diag-pill diag-error">${tk.nombre}</span>`;
-                    }
-                    script.remove();
+                        descargarUnits(tk, d.eid);
+                    } else diag.innerHTML += `<span class="diag-pill diag-error">${tk.nombre}</span>`;
+                    sc.remove();
                 };
-                script.src = `${tk.url}/wialon/ajax.html?svc=token/login&params={"token":"${tk.token}"}&callback=${cb}`;
-                document.head.appendChild(script);
+                sc.src = `${tk.url}/wialon/ajax.html?svc=token/login&params={"token":"${tk.token}"}&callback=${cb}`;
+                document.head.appendChild(sc);
             });
         });
     }
 
+    function descargarUnits(tk, sid) {
+        let sc = document.createElement("script"), cb = "u_"+Math.random().toString(36).substr(2,5);
+        window[cb] = (d) => { if(d && d.items) d.items.forEach(u => unidadesWialon[u.id] = u); renderizar(); sc.remove(); };
+        sc.src = `${tk.url}/wialon/ajax.html?svc=core/search_items&params={"spec":{"itemsType":"avl_unit","propName":"sys_name","propValueMask":"*","sortType":"sys_name"},"force":1,"flags":1025}&sid=${sid}&callback=${cb}`;
+        document.head.appendChild(sc);
+    }
+
+    // 3. RENDERIZADO JERÁRQUICO
     function renderizar() {
+        if(document.activeElement.tagName === "INPUT") return;
         const tbody = document.getElementById('units-body');
-        let html = `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA</th><th>📦 CONTENEDORES</th><th>ESTATUS</th><th>GPS</th><th>ACCIÓN</th></tr>`;
-        
+        let html = "";
+        let tree = { "Sin_Cliente": { "N/A": [] } };
+
+        Object.keys(dataClientes).forEach(cId => {
+            tree[cId] = { "N/A": [] };
+            if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []);
+        });
+
         Object.keys(viajesActivos).forEach(vId => {
             const v = viajesActivos[vId];
-            html += `<tr>
-                <td class="unit-name">${v.unidadN || 'S/N'}</td>
-                <td><input class="table-input" value="${v.operador||''}" onblur="firebase.database().ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase())"></td>
-                <td>${v.origen || ''} ➔ ${v.destino || ''}</td>
-                <td><textarea class="table-input" onblur="firebase.database().ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores || ''}</textarea></td>
-                <td><span class="badge bg-primary">Manual Active</span></td>
-                <td><small class="text-muted">Live Tracking...</small></td>
-                <td><button onclick="shareWA('${vId}')" class="btn btn-success btn-sm"><i class="fa-brands fa-whatsapp"></i></button></td>
-            </tr>`;
+            const cId = v.cliente || "Sin_Cliente", sId = v.subcliente || "N/A";
+            if(!tree[cId]) tree[cId] = { "N/A": [] };
+            if(!tree[cId][sId]) tree[cId][sId] = [];
+            tree[cId][sId].push({vId, v});
         });
-        tbody.innerHTML = html;
+
+        for(let cId in tree) {
+            let hasU = false, cliH = "", cliD = dataClientes[cId] || {nombre: "SIN CLIENTE ASIGNADO"};
+            for(let sId in tree[cId]) {
+                if(tree[cId][sId].length === 0) continue;
+                hasU = true;
+                if(sId !== "N/A") cliH += `<tr><td colspan="8" class="header-subcliente shadow-sm">↳ Subcliente: ${dataClientes[cId].subclientes[sId].nombre}</td></tr>`;
+                cliH += `<tr class="header-columnas"><th>UNIDAD</th><th>OPERADOR</th><th>RUTA</th><th>📦</th><th>HORARIOS</th><th>ESTATUS</th><th>GPS</th><th>ACCIÓN</th></tr>`;
+                tree[cId][sId].forEach(({vId, v}) => {
+                    const u = unidadesWialon[vId] || { pos: {s:0} };
+                    cliH += `<tr>
+                        <td class="unit-name">${v.unidadN}</td>
+                        <td><input class="table-input" value="${v.operador||''}" onblur="db.ref('viajes_activos/'+vId+'/operador').set(this.value.toUpperCase())"></td>
+                        <td>${v.origen||''} ➔ ${v.destino||''}</td>
+                        <td><textarea class="table-input" onblur="db.ref('viajes_activos/'+vId+'/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
+                        <td>${v.t_salida ? new Date(v.t_salida).toLocaleTimeString() : '---'}</td>
+                        <td><select class="form-select status-select" style="background:${estatusData[v.estatus]?.col}" onchange="db.ref('viajes_activos/'+vId+'/estatus').set(this.value)">${Object.keys(estatusData).map(k=>`<option value="${k}" ${v.estatus===k?'selected':''}>${estatusData[k].nombre}</option>`).join('')}</select></td>
+                        <td><span class="badge ${u.pos.s>0?'bg-success':'bg-secondary'}">${u.pos.s} km/h</span></td>
+                        <td><button onclick="shareWA('${vId}')" class="btn btn-success btn-sm"><i class="fa-brands fa-whatsapp"></i></button></td>
+                    </tr>`;
+                });
+            }
+            if(hasU) html += `<tr><td colspan="8" class="header-cliente shadow">📦 CLIENTE: ${cliD.nombre}</td></tr>` + cliH;
+        }
+        tbody.innerHTML = html || '<tr><td colspan="8" class="p-5 text-muted">No hay viajes activos.</td></tr>';
     }
 
     function shareWA(id) {
         const v = viajesActivos[id];
-        let msg = `*REPORTE C4*\n🚛 *Unidad:* ${v.unidadN}\n📦 *Cont:* ${v.contenedores || 'S/N'}\n🏁 ${v.origen || 'N/A'} -> ${v.destino || 'N/A'}`;
+        let msg = `*Reporte de Viaje*\n🚛 *Unidad:* ${v.unidadN}\n📦 *Cont:* ${v.contenedores||'S/N'}\n🏁 ${v.origen||'S/N'} ➔ ${v.destino||'S/N'}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     }
-
-    function toggleMap() { 
-        document.getElementById("mainWorkspace").classList.toggle("show-map"); 
-        if(!lmap) { 
-            lmap = L.map('map').setView([23.6, -102.5], 5); 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(lmap); 
-        } 
-        setTimeout(()=>lmap.invalidateSize(), 400); 
-    }
+    function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) { lmap = L.map('map').setView([23.6, -102.5], 5); L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(lmap); } setTimeout(()=>lmap.invalidateSize(), 400); }
+    function registrarViaje() { const u = document.getElementById("nv_u").value.toUpperCase(); if(!u) return; db.ref('viajes_activos/M'+Date.now()).set({ unidadN: u, operador: document.getElementById("nv_o").value.toUpperCase(), cliente: document.getElementById("nv_c").value, subcliente: document.getElementById("nv_s").value, estatus: "s1" }); bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); }
+    function actualizarModals() { let s = document.getElementById("nv_c"); s.innerHTML = Object.keys(dataClientes).map(k=>`<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); actualizarSubSelect(s.value); }
+    function actualizarSubSelect(c) { let s = document.getElementById("nv_s"); s.innerHTML = '<option value="N/A">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k=> s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
+    function filtrarTabla() { let t = document.getElementById("buscador").value.toLowerCase(); document.querySelectorAll("#mainTable tbody tr").forEach(r => { if(r.classList.contains("header-cliente")||r.classList.contains("header-subcliente")) return; r.style.display = r.innerText.toLowerCase().includes(t)?"":"none"; }); }
 </script>
 </body>
 </html>
