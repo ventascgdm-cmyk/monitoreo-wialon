@@ -1,90 +1,92 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Logística Cloud - Acceso Maestro</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    
-    <script src="https://sdk.wialon.com/library/js/wialon.js"></script>
-
-    <style>
-        body { background: #001f4d; color: white; font-family: sans-serif; }
-        .card-login { background: white; color: #333; width: 400px; border-radius: 15px; margin-top: 15vh; }
-        #dashboard { display:none; background: #f4f7f6; color: #333; min-height: 100vh; }
-        .status-msg { font-size: 0.8rem; font-weight: bold; margin-top: 10px; }
-    </style>
+    <meta charset="utf-8" />
+    <title>Wialon Playground - Get units</title>
+    <script type="text/javascript" src="//code.jquery.com/jquery-latest.min.js"></script>
+    <script type="text/javascript" src="//hst-api.wialon.com/wsdk/script/wialon.js"></script>
 </head>
 <body>
+<style>
+#log { border: 1px solid #c6c6c6; }
+.icon {float:left; margin:10px;}
+</style>
 
-<div id="loginOverlay" class="d-flex justify-content-center">
-    <div class="card card-login p-4 shadow-lg text-center">
-        <h3 class="text-primary fw-bold">Logística Cloud</h3>
-        <p class="text-muted small">Configuración de Flota Independiente</p>
-        <input type="password" id="tokenInput" class="form-control mb-3 text-center" placeholder="Pega tu Wialon Token aquí">
-        <button onclick="conectarSistema()" id="btnIngresar" class="btn btn-primary w-100 fw-bold">Sincronizar y Entrar</button>
-        <div id="sdkStatus" class="status-msg text-warning">Verificando SDK de Wialon...</div>
-    </div>
-</div>
 
-<div id="dashboard">
-    <div class="p-3 bg-primary text-white text-center"><h4>PANEL DE CONTROL REAL-TIME</h4></div>
-    <div id="tablaContenedor" class="p-4"></div>
-</div>
+Select unit: <select id="units"><option></option></select>
+<div id="log"></div>
 
-<script>
-    // Configuración de tu Firebase confirmada
-    const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
 
-    let sess = null;
+<script type="text/javascript">
+// Print message to log
+function msg(text) { $("#log").prepend(text + "<br/>"); }
 
-    // Verificar SDK al inicio
-    window.onload = () => {
-        if (typeof wialon !== 'undefined') {
-            document.getElementById('sdkStatus').innerText = "SDK Cargado ✅";
-            document.getElementById('sdkStatus').className = "status-msg text-success";
-        } else {
-            document.getElementById('sdkStatus').innerText = "Error: SDK no detectado. Reintentando...";
-        }
-    };
+function init() { // Execute after login succeed
+	var sess = wialon.core.Session.getInstance(); // get instance of current Session
+	// flags to specify what kind of data should be returned
+	var flags = wialon.item.Item.dataFlag.base | wialon.item.Unit.dataFlag.lastMessage;
 
-    function conectarSistema() {
-        const token = document.getElementById('tokenInput').value;
-        if (!token) return alert("Por favor, ingresa tu token primero");
+    sess.loadLibrary("itemIcon"); // load Icon Library	
+    sess.updateDataFlags( // load items to current session
+	[{type: "type", data: "avl_unit", flags: flags, mode: 0}], // Items specification
+		function (code) { // updateDataFlags callback
+    		if (code) { msg(wialon.core.Errors.getErrorText(code)); return; } // exit if error code
 
-        // Inicializamos la sesión solo cuando tenemos el token y el SDK listo
-        if (typeof wialon !== 'undefined') {
-            sess = wialon.core.Session.getInstance();
-            sess.initSession("https://hst-api.wialon.com");
-            
-            // Login oficial con el token
-            sess.loginToken(token, "", (code) => {
-                if (code) {
-                    alert("Error de Login: " + wialon.core.Errors.getErrorText(code));
-                    return;
-                }
-                // Si el login es exitoso, mostramos el panel
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                iniciarRastreo();
-            });
-        } else {
-            alert("El SDK de Wialon no ha cargado aún. Por favor, refresca la página (F5).");
-        }
-    }
+            // get loaded 'avl_unit's items  
+	    	var units = sess.getItems("avl_unit");
+    		if (!units || !units.length){ msg("Units not found"); return; } // check if units found
 
-    function iniciarRastreo() {
-        // Aquí cargamos las librerías necesarias para ver las unidades
-        sess.loadLibrary("itemUnit");
-        sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], () => {
-            const units = sess.getItems("avl_unit");
-            console.log("Unidades cargadas:", units);
-            // Aquí llamarías a tu función de renderizado de tabla
-        });
-    }
+		    for (var i = 0; i< units.length; i++){ // construct Select object using found units
+			    var u = units[i]; // current unit in cycle
+			    // append option to select
+			    $("#units").append("<option value='"+ u.getId() +"'>"+ u.getName()+ "</option>");
+			}
+            // bind action to select change event
+		    $("#units").change( getSelectedUnitInfo );
+	    }
+	);
+}
+
+function getSelectedUnitInfo(){ // print information about selected Unit
+
+	var val = $("#units").val(); // get selected unit id
+	if(!val) return; // exit if no unit selected
+	
+	var unit = wialon.core.Session.getInstance().getItem(val); // get unit by id
+	if(!unit){ msg("Unit not found");return; } // exit if unit not found
+	
+	// construct message with unit information
+	var text = "<div>'"+unit.getName()+"' selected. "; // get unit name
+	var icon = unit.getIconUrl(32); // get unit Icon url
+	if(icon) text = "<img class='icon' src='"+ icon +"' alt='icon'/>"+ text; // add icon to message
+	var pos = unit.getPosition(); // get unit position
+	if(pos){ // check if position data exists
+	    var time = wialon.util.DateTime.formatTime(pos.t);
+		text += "<b>Last message</b> "+ time +"<br/>"+ // add last message time
+			"<b>Position</b> "+ pos.x+", "+pos.y +"<br/>"+ // add info about unit position
+			"<b>Speed</b> "+ pos.s; // add info about unit speed
+        // try to find unit location using coordinates 
+		wialon.util.Gis.getLocations([{lon:pos.x, lat:pos.y}], function(code, address){ 
+			if (code) { msg(wialon.core.Errors.getErrorText(code)); return; } // exit if error code
+			msg(text + "<br/><b>Location of unit</b>: "+ address+"</div>"); // print message to log
+		});
+	} else // position data not exists, print message
+		msg(text + "<br/><b>Location of unit</b>: Unknown</div>");
+}
+
+// execute when DOM ready
+$(document).ready(function () {
+	wialon.core.Session.getInstance().initSession("https://hst-api.wialon.com"); // init session
+    // For more info about how to generate token check
+    // http://sdk.wialon.com/playground/demo/app_auth_token
+	wialon.core.Session.getInstance().loginToken("5dce19710a5e26ab8b7b8986cb3c49e58C291791B7F0A7AEB8AFBFCEED7DC03BC48FF5F8", "", // try to login
+		function (code) { // login callback
+		    // if error code - print error message
+			if (code){ msg(wialon.core.Errors.getErrorText(code)); return; }
+			msg("Logged successfully"); init(); // when login suceed then run init() function
+	});
+});
+
 </script>
 </body>
 </html>
