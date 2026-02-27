@@ -2,139 +2,125 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Bitácora Multi-Flota</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>C4 - Bitácora con Cambio de Conductor</title>
+    <script type="text/javascript" src="//code.jquery.com/jquery-latest.min.js"></script>
+    <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
     <style>
-        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
-        .header-c4 { background: #0f172a; color: white; padding: 15px; border-radius: 8px 8px 0 0; }
-        .unit-name { font-weight: 800; color: #0284c7; }
-        .platform-tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #475569; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; padding: 20px; }
+        .unit-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        .unit-table th { background: #0f172a; color: white; padding: 12px; text-align: left; }
+        .unit-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+        .drv-container { display: flex; align-items: center; gap: 8px; font-weight: bold; color: #0284c7; }
+        .btn-bind { background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-bind:hover { background: #2563eb; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid py-4">
-    <div class="header-c4 d-flex justify-content-between align-items-center">
-        <h4 class="m-0 fw-bold">OPERATIVO C4 | <span class="text-info">GESTIÓN GPS</span></h4>
-        <button onclick="arranqueMaestro()" class="btn btn-info btn-sm fw-bold">ACTUALIZAR DATOS</button>
-    </div>
+    <h2>Operativo C4: Gestión de Conductores</h2>
+    <div id="log">Conectando a Wialon...</div>
 
-    <div class="bg-white shadow-sm border">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Plataforma</th>
-                    <th>Unidad</th>
-                    <th>Conductor Actual</th>
-                    <th>Teléfono</th>
-                    <th>Velocidad</th>
-                </tr>
-            </thead>
-            <tbody id="units-body">
-                <tr><td colspan="5" class="text-center p-5">Cargue los datos para iniciar...</td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<script>
-// --- TUS TOKENS ---
-const PLATAFORMAS = [
-    { nombre: "PLATAFORMA 1", url: "https://hst-api.wialon.com", token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" }
-];
-
-let conductoresGlobales = {}; 
-
-async function arranqueMaestro() {
-    document.getElementById("units-body").innerHTML = '<tr><td colspan="5" class="text-center p-5">Sincronizando...</td></tr>';
-    conductoresGlobales = {};
-    let listaUnidades = [];
-
-    // Consultamos todas las plataformas
-    for (let p of PLATAFORMAS) {
-        const data = await procesarHost(p);
-        if (data) listaUnidades = listaUnidades.concat(data);
-    }
-    renderizarTabla(listaUnidades);
-}
-
-async function procesarHost(p) {
-    try {
-        // 1. Login vía JSONP para evitar bloqueos de CORS (Imagen 1)
-        const login = await queryWialon(p.url, "token/login", { token: p.token });
-        const sid = login.eid;
-        if (!sid) return null;
-
-        // 2. Traer todos los conductores y sus teléfonos de este Host
-        const drvReq = await queryWialon(p.url, "core/search_items", {
-            spec: { itemsType: "avl_driver", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 1 + 256, from: 0, to: 0
-        }, sid);
-
-        if (drvReq.items) {
-            drvReq.items.forEach(d => {
-                const props = d.pprops || d.p || {}; // Buscamos el teléfono donde esté guardado
-                conductoresGlobales[d.id] = {
-                    nombre: d.nm,
-                    tel: props.ph || props.phone || "S/N",
-                    uId: d.bu // ID de la unidad vinculada
-                };
-            });
-        }
-
-        // 3. Traer Unidades
-        const unitReq = await queryWialon(p.url, "core/search_items", {
-            spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 1 + 1024, from: 0, to: 0
-        }, sid);
-
-        return (unitReq.items || []).map(u => ({
-            nm: u.nm,
-            plat: p.nombre,
-            pos: u.pos,
-            id: u.id,
-            chofer: vincular(u.id)
-        }));
-    } catch (e) { return null; }
-}
-
-// Función clave: busca en el mapa si alguien tiene este camión asignado
-function vincular(uId) {
-    for (let id in conductoresGlobales) {
-        if (conductoresGlobales[id].uId == uId) return conductoresGlobales[id];
-    }
-    return { nombre: "Sin asignar", tel: "---" };
-}
-
-function renderizarTabla(unidades) {
-    const tbody = document.getElementById("units-body");
-    let html = "";
-    unidades.sort((a,b) => a.nm.localeCompare(b.nm));
-
-    unidades.forEach(u => {
-        const v = u.pos ? u.pos.s : 0;
-        html += `
+    <table class="unit-table">
+        <thead>
             <tr>
-                <td><span class="platform-tag">${u.plat}</span></td>
-                <td><span class="unit-name">${u.nm}</span></td>
-                <td>${u.chofer.nombre}</td>
-                <td><a href="tel:${u.chofer.tel}">${u.chofer.tel}</a></td>
-                <td class="fw-bold ${v > 0 ? 'text-success' : ''}">${v} km/h</td>
-            </tr>`;
-    });
-    tbody.innerHTML = html;
-}
+                <th>Unidad</th>
+                <th>Conductor Actual</th>
+                <th>Asignar Nuevo</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody id="units-body"></tbody>
+    </table>
 
-// Utilidad JSONP para saltar el CORS (Solución Imagen 1)
-function queryWialon(url, svc, params, sid = null) {
-    return new Promise(resolve => {
-        const cb = "cb_" + Math.random().toString(36).substring(7);
-        window[cb] = d => { delete window[cb]; resolve(d); };
-        const script = document.createElement("script");
-        script.src = `${url}/wialon/ajax.html?svc=${svc}&params=${JSON.stringify(params)}&callback=${cb}${sid ? '&sid=' + sid : ''}`;
-        document.head.appendChild(script);
+<script type="text/javascript">
+    const TOKEN = "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87";
+    var all_drivers = {}; // Mapa para saber qué conductor tiene cada unidad
+    var select_options = ""; // String HTML para el menú desplegable
+
+    function init() {
+        var sess = wialon.core.Session.getInstance();
+        
+        // Cargamos librerías necesarias para iconos y conductores
+        sess.loadLibrary("resourceDrivers");
+        sess.loadLibrary("itemIcon");
+
+        // Definimos los flags: base para unidades y drivers para recursos
+        var unit_flags = wialon.item.Item.dataFlag.base;
+        var res_flags = wialon.util.Number.or(wialon.item.Item.dataFlag.base, wialon.item.Resource.dataFlag.drivers);
+
+        sess.updateDataFlags(
+            [{type: "type", data: "avl_unit", flags: unit_flags, mode: 0},
+             {type: "type", data: "avl_resource", flags: res_flags, mode: 0}],
+            function (code) {
+                if (code) { console.error("Error:", code); return; }
+
+                var units = sess.getItems("avl_unit");
+                var ress = sess.getItems("avl_resource");
+
+                // 1. Mapeamos todos los conductores de todos los recursos
+                ress.forEach(res => {
+                    var drivers = res.getDrivers() || {};
+                    for (var dId in drivers) {
+                        var d = drivers[dId];
+                        // Guardamos el conductor por el ID de unidad vinculado (bu)
+                        if (!all_drivers[d.bu]) all_drivers[d.bu] = [];
+                        all_drivers[d.bu].push({ id: d.id, name: d.n, resId: res.getId(), icon: res.getDriverImageUrl(d, 32) });
+                        
+                        // Llenamos las opciones del selector
+                        select_options += `<option value="${res.getId()}_${d.id}">${d.n}</option>`;
+                    }
+                });
+
+                // 2. Renderizamos la tabla de unidades
+                var html = "";
+                units.forEach(u => {
+                    var u_id = u.getId();
+                    var drvHtml = "<i>Sin conductor</i>";
+                    
+                    // Si la unidad tiene conductores vinculados
+                    if (all_drivers[u_id]) {
+                        drvHtml = all_drivers[u_id].map(d => 
+                            `<div class="drv-container"><img src="${d.icon}" width="20"> ${d.name}</div>`
+                        ).join("");
+                    }
+
+                    html += `
+                        <tr id="row_${u_id}">
+                            <td><b>${u.getName()}</b></td>
+                            <td id="assigned_${u_id}">${drvHtml}</td>
+                            <td><select id="sel_${u_id}">${select_options}</select></td>
+                            <td><button class="btn-bind" onclick="vincular('${u_id}')">Vincular</button></td>
+                        </tr>`;
+                });
+                document.getElementById("units-body").innerHTML = html;
+                document.getElementById("log").innerText = "Sincronización completa.";
+            }
+        );
+    }
+
+    function vincular(u_id) {
+        var sess = wialon.core.Session.getInstance();
+        var unit = sess.getItem(u_id);
+        var val = document.getElementById("sel_" + u_id).value;
+        var [resId, drvId] = val.split("_");
+        
+        var res = sess.getItem(resId);
+        var driver = res.getDriver(drvId);
+        
+        // Ejecutamos la vinculación física en Wialon
+        res.bindDriverToUnit(driver, unit, 0, true, function(code) {
+            if (code) { alert("Error: " + wialon.core.Errors.getErrorText(code)); return; }
+            alert("Conductor " + driver.n + " asignado a " + unit.getName());
+            location.reload(); // Recargamos para actualizar la vista
+        });
+    }
+
+    $(document).ready(function () {
+        wialon.core.Session.getInstance().initSession("https://hst-api.wialon.com");
+        wialon.core.Session.getInstance().loginToken(TOKEN, "", (code) => {
+            if (!code) init();
+        });
     });
-}
 </script>
 </body>
 </html>
