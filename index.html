@@ -61,14 +61,12 @@
         }
         .dark-mode .data-row:hover td { background: rgba(0,0,0,0.2) !important; }
         
-        /* ENCABEZADOS GIGANTES */
         .header-cliente td { background: transparent !important; color: #0f172a !important; font-size: 2.5rem; font-weight: 900; padding: 35px 10px 10px 10px !important; text-transform: uppercase; border: none !important; letter-spacing: -1px;}
         .dark-mode .header-cliente td { color: #f8fafc !important; }
         
         .header-subcliente td { background: transparent !important; color: #475569 !important; font-size: 1.8rem; font-weight: 800; padding: 15px 10px 10px 30px !important; border: none !important; letter-spacing: -0.5px;}
         .dark-mode .header-subcliente td { color: #cbd5e1 !important; }
         
-        /* LOGOS DE CLIENTE (MÁS GRANDES) */
         .client-logo { height: 70px; max-width: 220px; object-fit: contain; vertical-align: middle; margin-right: 15px; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: white; padding: 5px; }
 
         .lost-connection-row { outline: 2px dashed #ef4444; outline-offset: -2px; border-radius: 8px;}
@@ -82,7 +80,7 @@
         .dark-mode .input-ghost:focus { background: #0f172a; }
         
         .col-unidad { min-width: 130px; width: 140px; }
-        .col-operador { min-width: 140px; }
+        .col-operador { min-width: 200px; width: 220px; }
         .col-ruta { min-width: 180px; }
         .col-contenedores { min-width: 110px; }
         .col-horarios { min-width: 130px; }
@@ -95,11 +93,10 @@
         .status-select { border-radius: 20px; font-weight: 800; cursor: pointer; text-align: center; font-size: 0.75rem; padding: 6px 12px; background: transparent; border: 1.5px solid; outline: none; transition: all 0.2s; -webkit-appearance: none; -moz-appearance: none; appearance: none;}
         .status-select:hover { transform: scale(1.03); background-color: rgba(255,255,255,0.5); }
         
-        .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.15rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
+        .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.15rem; letter-spacing: 0.5px; transition: 0.2s;}
         .dark-mode .unit-name { color: #38bdf8; }
         .unit-name:hover { color: #0284c7; text-decoration: underline; }
         
-        /* DEEP LINK A WIALON */
         .wialon-deep-link { color: #94a3b8; font-size: 0.9rem; transition: 0.2s; cursor: pointer; }
         .wialon-deep-link:hover { color: #f59e0b; transform: scale(1.1); }
         
@@ -121,7 +118,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v20.2 (Edición Dinámica)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v21.0 (Conductores Pro)</div>
     </div>
 </div>
 
@@ -203,7 +200,6 @@
                             reader.readAsDataURL(this.files[0]);
                         }
                     ">
-
                     <ul class="list-group list-group-sm mt-3" id="listaClientesAdmin" style="max-height: 200px; overflow-y:auto;"></ul>
                 </div>
             </div>
@@ -418,7 +414,7 @@
             } else {
                 addrText = "Ubicación GPS";
             }
-            locLink = `${addrText} \nhttps://www.google.com/maps?q=${pos.y},${pos.x}`;
+            locLink = `${addrText} \nhttps://maps.google.com/maps?q=lat,lon{pos.y},${pos.x}`;
         }
 
         let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
@@ -464,7 +460,7 @@
                 } else {
                     addrText = "Ubicación GPS";
                 }
-                locLink = `https://www.google.com/maps?q=${pos.y},${pos.x}`;
+                locLink = `https://maps.google.com/maps?q=lat,lon{pos.y},${pos.x}`;
             }
             
             txt += `🚛 *Unidad:* ${name}\n` +
@@ -492,6 +488,51 @@
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
 
+    // ================= FUNCIONES DE ASIGNACIÓN REMOTA WIALON =================
+    async function vincularConductorBitacora(vId, unitId) {
+        let sel = document.getElementById(`sel_drv_${vId}`);
+        if(!sel || !sel.value) return;
+        
+        let parts = sel.value.split("_");
+        let resId = parseInt(parts[0]);
+        let drvId = parseInt(parts[1]);
+        let tkVal = parts.slice(2).join('_'); 
+        
+        let auth = activeSIDs[tkVal];
+        let tkInfo = configSistema.tokens.find(t => t.token === tkVal);
+        if(!auth || !tkInfo) { alert("Error: Sesión Wialon inactiva para este token."); return; }
+        
+        let btn = sel.nextElementSibling;
+        let oldHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+        
+        let params = { resourceId: resId, unitId: parseInt(unitId), driverId: drvId, time: 0, mode: true }; 
+        await peticionWialon(tkInfo.url, "resource/bind_unit_driver", params, auth.sid);
+        
+        registrarLog(vId, 'Wialon', 'Asignó operador: ' + sel.options[sel.selectedIndex].text.split('[')[0].trim());
+        btn.innerHTML = oldHtml;
+        sincronizarFlotas(); // Recarga visual instantánea
+    }
+
+    async function desvincularConductorBitacora(vId, unitId, resId, drvId, tkVal) {
+        if(!confirm("¿Seguro que deseas desvincular este conductor en Wialon?")) return;
+        
+        let auth = activeSIDs[tkVal];
+        let tkInfo = configSistema.tokens.find(t => t.token === tkVal);
+        if(!auth || !tkInfo) { alert("Error de sesión Wialon."); return; }
+        
+        let elOpWialon = document.getElementById("op_wialon_" + vId);
+        if(elOpWialon) elOpWialon.style.opacity = "0.5";
+
+        // Modo 0 (false) para desvincular
+        let params = { resourceId: parseInt(resId), unitId: parseInt(unitId), driverId: parseInt(drvId), time: 0, mode: false }; 
+        await peticionWialon(tkInfo.url, "resource/bind_unit_driver", params, auth.sid);
+        
+        registrarLog(vId, 'Wialon', 'Desvinculó operador.');
+        sincronizarFlotas(); 
+    }
+    // =========================================================================
+
     window.onload = function () {
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
         inicializarMenuColumnas();
@@ -508,7 +549,7 @@
         db.ref('sistema/tokens').on('value', s => { let tks = s.val() || {}; configSistema.tokens = Object.values(tks); actualizarListaTokensAdmin(tks); if(currentUser && !motorArrancado) arranqueMotor(); });
         
         document.getElementById("logPass").addEventListener("keyup", e => e.key === "Enter" && autenticarUsuario());
-        document.getElementById("nv_unidad_input").addEventListener("input", function() { let uN = this.value.toUpperCase(); document.getElementById("nv_operador").value = ramDrivers[uN] || dbOperadores[uN] || ""; });
+        document.getElementById("nv_unidad_input").addEventListener("input", function() { let uN = this.value.toUpperCase(); document.getElementById("nv_operador").value = ramDrivers[uN] ? ramDrivers[uN].n : (dbOperadores[uN] || ""); });
         
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
         
@@ -576,6 +617,7 @@
             
             estadoTokens = {}; 
             let tempUnits = {}, tempGeo = [], listDrv = new Set(), listUni = new Set(); 
+            let tempGlobalDrivers = []; // <-- Almacena TODOS los conductores extraídos
             let conexionesExitosas = 0;
 
             let promesas = configSistema.tokens.map(async (tk) => {
@@ -604,7 +646,15 @@
                         let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 4294967295 }, auth.sid);
                         if(reqR && reqR.items) {
                             reqR.items.forEach(r => { 
-                                if(r.drv) Object.values(r.drv).forEach(d => { if(d.bu) ramDrivers[String(d.bu)] = String(d.n||"").toUpperCase(); listDrv.add(String(d.n||"").toUpperCase()); }); 
+                                // === EXTRACCIÓN DE CHOFERES MEJORADA ===
+                                if(r.drv) {
+                                    Object.values(r.drv).forEach(d => { 
+                                        let d_obj = { n: String(d.n||"").toUpperCase(), p: d.p||"", c: d.c||"", id: d.id, resId: r.id, tkVal: tk.token };
+                                        tempGlobalDrivers.push(d_obj);
+                                        listDrv.add(d_obj.n); 
+                                        if(d.bu) ramDrivers[String(d.bu)] = d_obj; 
+                                    }); 
+                                }
                                 if(r.zl) Object.values(r.zl).forEach(z => tempGeo.push(z)); 
                             });
                         }
@@ -621,6 +671,13 @@
             document.getElementById("listaConductores").innerHTML = Array.from(listDrv).map(n => `<option value="${n}">`).join('');
             document.getElementById("listaGeocercas").innerHTML = tempGeo.map(z => `<option value="${String(z.n).toUpperCase()}">`).join('');
             
+            // Generar la lista global HTML para los Selects de asignación
+            let optHtml = `<option value="">-- ASIGNAR WIALON --</option>`;
+            tempGlobalDrivers.sort((a,b)=> a.n.localeCompare(b.n)).forEach(d => {
+                optHtml += `<option value="${d.resId}_${d.id}_${d.tkVal}">${d.n} ${d.p ? '['+d.p+']' : ''}</option>`;
+            });
+            window.wialonDriversOptions = optHtml;
+
             if(indMenu) {
                 if(conexionesExitosas > 0) { 
                     indMenu.innerHTML = `<span class="badge bg-success shadow-sm rounded-pill py-2 px-3">${Object.keys(unidadesGlobales).length} Camiones En Vivo</span>`;
@@ -694,15 +751,43 @@
                     btnName.setAttribute("onclick", `centrarUnidadMapa(null, null)`);
                 }
 
-                let wialonDriver = uData && ramDrivers[String(uData.id)] ? ramDrivers[String(uData.id)] : "";
+                // ================= INYECCIÓN DEL CHOFER =================
+                let wialonDriver = uData && ramDrivers[String(uData.id)] ? ramDrivers[String(uData.id)] : null;
                 let elOpWialon = document.getElementById("op_wialon_" + vId);
-                if (elOpWialon) {
+                let opInput = document.getElementById("op_input_" + vId);
+                
+                if (elOpWialon && uData && !isExternal) {
+                    let driverInfo = "";
                     if (wialonDriver) {
-                        elOpWialon.innerHTML = `<div class="badge bg-info text-dark w-100 mt-1 shadow-sm border border-light" style="font-size:0.75rem; letter-spacing:0.5px;"><i class="fa-solid fa-id-card"></i> ${wialonDriver}</div>`;
-                    } else {
-                        elOpWialon.innerHTML = '';
+                        // Si el campo manual está vacío, Wialon lo auto-llena
+                        if(opInput && opInput.value === "") { opInput.value = wialonDriver.n; }
+
+                        let waLink = wialonDriver.p ? `<a href="https://wa.me/${wialonDriver.p.replace(/\D/g,'')}?text=Hola%20${encodeURIComponent(wialonDriver.n)}" target="_blank" class="badge bg-success text-white shadow-sm border-0 text-decoration-none mt-1"><i class="fa-brands fa-whatsapp"></i> ${wialonDriver.p}</a>` : '';
+                        driverInfo = `
+                            <div class="d-flex flex-column align-items-center mt-2 w-100 bg-light p-2 rounded border position-relative">
+                                <button class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 p-0 m-1" title="Desvincular en Wialon" onclick="desvincularConductorBitacora('${vId}', '${uData.id}', '${wialonDriver.resId}', '${wialonDriver.id}', '${wialonDriver.tkVal}')"><i class="fa-solid fa-link-slash"></i></button>
+                                <span class="fw-bold text-dark text-center" style="font-size:0.70rem; padding-right:15px; padding-left:15px;"><i class="fa-solid fa-id-card text-info"></i> ${wialonDriver.n}</span>
+                                ${wialonDriver.c && wialonDriver.c !== "N/A" ? `<span class="badge bg-secondary mt-1" style="font-size:0.6rem; letter-spacing:1px;"><i class="fa-solid fa-hashtag"></i> ${wialonDriver.c}</span>` : ''}
+                                ${waLink}
+                            </div>
+                        `;
                     }
+
+                    // Menú de asignación para la bitácora
+                    let bindControl = `
+                        <div class="input-group mt-2 shadow-sm rounded overflow-hidden" style="height: 24px;">
+                            <select class="form-select bg-white border-0 py-0 ps-2 pe-0" style="font-size:0.65rem; color:#475569; font-weight:bold; cursor:pointer;" id="sel_drv_${vId}">
+                                ${window.wialonDriversOptions || '<option value="">Cargando...</option>'}
+                            </select>
+                            <button class="btn btn-primary py-0 px-2" style="font-size:0.65rem;" onclick="vincularConductorBitacora('${vId}', '${uData.id}')" title="Vincular en Wialon"><i class="fa-solid fa-link"></i></button>
+                        </div>
+                    `;
+
+                    elOpWialon.innerHTML = driverInfo + bindControl;
+                } else if (elOpWialon) {
+                    elOpWialon.innerHTML = '';
                 }
+                // =========================================================
 
                 let elAddrControl = document.getElementById("addr_control_" + vId);
                 if(elAddrControl) {
@@ -716,7 +801,7 @@
                             </div>
                             <div style="font-size:0.85rem; color:#0f172a; font-weight:800; max-width:100%; margin:0 auto;" class="text-wrap">${v.ubicacion_manual||'--'}</div>`;
                     } else {
-                        let mapsLink = `https://www.google.com/maps?q=${pos.y},${pos.x}`;
+                        let mapsLink = `https://maps.google.com/maps?q=lat,lon{pos.y},${pos.x}`;
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
                         let zonaGeo = resolverGeocerca(pos.y, pos.x);
                         
@@ -937,7 +1022,7 @@
                             </td>
                             <td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}">
                                 <div class="d-flex flex-column gap-1">
-                                    <input class="input-ghost" id="op_input_${vId}" value="${drvName}" placeholder="NOMBRE" onblur="if(this.value.toUpperCase() !== '${drvName.toUpperCase()}'){ registrarLog('${vId}', 'Cambió Operador', this.value); db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase()); }">
+                                    <input class="input-ghost" id="op_input_${vId}" value="${drvName}" placeholder="MANUAL" onblur="if(this.value.toUpperCase() !== '${drvName.toUpperCase()}'){ registrarLog('${vId}', 'Cambió Operador', this.value); db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase()); }">
                                     <input class="input-ghost text-primary" value="${v.telefono||''}" placeholder="TELÉFONO" onblur="db.ref('viajes_activos/${vId}/telefono').set(this.value.toUpperCase())">
                                     <div id="op_wialon_${vId}"></div>
                                 </div>
@@ -998,7 +1083,7 @@
                     }
                 });
             }
-            if(hasClientUnits) html += `<tr class="header-cliente shadow-sm"><td colspan="10">📦 CLIENTE: ${cliName} ${btnWaCli}</td></tr>` + cliHtml;
+            if(hasClientUnits) html += `<tr class="header-cliente shadow-sm"><td colspan="10">${logoHtml} ${cliName} ${btnWaCli}</td></tr>` + cliHtml;
         }
         tbody.innerHTML = html || '<tr><td colspan="10" class="p-5 text-muted fs-5"><i class="fa-solid fa-folder-open mb-3 fs-1 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>';
         filtrarTablaInteligente();
@@ -1147,4 +1232,3 @@
 </script>
 </body>
 </html>
-
