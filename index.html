@@ -1100,8 +1100,17 @@
     function actualizarListasAdmin() { 
         let s = document.getElementById("sub_clientePadre"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); 
         document.getElementById("listaClientesAdmin").innerHTML = Object.keys(dataClientes).map(k => {
-            let logoText = dataClientes[k].logo ? `<i class="fa-solid fa-image text-success" title="Logo Cargado"></i>` : '';
-            return `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8">${dataClientes[k].nombre} ${logoText} <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Cliente?')) db.ref('clientes/${k}').remove()"></i></li>`;
+            let c = dataClientes[k];
+            let logoText = c.logo ? `<i class="fa-solid fa-image text-success" title="Logo Cargado"></i>` : '';
+            let safeNom = (c.nombre || '').replace(/'/g, "\\'");
+            let safeLogo = (c.logo || '').replace(/'/g, "\\'");
+            return `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8">
+                <span>${c.nombre} ${logoText}</span>
+                <div>
+                    <i class="fa-solid fa-pencil text-primary cp me-2" onclick="editarCliente('${k}', '${safeNom}', '${safeLogo}')" title="Editar Cliente"></i>
+                    <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Cliente?')) db.ref('clientes/${k}').remove()"></i>
+                </div>
+            </li>`;
         }).join('');
         let subHtml = ""; Object.keys(dataClientes).forEach(cId => { if(dataClientes[cId].subclientes) { Object.keys(dataClientes[cId].subclientes).forEach(sId => { subHtml += `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8"><b>${dataClientes[cId].nombre}</b> - ${dataClientes[cId].subclientes[sId].nombre} <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Subcliente?')) db.ref('clientes/${cId}/subclientes/${sId}').remove()"></i></li>`; }); } }); document.getElementById("listaSubclientesAdmin").innerHTML = subHtml;
         db.ref('sistema/usuarios').once('value', snap => { let usrs = snap.val() || {}; document.getElementById("listaUsuariosAdmin").innerHTML = Object.keys(usrs).map(k => k === 'admin' ? `<li class="list-group-item p-1 fs-8"><b>admin</b> (Maestro)</li>` : `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8"><b>${k}</b> <span class="text-truncate ps-1">${usrs[k].nom}</span> <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Usuario?')) db.ref('sistema/usuarios/${k}').remove()"></i></li>`).join(''); });
@@ -1112,6 +1121,19 @@
     
     function agregarToken() { db.ref('sistema/tokens').push({nombre:document.getElementById("tk_nom").value.toUpperCase(), token:document.getElementById("tk_val").value, url:document.getElementById("tk_url").value}); alert("Token Guardado"); document.getElementById("tk_nom").value=""; document.getElementById("tk_val").value=""; }
     function actualizarListaTokensAdmin(tks) { const lista = document.getElementById("listaTokensActivos"); if(lista) { lista.innerHTML = Object.keys(tks || {}).map(id => `<li class="list-group-item d-flex justify-content-between p-1 fs-8"><b>${tks[id].nombre}</b> <small class="text-muted text-truncate w-50">(${tks[id].url})</small> <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Token?')) { db.ref('sistema/tokens/' + '${id}').remove().then(() => { location.reload(); }); }"></i></li>`).join(''); } }
+    function editarCliente(id, nombreActual, logoActual) {
+    let nuevoNombre = prompt("Editar nombre del cliente:", nombreActual);
+    if(nuevoNombre === null) return; // Si le da cancelar, no hace nada
+    
+    let nuevoLogo = prompt("URL del Logo del cliente (deja en blanco para quitarlo):", logoActual);
+    if(nuevoLogo === null) return; // Si le da cancelar, no hace nada
+    
+    db.ref(`clientes/${id}`).update({
+        nombre: nuevoNombre.toUpperCase(),
+        logo: nuevoLogo.trim()
+    });
+}
 </script>
 </body>
 </html>
+
