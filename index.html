@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Bitácora Maestra FINAL</title>
+    <title>C4 - Bitácora Integral (Manual Wialon)</title>
     <script type="text/javascript" src="//code.jquery.com/jquery-latest.min.js"></script>
     <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,22 +11,23 @@
         .unit-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .unit-table th { background: #0f172a; color: white; padding: 12px; text-align: left; }
         .unit-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
-        .phone-link { color: #2563eb; text-decoration: none; font-weight: bold; background: #eff6ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #dbeafe; }
-        .drv-name { font-weight: bold; color: #1e293b; }
+        .phone-badge { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.8rem; }
+        .code-badge { background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2 style="font-weight: 900; color: #0f172a;">OPERATIVO C4: <span style="color: #3b82f6;">BITÁCORA INTEGRAL</span></h2>
-    <div id="log" style="margin-bottom: 15px; font-weight: bold; color: #64748b;">Conectando...</div>
+    <h2 style="font-weight: 900; color: #0f172a;">OPERATIVO C4: <span style="color: #3b82f6;">CONTROL DE CONDUCTORES</span></h2>
+    <div id="log" style="margin-bottom: 15px; font-weight: bold; color: #10b981;">● Sincronización Exitosa (Manual Mode)</div>
 
     <table class="unit-table">
         <thead>
             <tr>
                 <th>Unidad</th>
+                <th>Código</th>
                 <th>Conductor Actual</th>
-                <th>Teléfono (Wialon)</th>
-                <th>Acciones</th>
+                <th>WhatsApp / Teléfono</th>
+                <th>Asignar</th>
             </tr>
         </thead>
         <tbody id="units-body"></tbody>
@@ -34,65 +35,96 @@
 
 <script type="text/javascript">
     const TOKEN = "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87";
-    var conductoresMap = {}; // Diccionario global: ID_UNIDAD -> DATOS_CONDUCTOR
+    var conductoresMap = {}; 
+    var select_options = "";
 
     function init() {
         var sess = wialon.core.Session.getInstance();
         sess.loadLibrary("resourceDrivers");
         sess.loadLibrary("itemIcon");
 
-        // Flags: Base (1) + Drivers (256) + pprops (1024)
-        var res_flags = wialon.util.Number.or(1, 256, 1024);
+        var res_flags = wialon.util.Number.or(1, 256);
 
         sess.updateDataFlags(
             [{type: "type", data: "avl_unit", flags: 1, mode: 0},
              {type: "type", data: "avl_resource", flags: res_flags, mode: 0}],
             function (code) {
-                if (code) { console.error("Error:", code); return; }
+                if (code) return;
 
                 var units = sess.getItems("avl_unit");
                 var ress = sess.getItems("avl_resource");
 
-                // 1. MAPEAMOS CONDUCTORES DESDE LOS RECURSOS
                 ress.forEach(res => {
                     var drivers = res.getDrivers() || {};
                     for (var dId in drivers) {
                         var d = drivers[dId];
-                        // Buscamos teléfono en p o pprops (como en tu Sheets)
-                        var props = d.p || d.pprops || {};
-                        var telefono = props.ph || props.phone || props.mobile || "---";
                         
-                        // Guardamos usando el ID de la unidad vinculada (bu)
+                        // --- APLICANDO DATOS SEGÚN MANUAL ENCONTRADO ---
+                        var telefono = d.p || ""; // Propiedad "p" según manual
+                        var codigo = d.c || "N/A"; // Propiedad "c" según manual
+                        
                         if (d.bu) {
-                            conductoresMap[d.bu] = { name: d.n, phone: telefono };
+                            conductoresMap[d.bu] = { 
+                                name: d.n, 
+                                phone: telefono.trim(),
+                                code: codigo 
+                            };
                         }
+                        // Llenamos el select con los nombres y teléfonos
+                        select_options += `<option value="${res.getId()}_${d.id}">${d.n} ${telefono ? `[${telefono}]` : ''}</option>`;
                     }
                 });
 
-                // 2. RENDERIZAMOS LA TABLA
-                var html = "";
-                units.forEach(u => {
-                    var u_id = u.getId();
-                    var info = conductoresMap[u_id] || { name: "<i>Sin conductor</i>", phone: "---" };
-
-                    html += `
-                        <tr>
-                            <td><b style="color:#0284c7">${u.getName()}</b></td>
-                            <td class="drv-name">${info.name}</td>
-                            <td>
-                                ${info.phone !== "---" ? 
-                                `<a href="tel:${info.phone}" class="phone-link"><i class="fa fa-phone"></i> ${info.phone}</a>` : 
-                                '<span style="color:#94a3b8">---</span>'}
-                            </td>
-                            <td>
-                                <button onclick="location.reload()" style="border:none; background:none; color:#3b82f6; cursor:pointer;"><i class="fa fa-sync"></i></button>
-                            </td>
-                        </tr>`;
-                });
-                document.getElementById("units-body").innerHTML = html;
-                document.getElementById("log").innerHTML = "<span style='color:green'>● Sincronización Exitosa</span>";
+                renderizarTabla(units);
             }
         );
+    }
+
+    function renderizarTabla(units) {
+        var html = "";
+        units.forEach(u => {
+            var u_id = u.getId();
+            var info = conductoresMap[u_id] || { name: "<i>Sin asignar</i>", phone: "", code: "---" };
+
+            // Limpieza de número para WhatsApp
+            var waNumber = info.phone.replace(/\D/g,'');
+
+            html += `
+                <tr>
+                    <td><b style="color:#0284c7">${u.getName()}</b></td>
+                    <td><span class="code-badge">${info.code}</span></td>
+                    <td style="font-weight:bold;">${info.name}</td>
+                    <td>
+                        ${info.phone ? 
+                        `<a href="https://wa.me/${waNumber}?text=Hola%20${encodeURIComponent(info.name)},%20estatus%20de%20unidad%20${encodeURIComponent(u.getName())}" target="_blank" class="phone-badge">
+                            <i class="fab fa-whatsapp"></i> ${info.phone}
+                         </a>` : 
+                        '<span style="color:#94a3b8">---</span>'}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:5px;">
+                            <select id="sel_${u_id}" style="font-size:0.75rem;">${select_options}</select>
+                            <button onclick="vincular('${u_id}')" style="background:#3b82f6; color:white; border:none; border-radius:4px; cursor:pointer; padding:2px 8px;"><i class="fa fa-link"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+        });
+        document.getElementById("units-body").innerHTML = html;
+    }
+
+    function vincular(u_id) {
+        var sess = wialon.core.Session.getInstance();
+        var unit = sess.getItem(u_id);
+        var val = document.getElementById("sel_" + u_id).value;
+        var [resId, drvId] = val.split("_");
+        var res = sess.getItem(resId);
+        var driver = res.getDriver(drvId);
+        
+        res.bindDriverToUnit(driver, unit, 0, true, function(code) {
+            if (code) { alert("Error: " + wialon.core.Errors.getErrorText(code)); return; }
+            alert("Vinculado: " + driver.n);
+            location.reload(); 
+        });
     }
 
     $(document).ready(function () {
