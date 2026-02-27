@@ -38,7 +38,6 @@
         .workspace-container.show-map .table-panel { height: 55%; }
         #map { width: 100%; height: 100%; z-index: 1;}
         
-        /* DISEÑO DE TABLA FLOTANTE */
         .table-custom { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: -8px;}
         
         #mainTableHeader th { 
@@ -46,7 +45,6 @@
             position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--border-col);
         }
         
-        /* FILAS TIPO TARJETA */
         .data-row td { 
             background: var(--bg-card); padding: 12px 8px; vertical-align: middle; 
             border-top: 1px solid var(--border-col); border-bottom: 1px solid var(--border-col);
@@ -62,19 +60,16 @@
         }
         .dark-mode .data-row:hover td { background: #334155; }
         
-        /* ENCABEZADOS DE GRUPOS */
         .header-cliente td { background: transparent !important; color: #0f172a !important; font-size: 1rem; font-weight: 800; padding: 16px 8px 4px 8px !important; text-transform: uppercase; border: none !important;}
         .dark-mode .header-cliente td { color: #f8fafc !important; }
         .header-subcliente td { background: transparent !important; color: #64748b !important; font-size: 0.85rem; font-weight: 700; padding: 4px 8px 4px 20px !important; border: none !important;}
         .dark-mode .header-subcliente td { color: #cbd5e1 !important; }
 
-        /* ESTADOS DE DESCONEXIÓN */
         .lost-connection-row td { background: #fff1f2 !important; border-color: #ffe4e6 !important; }
         .external-connection-row td { background: #f0fdf4 !important; border-color: #dcfce7 !important; }
         .dark-mode .lost-connection-row td { background: #4c0519 !important; border-color: #881337 !important;}
         .dark-mode .external-connection-row td { background: #022c22 !important; border-color: #064e3b !important;}
 
-        /* INPUTS INVISIBLES (CLEAN UI) */
         .input-ghost { border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 6px 8px; width: 100%; font-size: 0.75rem; font-weight: 700; color: inherit; text-transform: uppercase; text-align: center; transition: all 0.2s; outline: none; }
         .input-ghost:hover { border-color: var(--border-col); background: var(--bg-main); }
         .input-ghost:focus { border-color: var(--accent); background: var(--bg-card); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
@@ -88,12 +83,11 @@
         .col-contenedores { min-width: 110px; }
         .col-horarios { min-width: 130px; }
         .col-estatus { min-width: 140px; }
-        .col-gps { min-width: 300px; } 
+        .col-gps { min-width: 320px; } 
         .col-alertas { min-width: 70px; }
         .col-historial { min-width: 220px; }
         .col-accion { min-width: 50px; }
 
-        /* BADGES Y BOTONES */
         .status-select { border-radius: 20px; font-weight: 800; cursor: pointer; text-align: center; font-size: 0.75rem; padding: 6px 12px; background: transparent; border: 2px solid; outline: none; transition: all 0.2s; -webkit-appearance: none; -moz-appearance: none; appearance: none;}
         .status-select:hover { transform: scale(1.02); }
         
@@ -121,7 +115,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v12.0 (Titanio)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v13.1 Anti-Crash</div>
     </div>
 </div>
 
@@ -236,26 +230,20 @@
         "s1":{nombre:"1. Ruta",col:"#10b981"}, "s2":{nombre:"1.1 PARADO",col:"#ef4444"}, "s3":{nombre:"1.2 RETEN",col:"#d97706"}, "s4":{nombre:"1.3 Resguardo",col:"#8b5cf6"}, "s5":{nombre:"1.4 REGRESANDO",col:"#f59e0b"}, "s6":{nombre:"2. Incidencia",col:"#be123c"}, "s7":{nombre:"3. Cargando",col:"#64748b"}, "s8":{nombre:"4. Descargando",col:"#0284c7"}, "s9":{nombre:"5. Patio GDL",col:"#06b6d4"}, "s10":{nombre:"6. Patio Reynosa",col:"#14b8a6"}, "s11":{nombre:"7. Taller",col:"#94a3b8"}, "s12":{nombre:"8. Finalizado",col:"#1e40af"}, "s13":{nombre:"9. Baja cobertura",col:"#fbbf24"}, "s14":{nombre:"ALIMENTOS",col:"#f59e0b"} 
     };
 
-    // MOTOR ELIMINADOR DE ERRORES: BUSCADOR UNIVERSAL WIALON
+    // EL BUSCADOR UNIVERSAL
     function encontrarUnidad(v, vId) {
         if(!v) return null;
         if(v.wialonId && v.wialonId !== "EXTERNO" && unidadesGlobales[v.wialonId]) return unidadesGlobales[v.wialonId];
-        
-        // Auto-curación de nombres (ignora espacios tontos o guiones)
         let n = String(v.unidadN || v.unidadFallback || "").trim().toUpperCase();
         let norm = n.replace(/[\s\-]/g, "");
         for(let k in unidadesGlobales) {
             let uName = String(unidadesGlobales[k].name).trim().toUpperCase();
             if(uName === n || uName.replace(/[\s\-]/g, "") === norm) return unidadesGlobales[k];
         }
-        
-        // Fallback por si la DB vieja aún tenía el ID de wialon como llave principal
         if(unidadesGlobales[vId]) return unidadesGlobales[vId];
-        
         return null; 
     }
 
-    // MATEMÁTICA DE GEOCERCAS WIALON 
     function isInsidePolygon(point, vs) {
         let x = point[0], y = point[1], inside = false;
         for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -281,7 +269,6 @@
         return null;
     }
 
-    // FECHAS Y TIEMPO
     function formatearFechaElegante(ms) {
         if (!ms) return "--:--"; let d = new Date(ms); let meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
         return `${String(d.getDate()).padStart(2, '0')} ${meses[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -320,7 +307,7 @@
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
 
-    // RENDERIZADORES EXTERNOS DE JAVASCRIPT (Anti-Choques de HTML)
+    // ENVIOS WHATSAPP (100% FIABLES)
     function enviarWA(vId) {
         let v = viajesActivos[vId]; if(!v) return;
         let uData = encontrarUnidad(v, vId);
@@ -331,51 +318,53 @@
         
         let cliId = v.cliente || "Sin_Cliente";
         let subId = v.subcliente || "N/A";
-        let cliName = dataClientes[cliId] ? dataClientes[cliId].nombre : "SIN CLIENTE";
-        let subName = (dataClientes[cliId] && dataClientes[cliId].subclientes && dataClientes[cliId].subclientes[subId]) ? dataClientes[cliId].subclientes[subId].nombre : "";
-        let subText = subName && subName !== "N/A" ? ` -> ${subName}` : '';
         
+        // BÚSQUEDA SEGURA DE NOMBRES DE CLIENTE
+        let cliName = "SIN CLIENTE";
+        let subName = "";
+        
+        if (cliId && cliId !== "Sin_Cliente" && dataClientes[cliId]) {
+            cliName = dataClientes[cliId].nombre || "CLIENTE DESCONOCIDO";
+            if (subId && subId !== "N/A" && dataClientes[cliId].subclientes && dataClientes[cliId].subclientes[subId]) {
+                subName = dataClientes[cliId].subclientes[subId].nombre || "";
+            }
+        }
+        
+        let subText = subName && subName !== "N/A" ? ` -> ${subName}` : '';
         let addrText = v.ubicacion_manual || "Buscando...";
         let mapLink = "";
         
         if (pos) {
-            let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
             let domAddr = document.getElementById("addr_" + vId);
-            addrText = domAddr ? domAddr.innerText : (geocodeCache[geoKey] || "Ubicación GPS");
-            mapLink = `\n📍 *Ubicación:* https://maps.google.com/?q=LAT,LON${pos.y},${pos.x}`;
+            if(domAddr && domAddr.innerText !== "Buscando...") {
+                addrText = domAddr.innerText;
+            } else {
+                let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
+                addrText = geocodeCache[geoKey] || "Ubicación GPS";
+            }
+            mapLink = `\n📍 *Ubicación:* https://maps.google.com/?q=${pos.y},${pos.x}`;
         } else {
             mapLink = `\n📍 *Ubicación:* ${addrText}`;
         }
         
-        let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
-                   `🏢 *Cliente:* ${cliName}${subText}\n\n` +
-                   `🚛 *Unidad:* ${nombreCamion}\n` +
-                   `📦 *Contenedores:* ${v.contenedores||'N/A'}` + 
+        let text = `🛰️REPORTE GCOM GPS:🛰️\n` +
+                   `${cliName}${subText}\n\n` +
+                   `🚛 Unidad: ${nombreCamion}\n` +
+                   `📦 Contenedores: ${v.contenedores||'N/A'}` + 
                    mapLink + `\n` +
-                   `⏱️ *Vel:* ${speed} km/h\n` +
-                   `🚦 *Estatus:* ${estNombre}\n` +
-                   `🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n\n` +
+                   `⏱️ Vel: ${speed} km/h\n` +
+                   `🚦 Estatus: ${estNombre}\n` +
+                   `🏁 Origen: ${v.origen||'N/A'} -> Destino: ${v.destino||'N/A'}\n\n` +
                    `_Reporte C4_`;
                    
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank'); 
-    }
-
-    function editarUbicacionManual(vId) {
-        let v = viajesActivos[vId]; if(!v) return;
-        let uName = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
-        let u = prompt(`Escribir ubicación manual para ${uName}:`, v.ubicacion_manual || '');
-        if(u !== null) { 
-            db.ref(`viajes_activos/${vId}/ubicacion_manual`).set(String(u).toUpperCase()); 
-            registrarLog(vId, 'Añadió Ubicación Manual', String(u).toUpperCase()); 
-        }
     }
 
     function generarReporteGrupal(cId, sId, titulo) {
         if(!datosAgrupadosGlobal[cId] || !datosAgrupadosGlobal[cId][sId]) return;
         let arrViajes = datosAgrupadosGlobal[cId][sId];
         
-        let txt = `*GRUDICOM TI & GPS - REPORTE DE FLOTA*\n` +
-                  `🏢 *${titulo}*\n\n`;
+        let txt = `🛰️REPORTE GCOM GPS:🛰️\n${titulo}\n\n`;
                   
         arrViajes.forEach(({v, vId}) => {
             let uData = encontrarUnidad(v, vId);
@@ -386,23 +375,37 @@
             
             let addrText = v.ubicacion_manual || "Manual";
             if(pos) {
-                let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
                 let domAddr = document.getElementById("addr_" + vId);
-                addrText = domAddr ? domAddr.innerText : (geocodeCache[geoKey] || "Ubicación GPS");
+                if(domAddr && domAddr.innerText !== "Buscando...") {
+                    addrText = domAddr.innerText;
+                } else {
+                    let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
+                    addrText = geocodeCache[geoKey] || "Ubicación GPS";
+                }
             }
             
-            let mapLink = pos ? `https://maps.google.com/?q=LAT,LON${pos.y},${pos.x}` : addrText;
+            let mapLink = pos ? `https://maps.google.com/?q=${pos.y},${pos.x}` : addrText;
             
-            txt += `🚛 *Unidad:* ${name}\n` +
-                   `📦 *Contenedores:* ${v.contenedores||'N/A'}\n` +
-                   `📍 *Ubicación:* ${mapLink}\n` +
-                   `⏱️ *Vel:* ${vel} km/h\n` +
-                   `🚦 *Estatus:* ${est}\n` +
-                   `🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n\n`;
+            txt += `🚛 Unidad: ${name}\n` +
+                   `📦 Contenedores: ${v.contenedores||'N/A'}\n` +
+                   `📍 Ubicación: ${mapLink}\n` +
+                   `⏱️ Vel: ${vel} km/h\n` +
+                   `🚦 Estatus: ${est}\n` +
+                   `🏁 Origen: ${v.origen||'N/A'} -> Destino: ${v.destino||'N/A'}\n\n`;
         });
         txt += `_Reporte C4_`;
         
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
+    }
+
+    function editarUbicacionManual(vId) {
+        let v = viajesActivos[vId]; if(!v) return;
+        let uName = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
+        let u = prompt(`Escribir ubicación manual para ${uName}:`, v.ubicacion_manual || '');
+        if(u !== null) { 
+            db.ref(`viajes_activos/${vId}/ubicacion_manual`).set(String(u).toUpperCase()); 
+            registrarLog(vId, 'Añadió Ubicación Manual', String(u).toUpperCase()); 
+        }
     }
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
@@ -421,7 +424,6 @@
         
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
         
-        // Fila de espera de Nominatim 1 segundo (Seguro anti-baneo)
         setInterval(procesarFilaDirecciones, 1100); 
     };
 
@@ -509,7 +511,7 @@
         renderStatusTokens(); renderizarBitacora(); desencadenarGeocoding(); if(mapVisible) actualizarMarcadoresMapa();
     }
 
-    // GEOCODIFICACIÓN EXACTA Y SEGURA 
+    // GEOCODIFICACIÓN (Con Tu código exacto + Geocercas)
     function desencadenarGeocoding() {
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId];
@@ -518,7 +520,7 @@
             let uData = encontrarUnidad(v, vId);
             
             if(uData && uData.pos) {
-                // 1. REVISIÓN INSTANTÁNEA DE GEOCERCAS WIALON
+                // 1. REVISIÓN INSTANTÁNEA DE GEOCERCAS
                 let zonaGeo = resolverGeocerca(uData.pos.y, uData.pos.x);
                 if(zonaGeo) {
                     let el = document.getElementById("addr_" + vId);
@@ -530,13 +532,13 @@
                     return; 
                 }
 
-                // 2. NOMINATIM CLÁSICO (Con fila de espera anti-baneo)
+                // 2. NOMINATIM CON ID EXACTO (Tu código)
                 let geoKey = `${uData.pos.y.toFixed(4)}_${uData.pos.x.toFixed(4)}`;
                 if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) {
                     geoQueue.push({ key: geoKey, y: uData.pos.y, x: uData.pos.x, vId: vId, dest: v.destino });
                 } else if(geocodeCache[geoKey]) {
                     let el = document.getElementById("addr_" + vId);
-                    if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
+                    if(el) el.innerText = geocodeCache[geoKey];
                     
                     let a = geocodeCache[geoKey];
                     if(v.destino && !v.t_arribo && a.toUpperCase().includes(String(v.destino).toUpperCase())) {
@@ -553,20 +555,19 @@
         isGeocoding = true;
         let item = geoQueue.shift();
         
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=18&addressdetails=1`)
+        // Petición clásica a Nominatim que pediste
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=16`)
             .then(r => r.json())
             .then(d => {
-                let fullAddr = d.display_name || "Sin dirección";
-                let parts = fullAddr.split(",");
-                if(parts.length > 4) fullAddr = parts.slice(0, 4).join(",");
+                let a = d.display_name || "Sin dirección";
                 
-                geocodeCache[item.key] = fullAddr;
+                geocodeCache[item.key] = a;
                 localStorage.setItem('tms_geoCache', JSON.stringify(geocodeCache));
                 
                 let elId = document.getElementById("addr_" + item.vId);
-                if(elId) elId.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${fullAddr}`;
+                if(elId) elId.innerText = a;
 
-                if(item.dest && fullAddr.toUpperCase().includes(String(item.dest).toUpperCase())) {
+                if(item.dest && a.toUpperCase().includes(String(item.dest).toUpperCase())) {
                     let v = viajesActivos[item.vId];
                     if(v && !v.t_arribo) {
                         db.ref('viajes_activos/'+item.vId+'/t_arribo').set(Date.now());
@@ -616,7 +617,7 @@
         }
     }
 
-    // EL RENDER MAESTRO CON BLINDAJE ANTI-CRASH TOTAL
+    // EL RENDER MAESTRO CON BLINDAJE TOTAL (Cero choques de JS garantizado)
     function renderizarBitacora() {
         if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA") return;
         const tbody = document.getElementById('units-body'); let html = "";
@@ -624,10 +625,9 @@
         
         Object.keys(dataClientes).forEach(cId => { tree[cId] = { "N/A": [] }; if(dataClientes[cId].subclientes) Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []); });
         
-        // Purgado de datos corruptos al vuelo
         Object.keys(viajesActivos).forEach(vId => { 
             let v = viajesActivos[vId]; 
-            if(typeof v !== 'object' || !v) return; // Ignora registros rotos en Firebase
+            if(typeof v !== 'object' || !v) return; 
             
             let cId = String(v.cliente || "Sin_Cliente"); 
             let sId = String(v.subcliente || "N/A"); 
@@ -639,16 +639,27 @@
         datosAgrupadosGlobal = tree; 
 
         for(let cId in tree) {
-            let cliData = dataClientes[cId] || {nombre: "SIN CLIENTE ASIGNADO"};
+            // EXTRACCIÓN SEGURA DE CLIENTE
+            let cliName = "SIN CLIENTE";
+            if (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].nombre) {
+                cliName = dataClientes[cId].nombre;
+            }
+            
             let cliHtml = "";
-            let btnWaCli = cId !== "Sin_Cliente" ? `<button class="btn btn-primary btn-sm py-0 px-2 float-end shadow-sm border-light rounded-pill" onclick="generarReporteGrupal('${cId}', 'N/A', '${cliData.nombre}')"><i class="fa-brands fa-whatsapp"></i> Reporte WhatsApp</button>` : '';
+            let btnWaCli = cId !== "Sin_Cliente" ? `<button class="btn btn-primary btn-sm py-0 px-2 float-end shadow-sm border-light rounded-pill" onclick="generarReporteGrupal('${cId}', 'N/A', '${cliName}')"><i class="fa-brands fa-whatsapp"></i> Reporte WhatsApp</button>` : '';
 
             for(let sId in tree[cId]) {
                 if(tree[cId][sId].length === 0) continue;
-                let nomSub = sId !== "N/A" ? dataClientes[cId].subclientes[sId].nombre : "";
-                let btnWaSub = sId !== "N/A" ? `<button class="btn btn-outline-primary bg-white btn-sm py-0 px-2 float-end shadow-sm rounded-pill" onclick="generarReporteGrupal('${cId}', '${sId}', '${cliData.nombre} -> ${nomSub}')"><i class="fa-brands fa-whatsapp"></i> Reporte WhatsApp</button>` : '';
                 
-                if(sId !== "N/A" && dataClientes[cId].subclientes) cliHtml += `<tr class="header-subcliente"><td colspan="10">↳ Subcliente: ${nomSub} ${btnWaSub}</td></tr>`;
+                // EXTRACCIÓN SEGURA DE SUBCLIENTE
+                let subName = "";
+                if (sId !== "N/A" && dataClientes[cId] && dataClientes[cId].subclientes && dataClientes[cId].subclientes[sId]) {
+                    subName = dataClientes[cId].subclientes[sId].nombre || "";
+                }
+                
+                let btnWaSub = sId !== "N/A" ? `<button class="btn btn-outline-primary bg-white btn-sm py-0 px-2 float-end shadow-sm rounded-pill" onclick="generarReporteGrupal('${cId}', '${sId}', '${cliName} -> ${subName}')"><i class="fa-brands fa-whatsapp"></i> Reporte WhatsApp</button>` : '';
+                
+                if(sId !== "N/A" && subName !== "") cliHtml += `<tr class="header-subcliente"><td colspan="10">↳ Subcliente: ${subName} ${btnWaSub}</td></tr>`;
                 
                 tree[cId][sId].sort((a, b) => { let estA = String(a.v.estatus || ""); let estB = String(b.v.estatus || ""); return estA.localeCompare(estB); });
 
@@ -662,7 +673,6 @@
                         let speed = pos ? pos.s : 0; 
                         let isLost = !uData || (uData && !pos && !isExternal); 
                         
-                        let geoKey = pos ? `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}` : 'none';
                         let uText = (isLost || isExternal) ? `<span class="unit-name ${isExternal?'text-info':'text-danger'}" title="${isExternal?'GPS Externo':'Sin señal Wialon'}">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
                         
                         let speedBg = "#64748b"; if(speed > 0 && speed < 100) speedBg = "#10b981"; if(speed >= 100) speedBg = "#ef4444"; 
@@ -671,8 +681,7 @@
                                        (speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1 fs-5"></i>' : '<i class="fa-solid fa-truck text-secondary me-1 fs-5"></i>'));
 
                         let drvName = String(v.operador || ramDrivers[nombreCamion] || dbOperadores[nombreCamion] || "");
-                        let addr = "<i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...";
-                        let mapsLink = pos ? `https://maps.google.com/?q=LAT,LON${pos.y},${pos.x}` : '#';
+                        let posTextY = pos ? pos.y : null; let posTextX = pos ? pos.x : null;
 
                         let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a'; 
 
@@ -697,9 +706,9 @@
                                 <button class="btn btn-sm btn-link p-0 ms-2 text-primary" title="Editar ubicación manual" onclick="editarUbicacionManual('${vId}')"><i class="fa-solid fa-pencil"></i></button>
                             </div>
                             <div style="font-size:0.85rem; color:#0f172a; font-weight:800; max-width:100%; margin:0 auto;" class="text-wrap">${v.ubicacion_manual||'--'}</div>` 
-                            : `<a href="${mapsLink}" target="_blank" class="addr-link" title="Abrir en Maps"><div id="addr_${vId}">${addr}</div></a>`;
+                            : `<a href="https://maps.google.com/?q=${pos.y},${pos.x}" target="_blank" class="addr-link" title="Abrir en Maps"><div id="addr_${vId}"><i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...</div></a>`;
 
-                        let searchData = `${nombreCamion} ${drvName} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${cliData.nombre} ${nomSub} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
+                        let searchData = `${nombreCamion} ${drvName} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                         let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
                         let rowClass = isExternal ? 'external-connection-row' : (isLost ? 'lost-connection-row' : '');
@@ -741,18 +750,18 @@
                                     <div style="font-size:0.75rem; color:#64748b; margin-top:4px; font-weight:600;">${timeAgoText}</div>
                                 </div>
                             </td>
-                            <td class="col-alertas ${hiddenCols['col-alertas'] ? 'd-none' : ''}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.75rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.75rem;">OK</span>'}</td>
+                            <td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.75rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.75rem;">OK</span>'}</td>
                             <td class="col-historial ${hiddenCols['col-historial'] ? 'd-none' : ''}">
                                 <div class="d-flex flex-column justify-content-between h-100">
                                     ${lastLog}
-                                    <button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-2 shadow-sm rounded-pill" style="font-size:0.70rem;" onclick="abrirModalLogJS('${vId}')"><i class="fa-solid fa-list-check"></i> Ver Historial</button>
+                                    <button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-2 shadow-sm rounded-pill" style="font-size:0.70rem;" onclick="abrirModalLog('${vId}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Ver Historial</button>
                                 </div>
                             </td>
                             <td class="col-accion">
                                 <div class="d-flex flex-column gap-2 align-items-center">
                                     <button onclick="enviarWA('${vId}')" class="btn btn-outline-success btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
-                                    <button onclick="abrirEdicionViajeJS('${vId}')" class="btn btn-outline-primary btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
-                                    <button onclick="finalizarViajeJS('${vId}')" class="btn btn-outline-danger btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
+                                    <button onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-primary btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
+                                    <button onclick="finalizarViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-danger btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </td>
                         </tr>`;
@@ -761,7 +770,7 @@
                     }
                 });
             }
-            if(cliHtml !== "") html += `<tr class="header-cliente shadow-sm"><td colspan="10">📦 CLIENTE: ${cliData.nombre} ${btnWaCli}</td></tr>` + cliHtml;
+            if(cliHtml !== "") html += `<tr class="header-cliente shadow-sm"><td colspan="10">📦 CLIENTE: ${cliName} ${btnWaCli}</td></tr>` + cliHtml;
         }
         tbody.innerHTML = html || '<tr><td colspan="10" class="p-5 text-muted fs-5"><i class="fa-solid fa-folder-open mb-3 fs-1 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>';
         filtrarTablaInteligente();
@@ -780,14 +789,9 @@
         }
     }
 
-    // CONTROLADORES SEGUROS (Evitan inyecciones HTML)
-    function abrirModalLogJS(vId) {
-        let v = viajesActivos[vId]; if(!v) return;
-        document.getElementById("log_uid").value = vId; 
-        document.getElementById("log_uName").innerText = String(v.unidadN || v.unidadFallback || "Desconocida"); 
-        document.getElementById("log_txt").value = "";
-        
-        let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
+    function abrirModalLog(uId, uName) {
+        document.getElementById("log_uid").value = uId; document.getElementById("log_uName").innerText = uName; document.getElementById("log_txt").value = "";
+        let logsObj = viajesActivos[uId]?.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
         let html = logsArr.map(l => `<div class="mb-2 border-bottom pb-2"><div style="font-size:0.70rem; color:#6c757d; font-weight:bold; margin-bottom:2px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(l.t)}</div><b class="text-dark">${l.usr}:</b> <span class="text-primary">${l.act}</span> <span class="text-muted">${l.det||''}</span></div>`).join('');
         document.getElementById("log_container").innerHTML = html || '<div class="text-muted text-center p-3 mt-4">Sin eventos. Escribe una nota abajo.</div>';
         new bootstrap.Modal(document.getElementById('modalLog')).show();
@@ -796,7 +800,7 @@
     function guardarLogManual() {
         let uId = document.getElementById("log_uid").value, txt = document.getElementById("log_txt").value.toUpperCase(); if(!txt) return;
         registrarLog(uId, "Agregó Nota", txt);
-        try{ bootstrap.Modal.getInstance(document.getElementById('modalLog')).hide(); }catch(e){}
+        try { bootstrap.Modal.getInstance(document.getElementById('modalLog')).hide(); } catch(e){}
     }
 
     function registrarViaje() {
@@ -813,49 +817,18 @@
         }
 
         let refPush = db.ref('viajes_activos').push();
-        refPush.set({ 
-            id: refPush.key, wialonId: wId, 
-            cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, 
-            origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), 
-            estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase(), unidadFallback: uN, unidadN: uN 
-        });
+        refPush.set({ id: refPush.key, wialonId: wId, cliente: document.getElementById("nv_cliente").value, subcliente: document.getElementById("nv_subcliente").value, origen: document.getElementById("nv_origen").value.toUpperCase(), destino: document.getElementById("nv_destino").value.toUpperCase(), estatus: "s1", operador: document.getElementById("nv_operador").value.toUpperCase(), unidadFallback: uN, unidadN: uN });
         registrarLog(refPush.key, "REGISTRÓ VIAJE", "Registró unidad en bitácora");
         
-        try{ bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); }catch(e){}
+        try{ bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); document.body.classList.remove('modal-open'); document.querySelectorAll('.modal-backdrop').forEach(el=>el.remove()); }catch(e){}
         document.getElementById("nv_unidad_input").value = ""; document.getElementById("nv_operador").value = "";
     }
 
-    function finalizarViajeJS(vId) { 
-        let v = viajesActivos[vId]; if(!v) return;
-        let uName = String(v.unidadN || v.unidadFallback || "Desconocida");
-        if(confirm(`¿Archivar viaje de la unidad ${uName}?`)) { 
-            registrarLog(vId, "FINALIZÓ VIAJE", "Se archiva registro"); 
-            setTimeout(()=>db.ref('viajes_activos/'+vId).remove(), 1000); 
-        } 
-    }
-    
-    function abrirEdicionViajeJS(vId) { 
-        let v = viajesActivos[vId]; if(!v) return; 
-        document.getElementById("edU_id").value = vId; 
-        document.getElementById("edU_name").innerText = String(v.unidadN || v.unidadFallback || "Desconocida"); 
-        document.getElementById("ed_operador").value = v.operador || ""; 
-        document.getElementById("ed_origen").value = v.origen || ""; 
-        document.getElementById("ed_destino").value = v.destino || ""; 
-        let s = document.getElementById("ed_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); s.value = v.cliente || ""; 
-        cargarSubclientesEnSelect('ed_subcliente', s.value); document.getElementById("ed_subcliente").value = v.subcliente || ""; 
-        new bootstrap.Modal(document.getElementById('modalEditarViaje')).show(); 
-    }
-
-    function guardarEdicionViaje() { 
-        let uId = document.getElementById("edU_id").value; 
-        registrarLog(uId, "Editó Datos de Viaje", "Modificó rutas/cliente/operador"); 
-        db.ref('viajes_activos/' + uId).update({ cliente: document.getElementById("ed_cliente").value, subcliente: document.getElementById("ed_subcliente").value, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { 
-            try{ bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide(); }catch(e){}
-        }); 
-    }
-
+    function finalizarViaje(id, n) { if(confirm(`¿Archivar viaje de la unidad ${n}?`)) { registrarLog(id, "FINALIZÓ VIAJE", "Se archiva registro"); setTimeout(()=>db.ref('viajes_activos/'+id).remove(), 1000); } }
     function prepararNuevoViaje() { let s = document.getElementById("nv_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); cargarSubclientesEnSelect('nv_subcliente', s.value); }
     function cargarSubclientesEnSelect(e, c) { let s = document.getElementById(e); s.innerHTML = '<option value="">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k => s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
+    function abrirEdicionViaje(uId, uName) { let v = viajesActivos[uId]; if(!v) return; document.getElementById("edU_id").value = uId; document.getElementById("edU_name").innerText = uName; document.getElementById("ed_operador").value = v.operador || ""; document.getElementById("ed_origen").value = v.origen || ""; document.getElementById("ed_destino").value = v.destino || ""; let s = document.getElementById("ed_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); s.value = v.cliente || ""; cargarSubclientesEnSelect('ed_subcliente', s.value); document.getElementById("ed_subcliente").value = v.subcliente || ""; new bootstrap.Modal(document.getElementById('modalEditarViaje')).show(); }
+    function guardarEdicionViaje() { let uId = document.getElementById("edU_id").value; registrarLog(uId, "Editó Datos de Viaje", "Modificó rutas/cliente/operador"); db.ref('viajes_activos/' + uId).update({ cliente: document.getElementById("ed_cliente").value, subcliente: document.getElementById("ed_subcliente").value, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { try{bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide();}catch(e){} }); }
     function cerrarSesion() { localStorage.clear(); location.reload(); }
 
     function vincularOperador() {
