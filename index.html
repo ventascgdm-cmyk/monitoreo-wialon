@@ -40,13 +40,11 @@
         
         .table-custom { width: 100%; border-collapse: separate; border-spacing: 0 4px; margin-top: 0;}
         
-        /* ENCABEZADOS DE COLUMNA REPETIDOS */
         .header-columnas th { 
             background: var(--header-bg); color: #f8fafc; font-size: 0.65rem; font-weight: 800; text-align: center; vertical-align: bottom; padding: 8px 6px; text-transform: uppercase; letter-spacing: 0.05em;
             position: sticky; top: 0; z-index: 10; border-bottom: 3px solid var(--accent);
         }
         
-        /* FILAS Y FONDOS DINÁMICOS */
         .data-row td { 
             background: transparent !important; 
             padding: 10px 6px; vertical-align: middle; 
@@ -69,7 +67,6 @@
         .dark-mode .header-subcliente td { color: #cbd5e1 !important; }
 
         .lost-connection-row { outline: 2px dashed #ef4444; outline-offset: -2px; border-radius: 8px;}
-        
         .external-gps-cell { background-color: rgba(14, 165, 233, 0.12) !important; border: 1px dashed #0ea5e9 !important; border-radius: 8px; }
         .dark-mode .external-gps-cell { background-color: rgba(14, 165, 233, 0.25) !important; }
 
@@ -103,7 +100,6 @@
         .addr-link:hover { text-decoration: underline; color: #0369a1; }
         
         .cp { cursor: pointer; }
-        .btn-modern { border-radius: 8px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -115,7 +111,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v17.0 (Pulido Final)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v18.0</div>
     </div>
 </div>
 
@@ -134,14 +130,11 @@
                     <i class="fa-solid fa-gear text-primary"></i> Panel de Control
                 </button>
                 <ul class="dropdown-menu shadow-lg border-0 rounded-4 p-2" style="font-size: 0.8rem; width: 220px;" id="colTogglerMenu">
-                    
                     <li><div class="px-3 py-2 fw-bold text-center text-dark bg-light rounded mb-2" id="menuSyncIndicator"><i class="fa-solid fa-satellite-dish text-primary"></i> Sincronizando...</div></li>
-                    
                     <li><hr class="dropdown-divider"></li>
                     <li class="px-3 py-1 fw-bold text-secondary" style="font-size:0.65rem;">SISTEMA</li>
                     <li><a class="dropdown-item cp py-2" data-bs-toggle="modal" data-bs-target="#modalStatusTokens"><i class="fa-solid fa-key me-2 text-warning"></i> Tokens Wialon</a></li>
                     <li><a class="dropdown-item cp py-2" id="btnAdminMenu" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalAdmin"><i class="fa-solid fa-user-shield me-2 text-danger"></i> Admin DB</a></li>
-                    
                     <li><hr class="dropdown-divider"></li>
                     <li class="px-3 py-1 fw-bold text-secondary" style="font-size:0.65rem;">COLUMNAS</li>
                     <li><label class="dropdown-item cp py-1"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-operador', this.checked)"> Operador</label></li>
@@ -152,7 +145,6 @@
                     <li><label class="dropdown-item cp py-1"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-historial', this.checked)"> Historial Log</label></li>
                 </ul>
             </div>
-
             <button class="btn btn-info btn-sm fw-bold me-2 text-dark shadow-sm rounded-pill px-3 py-2" onclick="toggleMap()"><i class="fa-solid fa-map"></i> Ver Mapa</button>
             <button class="btn btn-dark btn-sm fw-bold me-2 shadow-sm rounded-circle" style="width:34px; height:34px;" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
             <button class="btn btn-primary btn-sm fw-bold me-2 shadow-sm rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-truck-fast me-1"></i> Registrar Viaje</button>
@@ -166,7 +158,6 @@
             <div class="row mb-3 align-items-center">
                 <div class="col-md-5"><input type="text" id="buscador" class="form-control border-0 shadow-sm rounded-pill px-4 py-2" placeholder="🔍 Buscar unidad, operador, cliente, estatus..." onkeyup="filtrarTablaInteligente()"></div>
             </div>
-            
             <div class="table-responsive h-100" style="overflow-x: auto; padding-bottom: 50px;">
                 <table class="table-custom text-center" id="mainTable">
                     <tbody id="units-body"></tbody>
@@ -176,31 +167,11 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalStatusTokens" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-warning text-dark border-0"><h6 class="modal-title fw-bold"><i class="fa-solid fa-satellite-dish"></i> ESTATUS GPS</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><ul class="list-group list-group-flush rounded-bottom-4" id="listaStatusTokens"><li class="list-group-item text-muted text-center p-4">Cargando...</li></ul></div></div></div></div>
-
-<div class="modal fade" id="modalAdmin" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content border-0 shadow-lg rounded-4">
-    <div class="modal-header bg-danger text-white border-0"><h6 class="modal-title fw-bold">ADMINISTRACIÓN MAESTRA</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body bg-light rounded-bottom-4">
-        <div class="row g-3">
-            <div class="col-lg-2 col-md-4"><div class="bg-white p-3 rounded-4 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-2">Tokens GPS</h6><input type="text" id="tk_nom" class="form-control form-control-sm mb-2 bg-light" placeholder="Ej. RACEL"><input type="text" id="tk_url" class="form-control form-control-sm mb-2 bg-light" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-2 bg-light" placeholder="Token Largo"><button class="btn btn-primary btn-sm w-100 fw-bold rounded-pill" onclick="agregarToken()">Guardar</button><ul class="list-group list-group-sm mt-3" id="listaTokensActivos"></ul></div></div>
-            <div class="col-lg-3 col-md-4"><div class="bg-white p-3 rounded-4 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-2">Operadores Manuales</h6><input class="form-control form-control-sm mb-2 bg-light" list="listaUnidadesTotales" id="op_unidad" placeholder="Unidad" autocomplete="off"><input type="text" id="op_nombre" class="form-control form-control-sm mb-2 bg-light" placeholder="Nombre Chófer"><button onclick="vincularOperador()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill">Vincular</button><ul class="list-group list-group-sm mt-3" id="listaOperadoresAdmin"></ul></div></div>
-            <div class="col-lg-2 col-md-4"><div class="bg-white p-3 rounded-4 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-2">Clientes</h6><input type="text" id="cli_nombre" class="form-control form-control-sm mb-2 bg-light" placeholder="Empresa"><button onclick="crearCliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill">Añadir</button><ul class="list-group list-group-sm mt-3" id="listaClientesAdmin"></ul></div></div>
-            <div class="col-lg-2 col-md-4"><div class="bg-white p-3 rounded-4 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-2">Subclientes</h6><select id="sub_clientePadre" class="form-select form-select-sm mb-2 bg-light"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-2 bg-light" placeholder="Sub-empresa"><button onclick="crearSubcliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill">Añadir</button><ul class="list-group list-group-sm mt-3" id="listaSubclientesAdmin"></ul></div></div>
-            <div class="col-lg-3 col-md-4"><div class="bg-white p-3 rounded-4 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-2">Monitoristas</h6><input type="text" id="usr_id" class="form-control form-control-sm mb-2 bg-light" placeholder="Usuario (login)"><input type="text" id="usr_nom" class="form-control form-control-sm mb-2 bg-light" placeholder="Nombre completo"><input type="text" id="usr_pass" class="form-control form-control-sm mb-2 bg-light" placeholder="Contraseña"><button onclick="crearUsuario()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill">Crear</button><ul class="list-group list-group-sm mt-3" id="listaUsuariosAdmin"></ul></div></div>
-        </div>
-    </div>
-</div></div></div>
-
-<div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-primary text-white border-0"><h6 class="modal-title fw-bold">REGISTRAR UNIDAD</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small bg-light rounded-bottom-4"><div class="bg-white p-4 rounded-4 shadow-sm">
-    <div class="form-check form-switch mb-3 bg-light p-2 rounded border border-info">
-        <input class="form-check-input ms-1" type="checkbox" id="nv_externa" style="cursor:pointer;">
-        <label class="form-check-label fw-bold text-info ms-2" for="nv_externa" style="cursor:pointer;"><i class="fa-solid fa-globe"></i> UNIDAD EXTERNA (No buscar en Wialon)</label>
-    </div>
-    <label class="fw-bold text-secondary mb-1">Unidad GPS:</label><input type="text" class="form-control mb-3 border-primary fw-bold bg-light" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off" placeholder="Escribe o selecciona..."><label class="fw-bold text-secondary mb-1">Operador:</label><input type="text" id="nv_operador" class="form-control mb-3 bg-light" list="listaConductores" autocomplete="off"><div class="row mb-3"><div class="col-6"><label class="fw-bold text-secondary mb-1">Cliente:</label><select id="nv_cliente" class="form-select bg-light" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div><div class="col-6"><label class="fw-bold text-secondary mb-1">Subcliente:</label><select id="nv_subcliente" class="form-select bg-light"><option value="">N/A</option></select></div></div><div class="row mb-4"><div class="col-6"><label class="fw-bold text-secondary mb-1">Origen:</label><input type="text" id="nv_origen" class="form-control bg-light" list="listaGeocercas"></div><div class="col-6"><label class="fw-bold text-secondary mb-1">Destino:</label><input type="text" id="nv_destino" class="form-control bg-light" list="listaGeocercas"></div></div><button onclick="registrarViaje()" class="btn btn-primary w-100 fw-bold py-2 rounded-pill shadow-sm fs-6">INICIAR VIAJE EN BITÁCORA</button></div></div></div></div></div>
-
+<div class="modal fade" id="modalStatusTokens" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-warning text-dark border-0"><h6 class="modal-title fw-bold"><i class="fa-solid fa-satellite-dish"></i> ESTATUS GPS</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><ul class="list-group list-group-flush rounded-bottom-4" id="listaStatusTokens"></ul></div></div></div></div>
+<div class="modal fade" id="modalAdmin" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-danger text-white border-0"><h6 class="modal-title fw-bold">ADMINISTRACIÓN MAESTRA</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body bg-light rounded-bottom-4"><div class="row g-3"><div class="col-lg-2 col-md-4"><div class="bg-white p-3 rounded-4 shadow-sm h-100"><h6>Tokens GPS</h6><input type="text" id="tk_nom" class="form-control form-control-sm mb-2" placeholder="Ej. RACEL"><input type="text" id="tk_url" class="form-control form-control-sm mb-2" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-2" placeholder="Token"><button class="btn btn-primary btn-sm w-100 rounded-pill" onclick="agregarToken()">Guardar</button><ul class="list-group list-group-sm mt-3" id="listaTokensActivos"></ul></div></div><div class="col-lg-3 col-md-4"><div class="bg-white p-3 rounded-4 shadow-sm h-100"><h6>Operadores Manuales</h6><input class="form-control form-control-sm mb-2" list="listaUnidadesTotales" id="op_unidad" placeholder="Unidad"><input type="text" id="op_nombre" class="form-control form-control-sm mb-2" placeholder="Chofer"><button onclick="vincularOperador()" class="btn btn-primary btn-sm w-100 rounded-pill">Vincular</button><ul class="list-group list-group-sm mt-3" id="listaOperadoresAdmin"></ul></div></div><div class="col-lg-2 col-md-4"><div class="bg-white p-3 rounded-4 shadow-sm h-100"><h6>Clientes</h6><input type="text" id="cli_nombre" class="form-control form-control-sm mb-2" placeholder="Empresa"><button onclick="crearCliente()" class="btn btn-primary btn-sm w-100 rounded-pill">Añadir</button><ul class="list-group list-group-sm mt-3" id="listaClientesAdmin"></ul></div></div><div class="col-lg-2 col-md-4"><div class="bg-white p-3 rounded-4 shadow-sm h-100"><h6>Subclientes</h6><select id="sub_clientePadre" class="form-select form-select-sm mb-2"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-2" placeholder="Sub-empresa"><button onclick="crearSubcliente()" class="btn btn-primary btn-sm w-100 rounded-pill">Añadir</button><ul class="list-group list-group-sm mt-3" id="listaSubclientesAdmin"></ul></div></div><div class="col-lg-3 col-md-4"><div class="bg-white p-3 rounded-4 shadow-sm h-100"><h6>Monitoristas</h6><input type="text" id="usr_id" class="form-control form-control-sm mb-2" placeholder="Usuario (login)"><input type="text" id="usr_nom" class="form-control form-control-sm mb-2" placeholder="Nombre completo"><input type="text" id="usr_pass" class="form-control form-control-sm mb-2" placeholder="Contraseña"><button onclick="crearUsuario()" class="btn btn-primary btn-sm w-100 rounded-pill">Crear</button><ul class="list-group list-group-sm mt-3" id="listaUsuariosAdmin"></ul></div></div></div></div></div></div></div>
+<div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-primary text-white border-0"><h6 class="modal-title fw-bold">REGISTRAR UNIDAD</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small bg-light rounded-bottom-4"><div class="bg-white p-4 rounded-4 shadow-sm"><div class="form-check form-switch mb-3 bg-light p-2 rounded border border-info"><input class="form-check-input ms-1" type="checkbox" id="nv_externa"><label class="form-check-label fw-bold text-info ms-2" for="nv_externa"><i class="fa-solid fa-globe"></i> UNIDAD EXTERNA</label></div><label class="fw-bold text-secondary mb-1">Unidad GPS:</label><input type="text" class="form-control mb-3 border-primary fw-bold bg-light" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off"><label class="fw-bold text-secondary mb-1">Operador:</label><input type="text" id="nv_operador" class="form-control mb-3 bg-light" list="listaConductores"><div class="row mb-3"><div class="col-6"><label class="fw-bold text-secondary mb-1">Cliente:</label><select id="nv_cliente" class="form-select bg-light" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div><div class="col-6"><label class="fw-bold text-secondary mb-1">Subcliente:</label><select id="nv_subcliente" class="form-select bg-light"><option value="">N/A</option></select></div></div><div class="row mb-4"><div class="col-6"><label class="fw-bold text-secondary mb-1">Origen:</label><input type="text" id="nv_origen" class="form-control bg-light" list="listaGeocercas"></div><div class="col-6"><label class="fw-bold text-secondary mb-1">Destino:</label><input type="text" id="nv_destino" class="form-control bg-light" list="listaGeocercas"></div></div><button onclick="registrarViaje()" class="btn btn-primary w-100 fw-bold py-2 rounded-pill shadow-sm fs-6">INICIAR VIAJE</button></div></div></div></div></div>
 <div class="modal fade" id="modalEditarViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-success text-white border-0"><h6 class="modal-title fw-bold">EDITAR VIAJE: <span id="edU_name"></span></h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small bg-light rounded-bottom-4"><div class="bg-white p-4 rounded-4 shadow-sm"><input type="hidden" id="edU_id"><div class="row mb-3"><div class="col-6"><label class="fw-bold text-secondary mb-1">Cliente:</label><select id="ed_cliente" class="form-select bg-light" onchange="cargarSubclientesEnSelect('ed_subcliente', this.value)"></select></div><div class="col-6"><label class="fw-bold text-secondary mb-1">Subcliente:</label><select id="ed_subcliente" class="form-select bg-light"><option value="">N/A</option></select></div></div><div class="row mb-3"><div class="col-6"><label class="fw-bold text-secondary mb-1">Origen:</label><input type="text" id="ed_origen" class="form-control bg-light" list="listaGeocercas"></div><div class="col-6"><label class="fw-bold text-secondary mb-1">Destino:</label><input type="text" id="ed_destino" class="form-control bg-light" list="listaGeocercas"></div></div><label class="fw-bold text-secondary mb-1">Operador:</label><input type="text" id="ed_operador" class="form-control mb-4 bg-light" list="listaConductores"><button onclick="guardarEdicionViaje()" class="btn btn-success w-100 fw-bold py-2 rounded-pill shadow-sm fs-6">ACTUALIZAR DATOS</button></div></div></div></div></div>
-
-<div class="modal fade" id="modalLog" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-dark text-white border-0"><h6 class="modal-title fw-bold"><i class="fa-solid fa-list-ul"></i> HISTORIAL: <span id="log_uName"></span></h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 bg-light rounded-bottom-4"><div id="log_container" class="mb-4 bg-white border border-light rounded-4 p-3 shadow-sm" style="height:250px; overflow-y:auto; font-size:0.8rem;"></div><input type="hidden" id="log_uid"><div class="input-group shadow-sm rounded-pill overflow-hidden"><input type="text" id="log_txt" class="form-control border-0 text-uppercase bg-white px-4" placeholder="Escribe un evento o nota manual..."><button class="btn btn-primary fw-bold px-4" onclick="guardarLogManual()"><i class="fa-solid fa-paper-plane"></i></button></div></div></div></div></div>
+<div class="modal fade" id="modalLog" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-dark text-white border-0"><h6 class="modal-title fw-bold"><i class="fa-solid fa-list-ul"></i> HISTORIAL: <span id="log_uName"></span></h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 bg-light rounded-bottom-4"><div id="log_container" class="mb-4 bg-white border border-light rounded-4 p-3 shadow-sm" style="height:250px; overflow-y:auto; font-size:0.8rem;"></div><input type="hidden" id="log_uid"><div class="input-group shadow-sm rounded-pill overflow-hidden"><input type="text" id="log_txt" class="form-control border-0 text-uppercase bg-white px-4" placeholder="Escribe un evento..."><button class="btn btn-primary fw-bold px-4" onclick="guardarLogManual()"><i class="fa-solid fa-paper-plane"></i></button></div></div></div></div></div>
 
 <datalist id="listaGeocercas"></datalist><datalist id="listaConductores"></datalist><datalist id="listaUnidadesTotales"></datalist>
 
@@ -211,7 +182,7 @@
 
     let currentUser = null, configSistema = { tokens: [] }, dataClientes = {}, viajesActivos = {};
     let unidadesGlobales = {}, ramDrivers = {}, dbOperadores = {}, geocercasNativas = [], activeSIDs = {}, pollingInterval = null;
-    let lmap = null, mapVisible = false, mapLayerGroup = null;
+    let lmap = null, mapVisible = false, mapLayerGroup = null, geofenceLayerGroup = null;
     let estadoTokens = {}; 
     let datosAgrupadosGlobal = {}; 
 
@@ -273,7 +244,6 @@
         return null;
     }
 
-    // FECHAS
     function formatearFechaElegante(ms) {
         if (!ms) return "--:--"; let d = new Date(ms); let meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
         return `${String(d.getDate()).padStart(2, '0')} ${meses[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -316,8 +286,9 @@
         lmap = L.map('map').setView([23.6, -102.5], 5); 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(lmap); 
         mapLayerGroup = L.layerGroup().addTo(lmap);
+        geofenceLayerGroup = L.layerGroup().addTo(lmap);
     }
-    function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
+    function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); pintarGeocercasEnMapa(); } }, 400); }
     
     function centrarUnidadMapa(lat, lon) { 
         if(!lat || !lon) { alert("Esta unidad no tiene coordenadas GPS válidas en este momento."); return; }
@@ -325,7 +296,20 @@
         setTimeout(() => lmap.flyTo([lat, lon], 16), 400); 
     }
 
-    // ACTUALIZACIÓN DE ESTATUS EN TIEMPO REAL VISUAL
+    function pintarGeocercasEnMapa() {
+        if(!lmap || !geofenceLayerGroup) return;
+        geofenceLayerGroup.clearLayers();
+        geocercasNativas.forEach(z => {
+            let colorHex = z.c ? `#${z.c.toString(16).padStart(6, '0')}` : '#3b82f6';
+            if(z.t === 3 && z.p && z.p[0]) {
+                L.circle([z.p[0].y, z.p[0].x], {radius: z.p[0].r, color: colorHex, weight: 2, fillOpacity: 0.15}).bindTooltip(z.n).addTo(geofenceLayerGroup);
+            } else if((z.t === 1 || z.t === 2) && z.p) {
+                let latlngs = z.p.map(pt => [pt.y, pt.x]);
+                L.polygon(latlngs, {color: colorHex, weight: 2, fillOpacity: 0.15}).bindTooltip(z.n).addTo(geofenceLayerGroup);
+            }
+        });
+    }
+
     function cambiarEstatus(selectEl, vId) {
         let val = selectEl.value;
         let txt = selectEl.options[selectEl.selectedIndex].text;
@@ -363,7 +347,7 @@
         if (pos) {
             let domAddr = document.getElementById("addr_" + vId);
             addrText = (domAddr && domAddr.innerText !== "Buscando...") ? domAddr.innerText : "Ubicación GPS";
-            locLink = `${addrText} \nhttps://maps.google.com/?q=LAT,LON{pos.y},${pos.x}`;
+            locLink = `${addrText} \nhttps://maps.google.com/?q=${pos.y},${pos.x}`;
         }
 
         let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
@@ -398,7 +382,7 @@
             if (pos) {
                 let domAddr = document.getElementById("addr_" + vId);
                 addrText = (domAddr && domAddr.innerText !== "Buscando...") ? domAddr.innerText : "Ubicación GPS";
-                locLink = `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}`;
+                locLink = `https://maps.google.com/?q=${pos.y},${pos.x}`;
             }
             
             txt += `🚛 *Unidad:* ${name}\n` +
@@ -431,7 +415,13 @@
         
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
         db.ref('operadores').on('value', s => { dbOperadores = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
-        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); if(mapVisible) actualizarMarcadoresMapa(); });
+        
+        db.ref('viajes_activos').on('value', s => { 
+            viajesActivos = s.val() || {}; 
+            renderizarBitacora(); 
+            if(mapVisible) actualizarMarcadoresMapa(); 
+        });
+        
         db.ref('sistema/tokens').on('value', s => { let tks = s.val() || {}; configSistema.tokens = Object.values(tks); actualizarListaTokensAdmin(tks); if(currentUser && !motorArrancado) arranqueMotor(); });
         
         document.getElementById("logPass").addEventListener("keyup", e => e.key === "Enter" && autenticarUsuario());
@@ -555,7 +545,7 @@
             
             renderStatusTokens(); 
             inyectarGPSenTabla(); 
-            if(mapVisible) actualizarMarcadoresMapa();
+            if(mapVisible) { actualizarMarcadoresMapa(); pintarGeocercasEnMapa(); }
         
         } catch(errSync) {
             console.error("Error Global:", errSync);
@@ -611,7 +601,6 @@
                     else row.classList.remove("lost-connection-row");
                 }
                 
-                // Actualizar el botón del nombre del camión con las coordenadas para centrar el mapa
                 let btnName = document.getElementById("name_btn_" + vId);
                 if (btnName && pos) {
                     btnName.setAttribute("onclick", `centrarUnidadMapa(${pos.y}, ${pos.x})`);
@@ -789,9 +778,12 @@
             
             let cliHtml = "";
             let btnWaCli = cId !== "Sin_Cliente" ? `<button class="btn btn-primary btn-sm py-1 px-3 float-end shadow-sm border-light rounded-pill" onclick="generarReporteGrupal('${cId}', 'N/A', '${cliName}')"><i class="fa-brands fa-whatsapp"></i> Reporte WhatsApp</button>` : '';
+            
+            let hasClientUnits = false;
 
             for(let sId in tree[cId]) {
                 if(tree[cId][sId].length === 0) continue;
+                hasClientUnits = true;
                 
                 let subName = "";
                 if (sId !== "N/A" && dataClientes[cId] && dataClientes[cId].subclientes && dataClientes[cId].subclientes[sId]) {
@@ -894,7 +886,7 @@
                     }
                 });
             }
-            if(cliHtml !== "") html += `<tr class="header-cliente shadow-sm"><td colspan="10">📦 CLIENTE: ${cliName} ${btnWaCli}</td></tr>` + cliHtml;
+            if(hasClientUnits) html += `<tr class="header-cliente shadow-sm"><td colspan="10">📦 CLIENTE: ${cliName} ${btnWaCli}</td></tr>` + cliHtml;
         }
         tbody.innerHTML = html || '<tr><td colspan="10" class="p-5 text-muted fs-5"><i class="fa-solid fa-folder-open mb-3 fs-1 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>';
         filtrarTablaInteligente();
@@ -902,7 +894,6 @@
         if (motorArrancado) inyectarGPSenTabla();
     }
 
-    // EL FILTRO INTELIGENTE CORREGIDO
     function filtrarTablaInteligente() {
         let t = document.getElementById("buscador").value.toLowerCase();
         let rows = Array.from(document.querySelectorAll("#units-body tr"));
