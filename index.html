@@ -95,10 +95,11 @@
         .status-select { border-radius: 20px; font-weight: 800; cursor: pointer; text-align: center; font-size: 0.75rem; padding: 6px 12px; background: transparent; border: 1.5px solid; outline: none; transition: all 0.2s; -webkit-appearance: none; -moz-appearance: none; appearance: none;}
         .status-select:hover { transform: scale(1.03); background-color: rgba(255,255,255,0.5); }
         
-        .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.15rem; letter-spacing: 0.5px; transition: 0.2s;}
+        .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.15rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
         .dark-mode .unit-name { color: #38bdf8; }
         .unit-name:hover { color: #0284c7; text-decoration: underline; }
         
+        /* DEEP LINK A WIALON */
         .wialon-deep-link { color: #94a3b8; font-size: 0.9rem; transition: 0.2s; cursor: pointer; }
         .wialon-deep-link:hover { color: #f59e0b; transform: scale(1.1); }
         
@@ -120,7 +121,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v20.1 (Archivos Base64)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v20.2 (Edición Dinámica)</div>
     </div>
 </div>
 
@@ -191,6 +192,18 @@
                     <input type="text" id="cli_nombre" class="form-control form-control-sm mb-2 bg-light" placeholder="Empresa">
                     <input type="file" id="cli_logo_file" accept="image/*" class="form-control form-control-sm mb-2 bg-light" title="Seleccionar Logo">
                     <button onclick="crearCliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill">Añadir</button>
+                    
+                    <input type="file" id="edit_cli_logo_file" accept="image/*" style="display:none;" onchange="
+                        if(this.files && this.files[0] && window.currentEditCli){
+                            let reader = new FileReader();
+                            reader.onload = e => {
+                                db.ref('clientes/' + window.currentEditCli).update({logo: e.target.result});
+                                this.value = '';
+                            };
+                            reader.readAsDataURL(this.files[0]);
+                        }
+                    ">
+
                     <ul class="list-group list-group-sm mt-3" id="listaClientesAdmin" style="max-height: 200px; overflow-y:auto;"></ul>
                 </div>
             </div>
@@ -985,7 +998,7 @@
                     }
                 });
             }
-            if(hasClientUnits) html += `<tr class="header-cliente"><td colspan="10" class="border-bottom">${logoHtml} ${cliName} ${btnWaCli}</td></tr>` + cliHtml;
+            if(hasClientUnits) html += `<tr class="header-cliente shadow-sm"><td colspan="10">📦 CLIENTE: ${cliName} ${btnWaCli}</td></tr>` + cliHtml;
         }
         tbody.innerHTML = html || '<tr><td colspan="10" class="p-5 text-muted fs-5"><i class="fa-solid fa-folder-open mb-3 fs-1 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>';
         filtrarTablaInteligente();
@@ -1101,30 +1114,6 @@
             if(fileInput) fileInput.value = "";
         }
     }
-    
-    function editarCliente(id, nombreActual) {
-        let nuevoNombre = prompt("Editar nombre de la empresa:", nombreActual);
-        if(nuevoNombre === null) return; 
-        
-        if(confirm("¿Deseas subir o cambiar el LOGO de este cliente? (Si le das cancelar, solo se actualizará el nombre)")) {
-            let input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = e => {
-                let file = e.target.files[0];
-                if(file) {
-                    let reader = new FileReader();
-                    reader.onload = event => {
-                        db.ref(`clientes/${id}`).update({ nombre: nuevoNombre.toUpperCase(), logo: event.target.result });
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-            input.click(); 
-        } else {
-            db.ref(`clientes/${id}`).update({ nombre: nuevoNombre.toUpperCase() });
-        }
-    }
 
     function crearSubcliente() { db.ref(`clientes/${document.getElementById("sub_clientePadre").value}/subclientes`).push({nombre: document.getElementById("sub_nombre").value.toUpperCase()}); document.getElementById("sub_nombre").value = ""; }
     function crearUsuario() { let id = document.getElementById("usr_id").value.trim().toLowerCase(), nom = document.getElementById("usr_nom").value.trim(), pass = document.getElementById("usr_pass").value.trim(); if(id && nom && pass) { db.ref(`sistema/usuarios/${id}`).set({nom: nom, pass: pass, rol: "monitor"}); document.getElementById("usr_id").value=""; document.getElementById("usr_nom").value=""; document.getElementById("usr_pass").value=""; } }
@@ -1134,13 +1123,14 @@
         
         document.getElementById("listaClientesAdmin").innerHTML = Object.keys(dataClientes).map(k => {
             let c = dataClientes[k];
-            let logoText = c.logo ? `<i class="fa-solid fa-image text-success" title="Logo Cargado"></i>` : '';
+            let logoText = c.logo ? `<i class="fa-solid fa-image text-success ms-1" title="Logo Cargado"></i>` : '';
             let safeNom = (c.nombre || '').replace(/'/g, "\\'");
             return `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8">
-                <span>${c.nombre} ${logoText}</span>
-                <div>
-                    <i class="fa-solid fa-pencil text-primary cp me-2" onclick="editarCliente('${k}', '${safeNom}')" title="Editar Cliente"></i>
-                    <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Cliente?')) db.ref('clientes/${k}').remove()"></i>
+                <span class="text-truncate" style="max-width:60%;">${c.nombre} ${logoText}</span>
+                <div class="text-nowrap">
+                    <i class="fa-solid fa-pencil text-primary cp me-2" onclick="let n=prompt('Editar nombre:', '${safeNom}'); if(n){ db.ref('clientes/${k}').update({nombre: n.toUpperCase()}); }" title="Editar Nombre"></i>
+                    <i class="fa-solid fa-camera text-success cp me-2" onclick="window.currentEditCli='${k}'; document.getElementById('edit_cli_logo_file').click();" title="Cambiar Logo"></i>
+                    <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Cliente?')) db.ref('clientes/${k}').remove()" title="Borrar Cliente"></i>
                 </div>
             </li>`;
         }).join('');
