@@ -2,28 +2,28 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Bitácora Multitoken Definitiva</title>
+    <title>OPERATIVO C4 | Bitácora Maestra</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
         .header-c4 { background: #0f172a; color: white; padding: 15px; border-radius: 8px 8px 0 0; }
-        .table-custom { background: white; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .unit-id { font-weight: 800; color: #0284c7; }
-        .badge-geo { background: #d1fae5; color: #065f46; border: 1px solid #10b981; font-weight: 700; padding: 4px 8px; border-radius: 5px; }
+        .unit-name { font-weight: 800; color: #0284c7; font-size: 1rem; }
+        .geo-active { background: #d1fae5; color: #065f46; border: 1px solid #10b981; font-weight: 700; padding: 4px 8px; border-radius: 5px; }
+        .platform-tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #475569; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container-fluid py-4">
-    <div class="header-c4 d-flex justify-content-between align-items-center">
+    <div class="header-c4 d-flex justify-content-between align-items-center shadow">
         <h4 class="m-0 fw-bold">OPERATIVO C4 | <span class="text-info">GESTIÓN GPS MULTITOKEN</span></h4>
-        <button onclick="iniciarSincronizacion()" class="btn btn-info btn-sm fw-bold shadow-sm">
-            <i class="fa-solid fa-sync fa-spin-hover"></i> ACTUALIZAR DATOS
+        <button onclick="ejecutarSincronizacion()" class="btn btn-info btn-sm fw-bold shadow-sm">
+            <i class="fa-solid fa-satellite-dish"></i> ACTUALIZAR FLOTAS
         </button>
     </div>
 
-    <div class="table-custom">
+    <div class="bg-white shadow-sm border">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
@@ -32,148 +32,144 @@
                     <th>Conductor Actual</th>
                     <th>Teléfono</th>
                     <th>Geocerca / Ubicación</th>
-                    <th>Estatus</th>
+                    <th>Velocidad</th>
                 </tr>
             </thead>
-            <tbody id="tabla-body">
-                <tr><td colspan="6" class="text-center p-5 text-muted">Haga clic en "Actualizar Datos" para cargar las flotas.</td></tr>
+            <tbody id="units-body">
+                <tr><td colspan="6" class="text-center p-5 text-muted">Esperando sincronización...</td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
 <script>
-// --- CONFIGURACIÓN DE TUS TOKENS ---
-const CONFIG = [
+// --- CONFIGURACIÓN DE TUS PLATAFORMAS ---
+const PLATAFORMAS = [
     { nombre: "PLATAFORMA 1", token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87", url: "https://hst-api.wialon.com" },
-    // Puedes agregar más aquí abajo...
+    // Agrega aquí tus otros tokens siguiendo el mismo formato
 ];
 
-let globalUnits = [];
-let globalDrivers = {};
+let conductoresGlobales = {}; // Mapa para cruzar ID_CONDUCTOR -> DATOS
 
-async function iniciarSincronizacion() {
-    const body = document.getElementById("tabla-body");
-    body.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Conectando con servidores Wialon...</td></tr>';
+async function ejecutarSincronizacion() {
+    const tbody = document.getElementById("units-body");
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-sync fa-spin fa-2x"></i><br>Consultando servidores...</td></tr>';
     
-    globalUnits = [];
-    globalDrivers = {};
+    conductoresGlobales = {}; 
+    let todasLasUnidades = [];
 
-    // Procesar todos los tokens en paralelo
-    const tareas = CONFIG.map(c => procesarPlataforma(c));
-    await Promise.all(tareas);
-    
-    renderizarTabla();
+    // Procesamos todas las plataformas en paralelo
+    const promesas = PLATAFORMAS.map(async (p) => {
+        const data = await traerDatosWialon(p);
+        if (data) todasLasUnidades = todasLasUnidades.concat(data);
+    });
+
+    await Promise.all(promesas);
+    renderizarTablaFinal(todasLasUnidades);
 }
 
-async function procesarPlataforma(p) {
+async function traerDatosWialon(p) {
     try {
-        // 1. Login vía JSONP (Evita el error de CORS de la imagen 1)
-        const login = await callWialon(p.url, "token/login", { token: p.token });
+        // 1. Login JSONP para evitar CORS (Imagen 1)
+        const login = await consultaWialon(p.url, "token/login", { token: p.token });
         const sid = login.eid;
-        if (!sid) return;
+        if (!sid) return null;
 
-        // 2. Traer Conductores (avl_driver) con Teléfonos (pprops.ph)
-        const drvReq = await callWialon(p.url, "core/search_items", {
+        // 2. Traer Conductores (avl_driver)
+        const drvReq = await consultaWialon(p.url, "core/search_items", {
             spec: { itemsType: "avl_driver", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 256, from: 0, to: 0
         }, sid);
 
         if (drvReq.items) {
             drvReq.items.forEach(d => {
-                globalDrivers[d.id] = { 
-                    nombre: d.nm, 
-                    tel: (d.pprops && d.pprops.ph) ? d.pprops.ph : "---",
-                    uId: d.bu // Unidad vinculada
+                const pprops = d.pprops || d.p || {}; // Compatibilidad con ambas estructuras
+                conductoresGlobales[d.id] = {
+                    nombre: d.nm,
+                    tel: pprops.ph || pprops.phone || "S/N", // Extraído como en tu Sheets
+                    uId: d.bu // Unidad vinculada (Clave para que aparezcan)
                 };
             });
         }
 
-        // 3. Traer Unidades y Geocercas
-        const unitReq = await callWialon(p.url, "core/search_items", {
+        // 3. Traer Unidades y Recursos (Geocercas)
+        const unitReq = await consultaWialon(p.url, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 1024, from: 0, to: 0
         }, sid);
 
-        const resReq = await callWialon(p.url, "core/search_items", {
+        const resReq = await consultaWialon(p.url, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 4096, from: 0, to: 0
         }, sid);
 
-        let geoLocal = [];
+        let geos = [];
         if (resReq.items) {
-            resReq.items.forEach(r => { if(r.zl) Object.values(r.zl).forEach(z => geoLocal.push(z)); });
+            resReq.items.forEach(r => { if(r.zl) Object.values(r.zl).forEach(z => geos.push(z)); });
         }
 
-        if (unitReq.items) {
-            unitReq.items.forEach(u => {
-                // Detección de Geocerca
-                let zona = "En ruta";
-                if (u.pos) {
-                    geoLocal.forEach(z => {
-                        if (isInside(u.pos.x, u.pos.y, z.p)) zona = z.n;
-                    });
-                }
-
-                globalUnits.push({
-                    nombre: u.nm,
-                    plat: p.nombre,
-                    pos: u.pos,
-                    zona: zona,
-                    chofer: buscarChofer(u.id)
+        // 4. Mapear resultados locales
+        return (unitReq.items || []).map(u => {
+            let zona = "En ruta";
+            if (u.pos) {
+                geos.forEach(z => {
+                    if (estaEnGeocerca(u.pos.x, u.pos.y, z.p)) zona = z.n;
                 });
-            });
-        }
-    } catch (err) { console.error("Error en plataforma: " + p.nombre, err); }
+            }
+
+            return {
+                nm: u.nm,
+                plat: p.nombre,
+                pos: u.pos,
+                id: u.id,
+                zona: zona,
+                chofer: buscarVinculoChofer(u.id)
+            };
+        });
+    } catch (e) { return null; }
 }
 
-function buscarChofer(uId) {
-    for (let id in globalDrivers) {
-        if (globalDrivers[id].uId == uId) return globalDrivers[id];
+function buscarVinculoChofer(uId) {
+    for (let id in conductoresGlobales) {
+        if (conductoresGlobales[id].uId == uId) return conductoresGlobales[id];
     }
     return { nombre: "Sin asignar", tel: "---" };
 }
 
-function renderizarTabla() {
-    const body = document.getElementById("tabla-body");
+function renderizarTablaFinal(unidades) {
+    const tbody = document.getElementById("units-body");
     let html = "";
-    globalUnits.sort((a,b) => a.nombre.localeCompare(b.nombre));
+    unidades.sort((a,b) => a.nm.localeCompare(b.nm));
 
-    globalUnits.forEach(u => {
-        const speed = u.pos ? u.pos.s : 0;
-        const geoHtml = u.zona !== "En ruta" ? `<span class="badge-geo">${u.zona}</span>` : `<span class="text-muted">En ruta</span>`;
+    unidades.forEach(u => {
+        const vel = u.pos ? u.pos.s : 0;
+        const geoBadge = u.zona !== "En ruta" ? `<span class="geo-active">${u.zona}</span>` : `<span class="text-muted small">En ruta</span>`;
         
         html += `
             <tr>
-                <td><small class="badge bg-light text-dark border">${u.plat}</small></td>
-                <td><span class="unit-id">${u.nombre}</span></td>
-                <td><i class="fas fa-user-circle me-1 text-secondary"></i> ${u.chofer.nombre}</td>
-                <td><a href="tel:${u.chofer.tel}" class="text-decoration-none text-primary fw-bold">${u.chofer.tel}</a></td>
-                <td>${geoHtml}</td>
-                <td class="fw-bold ${speed > 0 ? 'text-success' : 'text-muted'}">${speed} km/h</td>
+                <td><span class="platform-tag">${u.plat}</span></td>
+                <td><span class="unit-name">${u.nm}</span></td>
+                <td><i class="fa-solid fa-user-tie me-2 text-secondary"></i>${u.chofer.nombre}</td>
+                <td><a href="tel:${u.chofer.tel}" class="text-decoration-none fw-bold"><i class="fa-solid fa-phone me-1"></i>${u.chofer.tel}</a></td>
+                <td>${geoBadge}</td>
+                <td class="fw-bold ${vel > 0 ? 'text-success' : 'text-muted'}">${vel} km/h</td>
             </tr>`;
     });
-    body.innerHTML = html || '<tr><td colspan="6" class="text-center p-4">No se encontraron unidades activas.</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="6" class="text-center">No se encontraron datos.</td></tr>';
 }
 
-// --- UTILIDADES DE CONEXIÓN (JSONP) ---
-function callWialon(url, svc, params, sid = null) {
+// --- UTILERÍA DE CONEXIÓN JSONP (EVITA ERRORES DE IMAGEN 1) ---
+function consultaWialon(url, svc, params, sid = null) {
     return new Promise(resolve => {
-        const callbackName = "wialon_" + Math.floor(Math.random() * 1000000);
-        window[callbackName] = function(data) {
-            resolve(data);
-            const script = document.getElementById(callbackName);
-            if (script) script.remove();
-            delete window[callbackName];
-        };
+        const cb = "cb_" + Math.random().toString(36).substring(7);
+        window[cb] = d => { delete window[cb]; resolve(d); };
         const script = document.createElement("script");
-        script.id = callbackName;
-        script.src = `${url}/wialon/ajax.html?svc=${svc}&params=${JSON.stringify(params)}&callback=${callbackName}${sid ? '&sid=' + sid : ''}`;
+        script.src = `${url}/wialon/ajax.html?svc=${svc}&params=${JSON.stringify(params)}&callback=${cb}${sid ? '&sid=' + sid : ''}`;
         document.head.appendChild(script);
     });
 }
 
-function isInside(x, y, poly) {
+function estaEnGeocerca(x, y, poly) {
     if (!poly) return false;
     let inside = false;
     for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
