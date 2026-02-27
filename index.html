@@ -109,7 +109,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v15.0</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v16.0</div>
     </div>
 </div>
 
@@ -268,14 +268,26 @@
         return null;
     }
 
+    // === FUNCIONES DE TIEMPO REPARADAS ===
     function formatearFechaElegante(ms) {
         if (!ms) return "--:--"; let d = new Date(ms); let meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
         return `${String(d.getDate()).padStart(2, '0')} ${meses[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
+    
+    function formatTimeFriendly(unixSecs) { 
+        if(!unixSecs) return "--:--"; 
+        let d = new Date(unixSecs * 1000); 
+        let today = new Date();
+        let timeStr = d.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+        if(d.toDateString() === today.toDateString()) return timeStr;
+        return d.toLocaleDateString('es-MX', {day:'2-digit', month:'short'}) + " " + timeStr; 
+    }
+
     function getLocalISO(unixMillis) {
         if(!unixMillis) return ""; let tzoffset = (new Date()).getTimezoneOffset() * 60000;
         return (new Date(unixMillis - tzoffset)).toISOString().slice(0, 16);
     }
+    
     function timeAgo(unixSecs) {
         if(!unixSecs) return "N/A"; let diff = Math.floor(Date.now()/1000) - unixSecs;
         if(diff < 60) return `${diff} seg`; if(diff < 3600) return `${Math.floor(diff/60)} min`;
@@ -326,7 +338,7 @@
         if (pos) {
             let domAddr = document.getElementById("addr_" + vId);
             addrText = (domAddr && domAddr.innerText !== "Buscando...") ? domAddr.innerText : "Ubicación GPS";
-            locLink = `${addrText} \nhttps://maps.google.com/?q=...${pos.y},${pos.x}`;
+            locLink = `${addrText} \nhttps://maps.google.com/?q=${pos.y},${pos.x}`;
         }
 
         let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
@@ -361,15 +373,15 @@
             if (pos) {
                 let domAddr = document.getElementById("addr_" + vId);
                 addrText = (domAddr && domAddr.innerText !== "Buscando...") ? domAddr.innerText : "Ubicación GPS";
-                locLink = `https://maps.google.com/?q=...${pos.y},${pos.x}`;
+                locLink = `https://maps.google.com/?q=${pos.y},${pos.x}`;
             }
             
             txt += `🚛 *Unidad:* ${name}\n` +
                    `📦 *Contenedores:* ${v.contenedores||'N/A'}\n` +
-                   `🛣️ *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n` +
-                   `🚦 *Estatus:* ${est}\n` +
+                   `📍 *Ubicación:* ${locLink}\n` +
                    `⏱️ *Vel:* ${vel} km/h\n` +
-                   `📍 *Ubicación:* ${locLink}\n\n`;
+                   `🚦 *Estatus:* ${est}\n` +
+                   `🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n\n`;
         });
         txt += `_Reporte generado por sistema C4_`;
         
@@ -394,14 +406,7 @@
         
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
         db.ref('operadores').on('value', s => { dbOperadores = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
-        
-        // LA TABLA SE DIBUJA SOLA EN CUANTO HAY CAMBIOS EN FIREBASE (No depende de Wialon)
-        db.ref('viajes_activos').on('value', s => { 
-            viajesActivos = s.val() || {}; 
-            renderizarBitacora(); 
-            if(mapVisible) actualizarMarcadoresMapa(); 
-        });
-        
+        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); if(mapVisible) actualizarMarcadoresMapa(); });
         db.ref('sistema/tokens').on('value', s => { let tks = s.val() || {}; configSistema.tokens = Object.values(tks); actualizarListaTokensAdmin(tks); if(currentUser && !motorArrancado) arranqueMotor(); });
         
         document.getElementById("logPass").addEventListener("keyup", e => e.key === "Enter" && autenticarUsuario());
@@ -463,7 +468,6 @@
         lista.innerHTML = html || '<li class="list-group-item text-center">No hay tokens</li>';
     }
 
-    // EL MOTOR DE WIALON (Solo inyecta datos en la tabla, no la redibuja)
     async function sincronizarFlotas() {
         if(isSyncingFlotas) return;
         isSyncingFlotas = true;
@@ -526,7 +530,7 @@
             }
             
             renderStatusTokens(); 
-            inyectarGPSenTabla(); // <- LA MAGIA DE LA ARQUITECTURA DESACOPLADA
+            inyectarGPSenTabla(); 
             if(mapVisible) actualizarMarcadoresMapa();
         
         } catch(errSync) {
@@ -536,84 +540,87 @@
         }
     }
 
-    // INYECTA DATOS GPS SIN BORRAR LA TABLA NI LO QUE EL USUARIO ESCRIBE
+    // ARQUITECTURA DESACOPLADA BLINDADA
     function inyectarGPSenTabla() {
         Object.keys(viajesActivos).forEach(vId => {
-            let v = viajesActivos[vId];
-            if(typeof v !== 'object' || !v) return;
-            
-            let uData = encontrarUnidad(v, vId);
-            let isExternal = v.wialonId === "EXTERNO"; 
-            let pos = uData ? uData.pos : null; 
-            let speed = pos ? pos.s : 0; 
-            let isLost = !uData || (uData && !pos && !isExternal);
-            
-            // 1. Iconos y Velocidad
-            let elIcon = document.getElementById("icon_" + vId);
-            let elSpeed = document.getElementById("speed_" + vId);
-            if(elIcon && elSpeed) {
-                if (isExternal) {
-                    elIcon.innerHTML = '<i class="fa-solid fa-globe text-info me-1 fs-6" title="Plataforma Externa"></i>';
-                    elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
-                } else if (isLost) {
-                    elIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i>';
-                    elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
-                } else {
-                    let speedBg = "#64748b"; if(speed > 0 && speed < 100) speedBg = "#10b981"; if(speed >= 100) speedBg = "#ef4444"; 
-                    elIcon.innerHTML = speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1 fs-5"></i>' : '<i class="fa-solid fa-truck text-secondary me-1 fs-5"></i>';
-                    elSpeed.innerHTML = `<span class="speed-badge" style="background-color:${speedBg};">${speed} km/h</span>`;
-                }
-            }
-
-            // 2. Tiempo de Reporte
-            let elTime = document.getElementById("time_" + vId);
-            if(elTime) {
-                if (isExternal) elTime.innerHTML = '<span class="text-info fw-bold">Plataforma Externa</span>';
-                else if (isLost) elTime.innerHTML = '<span class="text-danger fw-bold">Modo Offline</span>';
-                else elTime.innerHTML = `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:800;">(hace ${timeAgo(pos.t)})</span>`;
-            }
-
-            // 3. Color de la Fila entera
-            let row = document.getElementById("row_" + vId);
-            if(row) {
-                let baseClass = "data-row ";
-                if (isExternal) baseClass += "external-connection-row";
-                else if (isLost) baseClass += "lost-connection-row";
-                row.className = baseClass;
-            }
-
-            // 4. Panel de Ubicación
-            let elAddrControl = document.getElementById("addr_control_" + vId);
-            if(elAddrControl) {
-                if (isLost || isExternal) {
-                    let textExt = isExternal ? '<i class="fa-solid fa-globe"></i> GPS EXTERNO' : '<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL';
-                    let classExt = isExternal ? 'text-info' : 'text-danger';
-                    elAddrControl.innerHTML = `
-                        <div class="d-flex align-items-center justify-content-center">
-                            <span class="${classExt} fw-bold" style="font-size:0.75rem;">${textExt}</span>
-                            <button class="btn btn-sm btn-link p-0 ms-2 text-primary" title="Editar ubicación manual" onclick="editarUbicacionManual('${vId}')"><i class="fa-solid fa-pencil"></i></button>
-                        </div>
-                        <div style="font-size:0.85rem; color:#0f172a; font-weight:800; max-width:100%; margin:0 auto;" class="text-wrap">${v.ubicacion_manual||'--'}</div>`;
-                } else {
-                    let mapsLink = `https://maps.google.com/?q=...${pos.y},${pos.x}`;
-                    
-                    let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
-                    let zonaGeo = resolverGeocerca(pos.y, pos.x);
-                    
-                    let innerHTML = `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`;
-                    if(zonaGeo) {
-                        innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-success"></i> <b class="text-success">[GEOCERCA] ${zonaGeo}</b>`;
-                    } else if(geocodeCache[geoKey]) {
-                        innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
-                    }
-                    
-                    let newHtml = `<a href="${mapsLink}" target="_blank" class="addr-link" title="Abrir en Maps"><div id="addr_${vId}">${innerHTML}</div></a>`;
-                    
-                    // Solo actualiza si hay cambios, para no hacer "parpadear" la pantalla
-                    if(elAddrControl.innerHTML !== newHtml) {
-                        elAddrControl.innerHTML = newHtml;
+            try {
+                let v = viajesActivos[vId];
+                if(typeof v !== 'object' || !v) return;
+                
+                let uData = encontrarUnidad(v, vId);
+                let isExternal = v.wialonId === "EXTERNO"; 
+                let pos = uData ? uData.pos : null; 
+                let speed = pos ? pos.s : 0; 
+                let isLost = !uData || (uData && !pos && !isExternal);
+                
+                // 1. Iconos y Velocidad
+                let elIcon = document.getElementById("icon_" + vId);
+                let elSpeed = document.getElementById("speed_" + vId);
+                if(elIcon && elSpeed) {
+                    if (isExternal) {
+                        elIcon.innerHTML = '<i class="fa-solid fa-globe text-info me-1 fs-6" title="Plataforma Externa"></i>';
+                        elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
+                    } else if (isLost) {
+                        elIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i>';
+                        elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
+                    } else {
+                        let speedBg = "#64748b"; if(speed > 0 && speed < 100) speedBg = "#10b981"; if(speed >= 100) speedBg = "#ef4444"; 
+                        elIcon.innerHTML = speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1 fs-5"></i>' : '<i class="fa-solid fa-truck text-secondary me-1 fs-5"></i>';
+                        elSpeed.innerHTML = `<span class="speed-badge" style="background-color:${speedBg};">${speed} km/h</span>`;
                     }
                 }
+
+                // 2. Tiempo de Reporte
+                let elTime = document.getElementById("time_" + vId);
+                if(elTime) {
+                    if (isExternal) elTime.innerHTML = '<span class="text-info fw-bold">Plataforma Externa</span>';
+                    else if (isLost) elTime.innerHTML = '<span class="text-danger fw-bold">Modo Offline</span>';
+                    else elTime.innerHTML = `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:800;">(hace ${timeAgo(pos.t)})</span>`;
+                }
+
+                // 3. Color de la Fila entera
+                let row = document.getElementById("row_" + vId);
+                if(row) {
+                    let baseClass = "data-row ";
+                    if (isExternal) baseClass += "external-connection-row";
+                    else if (isLost) baseClass += "lost-connection-row";
+                    row.className = baseClass;
+                }
+
+                // 4. Panel de Ubicación
+                let elAddrControl = document.getElementById("addr_control_" + vId);
+                if(elAddrControl) {
+                    if (isLost || isExternal) {
+                        let textExt = isExternal ? '<i class="fa-solid fa-globe"></i> GPS EXTERNO' : '<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL';
+                        let classExt = isExternal ? 'text-info' : 'text-danger';
+                        elAddrControl.innerHTML = `
+                            <div class="d-flex align-items-center justify-content-center">
+                                <span class="${classExt} fw-bold" style="font-size:0.75rem;">${textExt}</span>
+                                <button class="btn btn-sm btn-link p-0 ms-2 text-primary" title="Editar ubicación manual" onclick="editarUbicacionManual('${vId}')"><i class="fa-solid fa-pencil"></i></button>
+                            </div>
+                            <div style="font-size:0.85rem; color:#0f172a; font-weight:800; max-width:100%; margin:0 auto;" class="text-wrap">${v.ubicacion_manual||'--'}</div>`;
+                    } else {
+                        let mapsLink = `https://maps.google.com/?q=${pos.y},${pos.x}`;
+                        
+                        let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
+                        let zonaGeo = resolverGeocerca(pos.y, pos.x);
+                        
+                        let innerHTML = `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`;
+                        if(zonaGeo) {
+                            innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-success"></i> <b class="text-success">[GEOCERCA] ${zonaGeo}</b>`;
+                        } else if(geocodeCache[geoKey]) {
+                            innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
+                        }
+                        
+                        let newHtml = `<a href="${mapsLink}" target="_blank" class="addr-link" title="Abrir en Maps"><div id="addr_${vId}">${innerHTML}</div></a>`;
+                        
+                        if(elAddrControl.innerHTML !== newHtml) {
+                            elAddrControl.innerHTML = newHtml;
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error("Error inyectando GPS en fila:", vId, e);
             }
         });
 
@@ -713,7 +720,7 @@
         }
     }
 
-    // EL RENDER MAESTRO (Construye el HTML inicial, los huecos del GPS los llena inyectarGPSenTabla)
+    // EL RENDER MAESTRO
     function renderizarBitacora() {
         if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA") return;
         const tbody = document.getElementById('units-body'); let html = "";
@@ -774,7 +781,6 @@
                         let searchData = `${nombreCamion} ${drvName} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                         let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
-                        // CELDAS SKELETON (Se llenan con inyectarGPSenTabla)
                         cliHtml += `<tr class="data-row" id="row_${vId}" data-search="${searchData}">
                             <td class="col-unidad align-middle"><span class="unit-name" onclick="centrarUnidadMapa(0, 0)">${nombreCamion}</span></td>
                             <td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}">
@@ -844,7 +850,6 @@
         tbody.innerHTML = html || '<tr><td colspan="10" class="p-5 text-muted fs-5"><i class="fa-solid fa-folder-open mb-3 fs-1 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>';
         filtrarTablaInteligente();
         
-        // Pinta la tabla y luego inmediatamente le inyecta los datos GPS que ya tiene en memoria
         if (motorArrancado) inyectarGPSenTabla();
     }
 
@@ -875,7 +880,6 @@
         try { bootstrap.Modal.getInstance(document.getElementById('modalLog')).hide(); } catch(e){}
     }
 
-    // CHECKBOX EXTERNO INTEGRADO
     function registrarViaje() {
         let uN = document.getElementById("nv_unidad_input").value.trim().toUpperCase(); if(!uN) return;
         let existe = Object.values(viajesActivos).some(v => String(v.unidadN||"").toUpperCase() === uN);
@@ -901,7 +905,7 @@
         
         document.getElementById("nv_unidad_input").value = ""; 
         document.getElementById("nv_operador").value = "";
-        document.getElementById("nv_externa").checked = false; // Reset toggle
+        document.getElementById("nv_externa").checked = false; 
     }
 
     function finalizarViaje(id, n) { if(confirm(`¿Archivar viaje de la unidad ${n}?`)) { registrarLog(id, "FINALIZÓ VIAJE", "Se archiva registro"); setTimeout(()=>db.ref('viajes_activos/'+id).remove(), 1000); } }
