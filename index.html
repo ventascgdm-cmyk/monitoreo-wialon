@@ -1,126 +1,96 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8" />
-    <title>C4 - Bitácora con Cambio de Conductor</title>
-    <script type="text/javascript" src="//code.jquery.com/jquery-latest.min.js"></script>
-    <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; padding: 20px; }
-        .unit-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
-        .unit-table th { background: #0f172a; color: white; padding: 12px; text-align: left; }
-        .unit-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
-        .drv-container { display: flex; align-items: center; gap: 8px; font-weight: bold; color: #0284c7; }
-        .btn-bind { background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-        .btn-bind:hover { background: #2563eb; }
-    </style>
-</head>
-<body>
+// Variable global para almacenar los datos extendidos
+var conductoresMap = {}; 
+var geocercasGlobales = [];
 
-    <h2>Operativo C4: Gestión de Conductores</h2>
-    <div id="log">Conectando a Wialon...</div>
+function init() {
+    var sess = wialon.core.Session.getInstance();
+    
+    // Cargamos librerías para manejar conductores y geocercas
+    sess.loadLibrary("resourceDrivers");
+    sess.loadLibrary("resourceZones"); // Nueva librería para geocercas
+    sess.loadLibrary("itemIcon");
 
-    <table class="unit-table">
-        <thead>
-            <tr>
-                <th>Unidad</th>
-                <th>Conductor Actual</th>
-                <th>Asignar Nuevo</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-        <tbody id="units-body"></tbody>
-    </table>
+    // Flags: 1(Base), 256(Conductores), 4096(Geocercas)
+    var res_flags = wialon.util.Number.or(
+        wialon.item.Item.dataFlag.base, 
+        wialon.item.Resource.dataFlag.drivers,
+        wialon.item.Resource.dataFlag.zones
+    );
+    var unit_flags = wialon.util.Number.or(wialon.item.Item.dataFlag.base, 1024); // 1024 para posición
 
-<script type="text/javascript">
-    const TOKEN = "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87";
-    var all_drivers = {}; // Mapa para saber qué conductor tiene cada unidad
-    var select_options = ""; // String HTML para el menú desplegable
+    sess.updateDataFlags(
+        [{type: "type", data: "avl_unit", flags: unit_flags, mode: 0},
+         {type: "type", data: "avl_resource", flags: res_flags, mode: 0}],
+        function (code) {
+            if (code) return;
 
-    function init() {
-        var sess = wialon.core.Session.getInstance();
+            var ress = sess.getItems("avl_resource");
+            var units = sess.getItems("avl_unit");
+
+            // 1. Procesar Conductores y Geocercas de todos los Recursos
+            ress.forEach(res => {
+                // Conductores
+                var drivers = res.getDrivers() || {};
+                for (var dId in drivers) {
+                    var d = drivers[dId];
+                    // Extraer teléfono de pprops (propiedades personalizadas)
+                    var pprops = d.p || {}; 
+                    conductoresMap[d.id] = {
+                        name: d.n,
+                        phone: pprops.ph || "S/N", // Igual que en tu Sheets
+                        resId: res.getId(),
+                        bu: d.bu // Unidad vinculada
+                    };
+                }
+                // Geocercas
+                var zones = res.getZones() || {};
+                for (var zId in zones) {
+                    geocercasGlobales.push(zones[zId]);
+                }
+            });
+
+            // 2. Renderizar Tabla
+            renderTable(units);
+        }
+    );
+}
+
+function renderTable(units) {
+    var html = "";
+    units.forEach(u => {
+        var u_id = u.getId();
+        var pos = u.getPosition();
         
-        // Cargamos librerías necesarias para iconos y conductores
-        sess.loadLibrary("resourceDrivers");
-        sess.loadLibrary("itemIcon");
-
-        // Definimos los flags: base para unidades y drivers para recursos
-        var unit_flags = wialon.item.Item.dataFlag.base;
-        var res_flags = wialon.util.Number.or(wialon.item.Item.dataFlag.base, wialon.item.Resource.dataFlag.drivers);
-
-        sess.updateDataFlags(
-            [{type: "type", data: "avl_unit", flags: unit_flags, mode: 0},
-             {type: "type", data: "avl_resource", flags: res_flags, mode: 0}],
-            function (code) {
-                if (code) { console.error("Error:", code); return; }
-
-                var units = sess.getItems("avl_unit");
-                var ress = sess.getItems("avl_resource");
-
-                // 1. Mapeamos todos los conductores de todos los recursos
-                ress.forEach(res => {
-                    var drivers = res.getDrivers() || {};
-                    for (var dId in drivers) {
-                        var d = drivers[dId];
-                        // Guardamos el conductor por el ID de unidad vinculado (bu)
-                        if (!all_drivers[d.bu]) all_drivers[d.bu] = [];
-                        all_drivers[d.bu].push({ id: d.id, name: d.n, resId: res.getId(), icon: res.getDriverImageUrl(d, 32) });
-                        
-                        // Llenamos las opciones del selector
-                        select_options += `<option value="${res.getId()}_${d.id}">${d.n}</option>`;
-                    }
-                });
-
-                // 2. Renderizamos la tabla de unidades
-                var html = "";
-                units.forEach(u => {
-                    var u_id = u.getId();
-                    var drvHtml = "<i>Sin conductor</i>";
-                    
-                    // Si la unidad tiene conductores vinculados
-                    if (all_drivers[u_id]) {
-                        drvHtml = all_drivers[u_id].map(d => 
-                            `<div class="drv-container"><img src="${d.icon}" width="20"> ${d.name}</div>`
-                        ).join("");
-                    }
-
-                    html += `
-                        <tr id="row_${u_id}">
-                            <td><b>${u.getName()}</b></td>
-                            <td id="assigned_${u_id}">${drvHtml}</td>
-                            <td><select id="sel_${u_id}">${select_options}</select></td>
-                            <td><button class="btn-bind" onclick="vincular('${u_id}')">Vincular</button></td>
-                        </tr>`;
-                });
-                document.getElementById("units-body").innerHTML = html;
-                document.getElementById("log").innerText = "Sincronización completa.";
+        // Buscar conductor vinculado por la propiedad 'bu'
+        var conductorAct = "<i>Sin asignar</i>";
+        var telAct = "---";
+        
+        for (var cid in conductoresMap) {
+            if (conductoresMap[cid].bu == u_id) {
+                conductorAct = conductoresMap[cid].name;
+                telAct = conductoresMap[cid].phone;
+                break;
             }
-        );
-    }
+        }
 
-    function vincular(u_id) {
-        var sess = wialon.core.Session.getInstance();
-        var unit = sess.getItem(u_id);
-        var val = document.getElementById("sel_" + u_id).value;
-        var [resId, drvId] = val.split("_");
-        
-        var res = sess.getItem(resId);
-        var driver = res.getDriver(drvId);
-        
-        // Ejecutamos la vinculación física en Wialon
-        res.bindDriverToUnit(driver, unit, 0, true, function(code) {
-            if (code) { alert("Error: " + wialon.core.Errors.getErrorText(code)); return; }
-            alert("Conductor " + driver.n + " asignado a " + unit.getName());
-            location.reload(); // Recargamos para actualizar la vista
-        });
-    }
+        // Detectar si está en una geocerca (Lógica geométrica del SDK)
+        var zonaActual = "En ruta";
+        if (pos) {
+            geocercasGlobales.forEach(z => {
+                if (z.pointIn(pos.x, pos.y)) { // Verifica si lat/lon están dentro
+                    zonaActual = `<b style="color: #10b981;">${z.n}</b>`;
+                }
+            });
+        }
 
-    $(document).ready(function () {
-        wialon.core.Session.getInstance().initSession("https://hst-api.wialon.com");
-        wialon.core.Session.getInstance().loginToken(TOKEN, "", (code) => {
-            if (!code) init();
-        });
+        html += `
+            <tr>
+                <td><b>${u.getName()}</b></td>
+                <td>${conductorAct}</td>
+                <td><a href="tel:${telAct}">${telAct}</a></td>
+                <td>${zonaActual}</td>
+                <td>${pos ? pos.s + " km/h" : "Offline"}</td>
+            </tr>`;
     });
-</script>
-</body>
-</html>
+    $("#units-body").html(html);
+}
