@@ -2,28 +2,27 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Bitácora Multitoken Pro</title>
+    <title>C4 - Bitácora Multitoken Definitiva</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
-        .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
         .header-c4 { background: #0f172a; color: white; padding: 1.5rem; border-radius: 12px 12px 0 0; }
-        .platform-badge { font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; background: #e2e8f0; color: #475569; font-weight: 800; }
         .unit-name { font-weight: 900; color: #0284c7; font-size: 0.95rem; }
-        .code-txt { font-family: monospace; color: #64748b; font-weight: bold; }
-        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; }
+        .plat-badge { font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; background: #e2e8f0; color: #475569; font-weight: 800; text-transform: uppercase; }
+        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; }
         .wa-btn:hover { background: #16a34a; color: white; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid py-4">
+<div class="container-fluid">
     <div class="card card-c4">
         <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h3 class="m-0"><i class="fa-solid fa-tower-broadcast me-2"></i> OPERATIVO C4 <small class="fs-6 opacity-75">| Multitoken</small></h3>
-            <button onclick="sincronizarFlotas()" class="btn btn-info btn-sm fw-bold shadow-sm">
-                <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR TODO
+            <h3 class="m-0"><i class="fa-solid fa-tower-broadcast me-2 text-info"></i> OPERATIVO C4 <small class="fs-6 opacity-75">| Multitoken Live</small></h3>
+            <button onclick="sincronizarTodo()" class="btn btn-info btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR TODAS LAS FLOTAS
             </button>
         </div>
         
@@ -34,13 +33,13 @@
                         <th>Plataforma</th>
                         <th>Unidad</th>
                         <th>Cod.</th>
-                        <th>Conductor Actual</th>
+                        <th>Conductor</th>
                         <th>WhatsApp / Teléfono</th>
-                        <th>Estatus</th>
+                        <th>Velocidad</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="6" class="text-center p-5">Presiona "Actualizar" para cargar flotas.</td></tr>
+                    <tr><td colspan="6" class="text-center p-5">Presiona el botón para cargar todas las plataformas configuradas.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -48,56 +47,66 @@
 </div>
 
 <script>
-// --- CONFIGURACIÓN DE TUS PLATAFORMAS ---
-const PLATAFORMAS = [
-    { nombre: "FLOTA 1", url: "https://hst-api.wialon.com", token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" },
-    { nombre: "FLOTA 2", url: "https://hst-api.wialon.com", token: "TOKEN_DE_TU_OTRA_PLATAFORMA" }
+/** * 1. CONFIGURACIÓN: Agrega aquí todos los tokens que necesites 
+ */
+const MIS_PLATAFORMAS = [
+    { 
+        nombre: "FLOTA RACEL", 
+        url: "https://hst-api.wialon.com", 
+        token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" 
+    },
+    { 
+        nombre: "OTRA FLOTA", 
+        url: "https://hst-api.wialon.com", 
+        token: "TU_OTRO_TOKEN_AQUI" 
+    }
 ];
 
 let conductoresConsolidados = {}; 
 
-async function sincronizarFlotas() {
+async function sincronizarTodo() {
     const body = document.getElementById("tabla-body");
-    body.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Consultando servidores múltiples...</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Consultando flotas múltiples...</td></tr>';
     
     conductoresConsolidados = {};
-    let todasLasUnidades = [];
+    let flotasUnidas = [];
 
-    // Consultar todos los tokens en paralelo para ahorrar tiempo
-    const promesas = PLATAFORMAS.map(p => procesarPlataforma(p));
+    // Consultamos todos los tokens en paralelo para que sea rápido
+    const promesas = MIS_PLATAFORMAS.map(p => procesarUnaPlataforma(p));
     const resultados = await Promise.all(promesas);
     
-    resultados.forEach(res => { if(res) todasLasUnidades = todasLasUnidades.concat(res); });
+    resultados.forEach(res => { if(res) flotasUnidas = flotasUnidas.concat(res); });
     
-    renderizar(todasLasUnidades);
+    renderizarFinal(flotasUnidas);
 }
 
-async function procesarPlataforma(p) {
+async function procesarUnaPlataforma(p) {
     try {
-        // 1. Login individual por plataforma
-        const login = await apiWialon(p.url, "token/login", { token: p.token });
+        // Login individual
+        const login = await consultaAPI(p.url, "token/login", { token: p.token });
         const sid = login.eid;
         if (!sid) return null;
 
-        // 2. Buscar Conductores con Flags de datos extendidos (propiedad 'p' y 'c')
-        const drvReq = await apiWialon(p.url, "core/search_items", {
+        // Traer conductores (Usamos flags 1 + 256 para asegurar que traiga propiedades extra)
+        const drvReq = await consultaAPI(p.url, "core/search_items", {
             spec: { itemsType: "avl_driver", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 256, from: 0, to: 0
         }, sid);
 
         if (drvReq.items) {
             drvReq.items.forEach(d => {
+                // Según tu manual: 'p' es teléfono, 'c' es código, 'bu' es unidad vinculada
                 conductoresConsolidados[d.id] = {
-                    nombre: d.n,
-                    telefono: d.p || "", // Propiedad 'p' del manual
-                    codigo: d.c || "N/A", // Propiedad 'c' del manual
-                    unidadVinculada: d.bu // Bind Unit
+                    n: d.n,
+                    tel: d.p || "", 
+                    cod: d.c || "---",
+                    uVinculada: d.bu 
                 };
             });
         }
 
-        // 3. Buscar Unidades
-        const unitReq = await apiWialon(p.url, "core/search_items", {
+        // Traer unidades
+        const unitReq = await consultaAPI(p.url, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 1024, from: 0, to: 0
         }, sid);
@@ -107,51 +116,52 @@ async function procesarPlataforma(p) {
             plat: p.nombre,
             pos: u.pos,
             id: u.id,
-            chofer: buscarChofer(u.id)
+            chofer: vincularManual(u.id)
         }));
     } catch (e) { return null; }
 }
 
-function buscarChofer(uId) {
+function vincularManual(uId) {
     for (let id in conductoresConsolidados) {
-        if (conductoresConsolidados[id].unidadVinculada == uId) return conductoresConsolidados[id];
+        if (conductoresConsolidados[id].uVinculada == uId) return conductoresConsolidados[id];
     }
-    return { nombre: "Sin asignar", telefono: "", codigo: "---" };
+    return { n: "Sin asignar", tel: "", cod: "---" };
 }
 
-function renderizar(unidades) {
+function renderizarFinal(unidades) {
     const tbody = document.getElementById("tabla-body");
     let html = "";
     unidades.sort((a, b) => a.nm.localeCompare(b.nm));
 
     unidades.forEach(u => {
         const vel = u.pos ? u.pos.s : 0;
-        const waNum = u.chofer.telefono.replace(/\D/g,'');
+        const limpioNum = u.chofer.tel.replace(/\D/g,'');
         
         html += `
             <tr>
-                <td><span class="platform-badge">${u.plat}</span></td>
+                <td><span class="plat-badge">${u.plat}</span></td>
                 <td><span class="unit-name">${u.nm}</span></td>
-                <td><span class="code-txt">${u.chofer.codigo}</span></td>
-                <td class="fw-bold">${u.chofer.nombre}</td>
+                <td><code class="text-muted">${u.chofer.cod}</code></td>
+                <td class="fw-bold text-dark">${u.chofer.n}</td>
                 <td>
-                    ${u.chofer.telefono ? 
-                    `<a href="https://wa.me/${waNum}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> ${u.chofer.telefono}</a>` : 
-                    '<span class="text-muted">---</span>'}
+                    ${u.chofer.tel ? 
+                    `<a href="https://wa.me/${limpioNum}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> ${u.chofer.tel}</a>` : 
+                    '<span class="text-muted small">Sin teléfono</span>'}
                 </td>
                 <td class="fw-bold ${vel > 0 ? 'text-success' : 'text-muted'}">${vel} km/h</td>
             </tr>`;
     });
-    tbody.innerHTML = html;
+    tbody.innerHTML = html || '<tr><td colspan="6" class="text-center">No se encontraron datos en las plataformas.</td></tr>';
 }
 
-// Función AJAX vía JSONP para saltar CORS en GitHub
-function apiWialon(url, svc, params, sid = null) {
+/** * FUNCIÓN CLAVE: JSONP (Evita el bloqueo de CORS que viste en la Imagen 1)
+ */
+function consultaAPI(url, svc, params, sid = null) {
     return new Promise(resolve => {
-        const cb = "cb_" + Math.random().toString(36).substring(7);
-        window[cb] = d => { delete window[cb]; resolve(d); };
+        const callbackName = "wialon_" + Math.random().toString(36).substring(7);
+        window[callbackName] = data => { delete window[callbackName]; resolve(data); };
         const script = document.createElement("script");
-        script.src = `${url}/wialon/ajax.html?svc=${svc}&params=${JSON.stringify(params)}&callback=${cb}${sid ? '&sid=' + sid : ''}`;
+        script.src = `${url}/wialon/ajax.html?svc=${svc}&params=${JSON.stringify(params)}&callback=${callbackName}${sid ? '&sid=' + sid : ''}`;
         document.head.appendChild(script);
     });
 }
