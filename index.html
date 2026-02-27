@@ -76,13 +76,13 @@
         .dark-mode .input-ghost:hover { border-color: #475569; background: rgba(0,0,0,0.2); }
         .dark-mode .input-ghost:focus { background: #0f172a; }
         
-        .col-unidad { min-width: 120px; width: 130px; }
+        .col-unidad { min-width: 130px; width: 140px; }
         .col-operador { min-width: 140px; }
         .col-ruta { min-width: 180px; }
         .col-contenedores { min-width: 110px; }
         .col-horarios { min-width: 130px; }
         .col-estatus { min-width: 140px; }
-        .col-gps { min-width: 280px; width: 320px; } 
+        .col-gps { min-width: 280px; width: 310px; } 
         .col-alertas { min-width: 70px; }
         .col-historial { min-width: 200px; }
         .col-accion { min-width: 50px; }
@@ -95,7 +95,7 @@
         .unit-name:hover { color: #0284c7; text-decoration: underline; }
         
         /* DEEP LINK A WIALON */
-        .wialon-deep-link { color: #94a3b8; font-size: 0.85rem; transition: 0.2s; cursor: pointer; }
+        .wialon-deep-link { color: #94a3b8; font-size: 0.9rem; transition: 0.2s; cursor: pointer; }
         .wialon-deep-link:hover { color: #f59e0b; transform: scale(1.1); }
         
         .speed-badge { font-size: 0.85rem; font-weight: 900; border-radius: 8px; padding: 4px 12px; text-align: center; color: white; display: inline-block; margin-bottom: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
@@ -116,7 +116,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v19.0 (La Bestia)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v19.1 (Auto-Login)</div>
     </div>
 </div>
 
@@ -255,7 +255,6 @@
         if (!ms) return "--:--"; let d = new Date(ms); let meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
         return `${String(d.getDate()).padStart(2, '0')} ${meses[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
-    
     function formatTimeFriendly(unixSecs) { 
         if(!unixSecs) return "--:--"; 
         let d = new Date(unixSecs * 1000); 
@@ -264,12 +263,10 @@
         if(d.toDateString() === today.toDateString()) return timeStr;
         return d.toLocaleDateString('es-MX', {day:'2-digit', month:'short'}) + " " + timeStr; 
     }
-    
     function getLocalISO(unixMillis) {
         if(!unixMillis) return ""; let tzoffset = (new Date()).getTimezoneOffset() * 60000;
         return (new Date(unixMillis - tzoffset)).toISOString().slice(0, 16);
     }
-    
     function timeAgo(unixSecs) {
         if(!unixSecs) return "N/A"; let diff = Math.floor(Date.now()/1000) - unixSecs;
         if(diff < 60) return `${diff} seg`; if(diff < 3600) return `${Math.floor(diff/60)} min`;
@@ -361,7 +358,6 @@
             if(zonaGeo) geoTextWA = `\n📍 *Geocerca:* ${zonaGeo}`;
             
             let domAddr = document.getElementById("addr_" + vId);
-            // Evitar mandar el HTML verde de la geocerca en el nombre de la calle
             if(domAddr && domAddr.innerText !== "Buscando...") {
                 let txtLimpio = domAddr.innerText.replace("[GEOCERCA]", "").trim();
                 let partes = txtLimpio.split("\n");
@@ -369,7 +365,7 @@
             } else {
                 addrText = "Ubicación GPS";
             }
-            locLink = `${addrText} \nhttps://maps.google.com/?q=${pos.y},${pos.x}`;
+            locLink = `${addrText} \nhttps://maps.google.com/maps?q=lat,lon{pos.y},${pos.x}`;
         }
 
         let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
@@ -415,7 +411,7 @@
                 } else {
                     addrText = "Ubicación GPS";
                 }
-                locLink = `https://maps.google.com/?q=${pos.y},${pos.x}`;
+                locLink = `https://maps.google.com/maps?q=lat,lon{pos.y},${pos.x}`;
             }
             
             txt += `🚛 *Unidad:* ${name}\n` +
@@ -517,6 +513,7 @@
         lista.innerHTML = html || '<li class="list-group-item text-center">No hay tokens</li>';
     }
 
+    // EL MOTOR DE WIALON (Extrae la URL de Auto-Login)
     async function sincronizarFlotas() {
         if(isSyncingFlotas) return;
         isSyncingFlotas = true;
@@ -539,22 +536,23 @@
                     let auth = activeSIDs[tk.token]; 
                     if(!auth || !auth.sid) { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; return; }
 
-                    // TRAER TODAS LAS UNIDADES
+                    // CONSTRUCCIÓN DEL LINK MÁGICO DE AUTO-LOGIN
+                    let webUrl = tk.url.includes("hst-api") ? "https://hosting.wialon.com" : tk.url;
+                    let autoLoginUrl = `${webUrl}/login.html?token=${tk.token}`;
+
                     let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025, from: 0, to: 4294967295 }, auth.sid);
                     if(reqU && reqU.items) {
                         conexionesExitosas++; estadoTokens[tk.nombre] = { status: 'OK', count: reqU.items.length };
                         let localMap = {}; 
                         reqU.items.forEach(u => { 
                             let n = String(u.nm || "Desconocida").toUpperCase(); 
-                            tempUnits[u.id] = { id: u.id, name: n, pos: u.pos }; 
+                            tempUnits[u.id] = { id: u.id, name: n, pos: u.pos, loginUrl: autoLoginUrl }; 
                             localMap[u.id] = n; listUni.add(n); 
                         });
                         
-                        // TRAER TODOS LOS RECURSOS (GEOCERCAS Y OPERADORES)
                         let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 4294967295 }, auth.sid);
                         if(reqR && reqR.items) {
                             reqR.items.forEach(r => { 
-                                // Ojo aquí: d.bu es el ID numérico de la unidad a la que está atado el chofer
                                 if(r.drv) Object.values(r.drv).forEach(d => { if(d.bu) ramDrivers[d.bu] = String(d.n||"").toUpperCase(); listDrv.add(String(d.n||"").toUpperCase()); }); 
                                 if(r.zl) Object.values(r.zl).forEach(z => tempGeo.push(z)); 
                             });
@@ -591,7 +589,6 @@
         }
     }
 
-    // ARQUITECTURA DESACOPLADA: Solo inyecta, no borra
     function inyectarGPSenTabla() {
         Object.keys(viajesActivos).forEach(vId => {
             try {
@@ -674,7 +671,7 @@
                             </div>
                             <div style="font-size:0.85rem; color:#0f172a; font-weight:800; max-width:100%; margin:0 auto;" class="text-wrap">${v.ubicacion_manual||'--'}</div>`;
                     } else {
-                        let mapsLink = `https://maps.google.com/?q=${pos.y},${pos.x}`;
+                        let mapsLink = `https://maps.google.com/maps?q=lat,lon{pos.y},${pos.x}`;
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
                         let zonaGeo = resolverGeocerca(pos.y, pos.x);
                         
@@ -861,6 +858,7 @@
                 tree[cId][sId].forEach(({vId, v}) => {
                     try {
                         let nombreCamion = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
+                        let uData = encontrarUnidad(v, vId);
                         let isExternal = v.wialonId === "EXTERNO"; 
                         let drvName = String(v.operador || "");
                         let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a'; 
@@ -882,7 +880,8 @@
 
                         let trClass = isExternal ? 'external-connection-row' : 'needs-gps-update';
                         
-                        let deepLinkHtml = !isExternal ? `<a href="https://hosting.wialon.com" target="_blank" class="ms-2 wialon-deep-link" title="Abrir en Wialon"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : '';
+                        // EL DEEP LINK MÁGICO 
+                        let deepLinkHtml = (!isExternal && uData && uData.loginUrl) ? `<a href="${uData.loginUrl}" target="_blank" class="ms-2 wialon-deep-link" title="Auto-Login en Wialon"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : '';
 
                         cliHtml += `<tr class="data-row ${trClass}" id="row_${vId}" data-search="${searchData}" style="background-color: ${rowBg} !important;">
                             <td class="col-unidad align-middle">
