@@ -2,148 +2,186 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Gestión Maestra de Conductores</title>
-    <script type="text/javascript" src="//code.jquery.com/jquery-latest.min.js"></script>
-    <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
+    <title>C4 - Bitácora Multitoken Definitiva</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; padding: 20px; font-size: 0.85rem; }
-        .unit-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .unit-table th { background: #0f172a; color: white; padding: 12px; text-align: left; text-transform: uppercase; font-size: 0.7rem; }
-        .unit-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
-        .drv-container { display: flex; align-items: center; gap: 8px; font-weight: bold; color: #0284c7; }
-        .badge-geo { background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; border: 1px solid #10b981; }
-        .btn-bind { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-bind:hover { background: #2563eb; }
-        select { padding: 5px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; }
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        .header-c4 { background: #0f172a; color: white; padding: 15px; border-radius: 8px 8px 0 0; }
+        .table-custom { background: white; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .unit-id { font-weight: 800; color: #0284c7; }
+        .badge-geo { background: #d1fae5; color: #065f46; border: 1px solid #10b981; font-weight: 700; padding: 4px 8px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <h2 style="font-weight: 900; color: #1e293b;">OPERATIVO C4: <span style="color: #3b82f6;">GESTIÓN GPS</span></h2>
-    <div id="log" style="margin-bottom: 15px; font-weight: bold; color: #64748b;">Conectando a Wialon...</div>
+<div class="container-fluid py-4">
+    <div class="header-c4 d-flex justify-content-between align-items-center">
+        <h4 class="m-0 fw-bold">OPERATIVO C4 | <span class="text-info">GESTIÓN GPS MULTITOKEN</span></h4>
+        <button onclick="iniciarSincronizacion()" class="btn btn-info btn-sm fw-bold shadow-sm">
+            <i class="fa-solid fa-sync fa-spin-hover"></i> ACTUALIZAR DATOS
+        </button>
+    </div>
 
-    <table class="unit-table">
-        <thead>
+    <div class="table-custom">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Plataforma</th>
+                    <th>Unidad</th>
+                    <th>Conductor Actual</th>
+                    <th>Teléfono</th>
+                    <th>Geocerca / Ubicación</th>
+                    <th>Estatus</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-body">
+                <tr><td colspan="6" class="text-center p-5 text-muted">Haga clic en "Actualizar Datos" para cargar las flotas.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// --- CONFIGURACIÓN DE TUS TOKENS ---
+const CONFIG = [
+    { nombre: "PLATAFORMA 1", token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87", url: "https://hst-api.wialon.com" },
+    // Puedes agregar más aquí abajo...
+];
+
+let globalUnits = [];
+let globalDrivers = {};
+
+async function iniciarSincronizacion() {
+    const body = document.getElementById("tabla-body");
+    body.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Conectando con servidores Wialon...</td></tr>';
+    
+    globalUnits = [];
+    globalDrivers = {};
+
+    // Procesar todos los tokens en paralelo
+    const tareas = CONFIG.map(c => procesarPlataforma(c));
+    await Promise.all(tareas);
+    
+    renderizarTabla();
+}
+
+async function procesarPlataforma(p) {
+    try {
+        // 1. Login vía JSONP (Evita el error de CORS de la imagen 1)
+        const login = await callWialon(p.url, "token/login", { token: p.token });
+        const sid = login.eid;
+        if (!sid) return;
+
+        // 2. Traer Conductores (avl_driver) con Teléfonos (pprops.ph)
+        const drvReq = await callWialon(p.url, "core/search_items", {
+            spec: { itemsType: "avl_driver", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
+            force: 1, flags: 1 + 256, from: 0, to: 0
+        }, sid);
+
+        if (drvReq.items) {
+            drvReq.items.forEach(d => {
+                globalDrivers[d.id] = { 
+                    nombre: d.nm, 
+                    tel: (d.pprops && d.pprops.ph) ? d.pprops.ph : "---",
+                    uId: d.bu // Unidad vinculada
+                };
+            });
+        }
+
+        // 3. Traer Unidades y Geocercas
+        const unitReq = await callWialon(p.url, "core/search_items", {
+            spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
+            force: 1, flags: 1 + 1024, from: 0, to: 0
+        }, sid);
+
+        const resReq = await callWialon(p.url, "core/search_items", {
+            spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
+            force: 1, flags: 4096, from: 0, to: 0
+        }, sid);
+
+        let geoLocal = [];
+        if (resReq.items) {
+            resReq.items.forEach(r => { if(r.zl) Object.values(r.zl).forEach(z => geoLocal.push(z)); });
+        }
+
+        if (unitReq.items) {
+            unitReq.items.forEach(u => {
+                // Detección de Geocerca
+                let zona = "En ruta";
+                if (u.pos) {
+                    geoLocal.forEach(z => {
+                        if (isInside(u.pos.x, u.pos.y, z.p)) zona = z.n;
+                    });
+                }
+
+                globalUnits.push({
+                    nombre: u.nm,
+                    plat: p.nombre,
+                    pos: u.pos,
+                    zona: zona,
+                    chofer: buscarChofer(u.id)
+                });
+            });
+        }
+    } catch (err) { console.error("Error en plataforma: " + p.nombre, err); }
+}
+
+function buscarChofer(uId) {
+    for (let id in globalDrivers) {
+        if (globalDrivers[id].uId == uId) return globalDrivers[id];
+    }
+    return { nombre: "Sin asignar", tel: "---" };
+}
+
+function renderizarTabla() {
+    const body = document.getElementById("tabla-body");
+    let html = "";
+    globalUnits.sort((a,b) => a.nombre.localeCompare(b.nombre));
+
+    globalUnits.forEach(u => {
+        const speed = u.pos ? u.pos.s : 0;
+        const geoHtml = u.zona !== "En ruta" ? `<span class="badge-geo">${u.zona}</span>` : `<span class="text-muted">En ruta</span>`;
+        
+        html += `
             <tr>
-                <th>Unidad</th>
-                <th>Conductor Actual</th>
-                <th>Teléfono</th>
-                <th>Geocerca / Ubicación</th>
-                <th>Asignar Nuevo</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-        <tbody id="units-body"></tbody>
-    </table>
-
-<script type="text/javascript">
-    const TOKEN = "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87";
-    var all_drivers = {}; 
-    var geocercas_list = [];
-    var select_options = ""; 
-
-    function init() {
-        var sess = wialon.core.Session.getInstance();
-        
-        // Cargamos librerías: Conductores, Iconos y Geocercas (Zonas)
-        sess.loadLibrary("resourceDrivers");
-        sess.loadLibrary("resourceZones"); 
-        sess.loadLibrary("itemIcon");
-
-        // Flags: Base para unidades (1) + Posición (1024) y Base para recursos + Drivers (256) + Zonas (4096)
-        var unit_flags = wialon.util.Number.or(wialon.item.Item.dataFlag.base, 1024);
-        var res_flags = wialon.util.Number.or(wialon.item.Item.dataFlag.base, wialon.item.Resource.dataFlag.drivers, wialon.item.Resource.dataFlag.zones);
-
-        sess.updateDataFlags(
-            [{type: "type", data: "avl_unit", flags: unit_flags, mode: 0},
-             {type: "type", data: "avl_resource", flags: res_flags, mode: 0}],
-            function (code) {
-                if (code) { console.error("Error:", code); return; }
-
-                var units = sess.getItems("avl_unit");
-                var ress = sess.getItems("avl_resource");
-
-                // 1. Mapeamos Conductores (con teléfono) y Geocercas
-                ress.forEach(res => {
-                    // Procesar Geocercas
-                    var zones = res.getZones() || {};
-                    for (var zId in zones) { geocercas_list.push(zones[zId]); }
-
-                    // Procesar Conductores
-                    var drivers = res.getDrivers() || {};
-                    for (var dId in drivers) {
-                        var d = drivers[dId];
-                        var phone = d.p && d.p.ph ? d.p.ph : "---"; // Extraer teléfono de propiedades
-                        
-                        if (!all_drivers[d.bu]) all_drivers[d.bu] = [];
-                        all_drivers[d.bu].push({ id: d.id, name: d.n, phone: phone, resId: res.getId(), icon: res.getDriverImageUrl(d, 32) });
-                        
-                        select_options += `<option value="${res.getId()}_${d.id}">${d.n}</option>`;
-                    }
-                });
-
-                // 2. Renderizamos la tabla
-                var html = "";
-                units.forEach(u => {
-                    var u_id = u.getId();
-                    var pos = u.getPosition();
-                    var drvName = "<i>Sin conductor</i>";
-                    var drvPhone = "---";
-                    var drvIcon = "";
-
-                    if (all_drivers[u_id]) {
-                        var d = all_drivers[u_id][0]; // Tomamos el primer conductor vinculado
-                        drvName = d.name;
-                        drvPhone = d.phone;
-                        drvIcon = `<img src="${d.icon}" width="20">`;
-                    }
-
-                    // Detección de Geocerca en tiempo real
-                    var zonaActual = "En ruta";
-                    if (pos) {
-                        geocercas_list.forEach(z => {
-                            if (z.pointIn(pos.x, pos.y)) zonaActual = `<span class="badge-geo">${z.n}</span>`;
-                        });
-                    }
-
-                    html += `
-                        <tr id="row_${u_id}">
-                            <td><b>${u.getName()}</b></td>
-                            <td><div class="drv-container">${drvIcon} ${drvName}</div></td>
-                            <td><a href="tel:${drvPhone}" style="text-decoration:none; color:#475569; font-weight:bold;"><i class="fa fa-phone me-1"></i>${drvPhone}</a></td>
-                            <td>${zonaActual}</td>
-                            <td><select id="sel_${u_id}">${select_options}</select></td>
-                            <td><button class="btn-bind" onclick="vincular('${u_id}')">Asignar</button></td>
-                        </tr>`;
-                });
-                document.getElementById("units-body").innerHTML = html;
-                document.getElementById("log").innerText = "Unidades sincronizadas con éxito.";
-            }
-        );
-    }
-
-    function vincular(u_id) {
-        var sess = wialon.core.Session.getInstance();
-        var unit = sess.getItem(u_id);
-        var val = document.getElementById("sel_" + u_id).value;
-        var [resId, drvId] = val.split("_");
-        var res = sess.getItem(resId);
-        var driver = res.getDriver(drvId);
-        
-        // Ejecutamos la vinculación física en Wialon
-        res.bindDriverToUnit(driver, unit, 0, true, function(code) {
-            if (code) { alert("Error: " + wialon.core.Errors.getErrorText(code)); return; }
-            alert("Conductor " + driver.n + " asignado a " + unit.getName());
-            location.reload(); 
-        });
-    }
-
-    $(document).ready(function () {
-        wialon.core.Session.getInstance().initSession("https://hst-api.wialon.com");
-        wialon.core.Session.getInstance().loginToken(TOKEN, "", (code) => {
-            if (!code) init();
-        });
+                <td><small class="badge bg-light text-dark border">${u.plat}</small></td>
+                <td><span class="unit-id">${u.nombre}</span></td>
+                <td><i class="fas fa-user-circle me-1 text-secondary"></i> ${u.chofer.nombre}</td>
+                <td><a href="tel:${u.chofer.tel}" class="text-decoration-none text-primary fw-bold">${u.chofer.tel}</a></td>
+                <td>${geoHtml}</td>
+                <td class="fw-bold ${speed > 0 ? 'text-success' : 'text-muted'}">${speed} km/h</td>
+            </tr>`;
     });
+    body.innerHTML = html || '<tr><td colspan="6" class="text-center p-4">No se encontraron unidades activas.</td></tr>';
+}
+
+// --- UTILIDADES DE CONEXIÓN (JSONP) ---
+function callWialon(url, svc, params, sid = null) {
+    return new Promise(resolve => {
+        const callbackName = "wialon_" + Math.floor(Math.random() * 1000000);
+        window[callbackName] = function(data) {
+            resolve(data);
+            const script = document.getElementById(callbackName);
+            if (script) script.remove();
+            delete window[callbackName];
+        };
+        const script = document.createElement("script");
+        script.id = callbackName;
+        script.src = `${url}/wialon/ajax.html?svc=${svc}&params=${JSON.stringify(params)}&callback=${callbackName}${sid ? '&sid=' + sid : ''}`;
+        document.head.appendChild(script);
+    });
+}
+
+function isInside(x, y, poly) {
+    if (!poly) return false;
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        let xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
+        if (((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+}
 </script>
 </body>
 </html>
