@@ -100,6 +100,7 @@
         .addr-link:hover { text-decoration: underline; color: #0369a1; }
         
         .cp { cursor: pointer; }
+        .btn-modern { border-radius: 8px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -343,11 +344,15 @@
         
         let addrText = v.ubicacion_manual || "Buscando...";
         let locLink = addrText;
+        let geoTextWA = "";
 
         if (pos) {
+            let zonaGeo = resolverGeocerca(pos.y, pos.x);
+            if(zonaGeo) geoTextWA = `\n📍 *Geocerca:* ${zonaGeo}`;
+            
             let domAddr = document.getElementById("addr_" + vId);
             addrText = (domAddr && domAddr.innerText !== "Buscando...") ? domAddr.innerText : "Ubicación GPS";
-            locLink = `${addrText} \nhttps://maps.google.com/?q=${pos.y},${pos.x}`;
+            locLink = `${addrText} \nhttps://maps.google.com/?q=LAT,LON{pos.y},${pos.x}`;
         }
 
         let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
@@ -356,7 +361,8 @@
                    `📦 *Contenedores:* ${v.contenedores||'N/A'}\n` +
                    `🛣️ *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n` +
                    `🚦 *Estatus:* ${estNombre}\n` +
-                   `⏱️ *Vel:* ${speed} km/h\n` +
+                   `⏱️ *Vel:* ${speed} km/h` +
+                   `${geoTextWA}\n` +
                    `📍 *Ubicación:* ${locLink}\n\n` +
                    `_Reporte generado por sistema C4_`;
                    
@@ -378,19 +384,24 @@
             
             let addrText = v.ubicacion_manual || "Manual";
             let locLink = addrText;
+            let geoTextWA = "";
             
             if (pos) {
+                let zonaGeo = resolverGeocerca(pos.y, pos.x);
+                if(zonaGeo) geoTextWA = `\n📍 *Geocerca:* ${zonaGeo}`;
+                
                 let domAddr = document.getElementById("addr_" + vId);
                 addrText = (domAddr && domAddr.innerText !== "Buscando...") ? domAddr.innerText : "Ubicación GPS";
-                locLink = `https://maps.google.com/?q=${pos.y},${pos.x}`;
+                locLink = `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}`;
             }
             
             txt += `🚛 *Unidad:* ${name}\n` +
                    `📦 *Contenedores:* ${v.contenedores||'N/A'}\n` +
-                   `📍 *Ubicación:* ${locLink}\n` +
                    `⏱️ *Vel:* ${vel} km/h\n` +
                    `🚦 *Estatus:* ${est}\n` +
-                   `🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n\n`;
+                   `🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}` +
+                   `${geoTextWA}\n` +
+                   `📍 *Ubicación:* ${locLink}\n\n`;
         });
         txt += `_Reporte generado por sistema C4_`;
         
@@ -505,7 +516,8 @@
                     let auth = activeSIDs[tk.token]; 
                     if(!auth || !auth.sid) { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; return; }
 
-                    let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025, from: 0, to: 0 }, auth.sid);
+                    // TRAER TODAS LAS UNIDADES
+                    let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025, from: 0, to: 4294967295 }, auth.sid);
                     if(reqU && reqU.items) {
                         conexionesExitosas++; estadoTokens[tk.nombre] = { status: 'OK', count: reqU.items.length };
                         let localMap = {}; 
@@ -515,7 +527,8 @@
                             localMap[u.id] = n; listUni.add(n); 
                         });
                         
-                        let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 0 }, auth.sid);
+                        // TRAER TODOS LOS RECURSOS (GEOCERCAS Y OPERADORES)
+                        let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 4294967295 }, auth.sid);
                         if(reqR && reqR.items) {
                             reqR.items.forEach(r => { 
                                 if(r.drv) Object.values(r.drv).forEach(d => { let dn = String(d.n||"").toUpperCase(); listDrv.add(dn); if(d.bu && localMap[d.bu]) ramDrivers[localMap[d.bu]] = dn; }); 
@@ -560,6 +573,7 @@
                 let v = viajesActivos[vId];
                 if(typeof v !== 'object' || !v) return;
                 
+                let nombreCamion = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
                 let uData = encontrarUnidad(v, vId);
                 let isExternal = v.wialonId === "EXTERNO"; 
                 let pos = uData ? uData.pos : null; 
@@ -608,6 +622,15 @@
                     btnName.setAttribute("onclick", `centrarUnidadMapa(null, null)`);
                 }
 
+                // INYECCIÓN DINÁMICA DE OPERADOR DESDE WIALON
+                let opInput = document.getElementById("op_input_" + vId);
+                if (opInput && !v.operador) { 
+                    let wialonDriver = ramDrivers[nombreCamion] || "";
+                    if (wialonDriver && opInput.value === "") {
+                        opInput.value = wialonDriver;
+                    }
+                }
+
                 let elAddrControl = document.getElementById("addr_control_" + vId);
                 if(elAddrControl) {
                     if (isLost || isExternal) {
@@ -624,14 +647,18 @@
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
                         let zonaGeo = resolverGeocerca(pos.y, pos.x);
                         
-                        let innerHTML = `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`;
-                        if(zonaGeo) {
-                            innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-success"></i> <b class="text-success">[GEOCERCA] ${zonaGeo}</b>`;
-                        } else if(geocodeCache[geoKey]) {
-                            innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
-                        }
+                        let addrText = `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`;
+                        if(geocodeCache[geoKey]) addrText = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
                         
-                        let newHtml = `<a href="${mapsLink}" target="_blank" class="addr-link" title="Abrir en Maps"><div id="addr_${vId}">${innerHTML}</div></a>`;
+                        // INYECCIÓN VISUAL DE LA GEOCERCA COMO EXTRA A LA DIRECCIÓN
+                        let geoHtml = zonaGeo ? `<div class="mb-1 py-1 px-2 rounded" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid #10b981;"><i class="fa-solid fa-draw-polygon text-success me-1"></i><b class="text-success">${zonaGeo}</b></div>` : '';
+                        
+                        let newHtml = `
+                            ${geoHtml}
+                            <a href="${mapsLink}" target="_blank" class="addr-link" title="Abrir en Maps">
+                                <div id="addr_${vId}" class="addr-span-${geoKey}">${addrText}</div>
+                            </a>
+                        `;
                         
                         if(elAddrControl.innerHTML !== newHtml) {
                             elAddrControl.innerHTML = newHtml;
@@ -658,7 +685,6 @@
                     if(v.destino && !v.t_arribo && zonaGeo.toUpperCase().includes(String(v.destino).toUpperCase())) {
                         db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); registrarLog(vId, 'Arribo Automático (Geocerca)');
                     }
-                    return; 
                 }
 
                 let geoKey = `${uData.pos.y.toFixed(4)}_${uData.pos.x.toFixed(4)}`;
@@ -687,6 +713,9 @@
                 
                 let elId = document.getElementById("addr_" + item.vId);
                 if(elId) elId.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${a}`;
+
+                let els = document.querySelectorAll(`.addr-span-${item.key}`);
+                els.forEach(span => { span.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${a}`; });
 
                 if(item.dest && a.toUpperCase().includes(String(item.dest).toUpperCase())) {
                     let v = viajesActivos[item.vId];
@@ -820,13 +849,13 @@
                         let searchData = `${nombreCamion} ${drvName} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                         let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
-                        let trClass = isExternal ? 'external-connection-row' : '';
+                        let trClass = isExternal ? 'external-connection-row' : 'needs-gps-update';
 
                         cliHtml += `<tr class="data-row ${trClass}" id="row_${vId}" data-search="${searchData}" style="background-color: ${rowBg} !important;">
                             <td class="col-unidad align-middle"><span class="unit-name" id="name_btn_${vId}" onclick="centrarUnidadMapa(null, null)">${nombreCamion}</span></td>
                             <td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}">
                                 <div class="d-flex flex-column gap-1">
-                                    <input class="input-ghost" value="${drvName}" placeholder="NOMBRE" onblur="if(this.value.toUpperCase() !== '${drvName.toUpperCase()}'){ registrarLog('${vId}', 'Cambió Operador', this.value); db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase()); }">
+                                    <input class="input-ghost" id="op_input_${vId}" value="${drvName}" placeholder="NOMBRE" onblur="if(this.value.toUpperCase() !== '${drvName.toUpperCase()}'){ registrarLog('${vId}', 'Cambió Operador', this.value); db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase()); }">
                                     <input class="input-ghost text-primary" value="${v.telefono||''}" placeholder="TELÉFONO" onblur="db.ref('viajes_activos/${vId}/telefono').set(this.value.toUpperCase())">
                                 </div>
                             </td>
