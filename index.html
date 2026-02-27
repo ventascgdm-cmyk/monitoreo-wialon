@@ -42,7 +42,7 @@
         
         #mainTableHeader th { 
             background: var(--bg-main); color: #64748b; font-size: 0.65rem; font-weight: 800; text-align: center; vertical-align: bottom; padding: 10px 8px; text-transform: uppercase; letter-spacing: 0.05em;
-            position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--border-col); resize: horizontal; overflow: hidden;
+            position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--border-col);
         }
         
         .data-row td { 
@@ -55,7 +55,8 @@
         
         .data-row:hover td { 
             background: #f8fafc; border-color: transparent; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); 
+            transform: translateY(-1px);
         }
         .dark-mode .data-row:hover td { background: #334155; }
         
@@ -72,6 +73,8 @@
         .input-ghost { border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 6px 8px; width: 100%; font-size: 0.75rem; font-weight: 700; color: inherit; text-transform: uppercase; text-align: center; transition: all 0.2s; outline: none; }
         .input-ghost:hover { border-color: var(--border-col); background: var(--bg-main); }
         .input-ghost:focus { border-color: var(--accent); background: var(--bg-card); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .dark-mode .input-ghost:hover { border-color: #475569; background: rgba(0,0,0,0.2); }
+        .dark-mode .input-ghost:focus { background: #0f172a; }
         
         .col-unidad { min-width: 100px; width: 110px; }
         .col-operador { min-width: 130px; }
@@ -85,6 +88,7 @@
         .col-accion { min-width: 50px; }
 
         .status-select { border-radius: 20px; font-weight: 800; cursor: pointer; text-align: center; font-size: 0.75rem; padding: 6px 12px; background: transparent; border: 2px solid; outline: none; transition: all 0.2s; -webkit-appearance: none; -moz-appearance: none; appearance: none;}
+        .status-select:hover { transform: scale(1.02); }
         
         .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.1rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
         .dark-mode .unit-name { color: #f8fafc; }
@@ -107,7 +111,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v14.0 (Blindado)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v14.0 (Arquitectura Desacoplada)</div>
     </div>
 </div>
 
@@ -149,7 +153,7 @@
         <div class="table-panel">
             <div class="row mb-3 align-items-center">
                 <div class="col-md-4"><input type="text" id="buscador" class="form-control border-0 shadow-sm rounded-pill px-4" placeholder="🔍 Buscar unidad, destino, estatus..." onkeyup="filtrarTablaInteligente()"></div>
-                <div class="col-md-8 text-end"><span id="syncIndicator" class="badge bg-secondary px-3 py-2 shadow-sm rounded-pill">Cargando Motor...</span></div>
+                <div class="col-md-8 text-end"><span id="syncIndicator" class="badge bg-secondary px-3 py-2 shadow-sm rounded-pill">Cargando Motores...</span></div>
             </div>
             
             <div class="table-responsive h-100" style="overflow-x: auto; padding-bottom: 50px;">
@@ -213,8 +217,6 @@
     let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
     let geoQueue = [];
     let isGeocoding = false;
-    let motorArrancado = false;
-    let isSyncingFlotas = false;
 
     let hiddenCols = JSON.parse(localStorage.getItem('tms_hiddenCols')) || {
         'col-operador': false, 'col-ruta': false, 'col-contenedores': false, 'col-horarios': false, 'col-alertas': false, 'col-historial': false
@@ -238,7 +240,7 @@
         return null; 
     }
 
-    // MOTOR MATEMÁTICO DE GEOCERCAS
+    // MOTOR MATEMÁTICO DE GEOCERCAS WIALON 
     function isInsidePolygon(point, vs) {
         let x = point[0], y = point[1], inside = false;
         for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -264,6 +266,7 @@
         return null;
     }
 
+    // FECHAS Y TIEMPO
     function formatearFechaElegante(ms) {
         if (!ms) return "--:--"; let d = new Date(ms); let meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
         return `${String(d.getDate()).padStart(2, '0')} ${meses[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -302,41 +305,23 @@
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
     function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
 
-    // PLANILLA WHATSAPP CÓDIGO EXACTO 
-    function enviarWA(vId) {
-        let v = viajesActivos[vId]; if(!v) return;
-        let uData = encontrarUnidad(v, vId);
-        let nombreCamion = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
-        let estNombre = window.estatusData[v.estatus]?.nombre || "En Trayecto";
-        let pos = uData ? uData.pos : null;
-        let speed = pos ? pos.s : 0;
+    // PLANILLA WHATSAPP ORIGINAL CUMPLIDA
+    function shareWA(u, loc, o, d, est, cont, cli, sub, vel, posY, posX) { 
+        let estNombre = window.estatusData[est]?.nombre || "En Trayecto"; 
+        let subText = sub !== 'N/A' ? ` -> ${sub}` : '';
+        let mapLink = posY && posX ? `\n📍 *Ubicación:* https://maps.google.com/?q=...{posY},${posX}` : `\n📍 *Ubicación:* ${loc}`;
         
-        let cliId = v.cliente || "Sin_Cliente";
-        let subId = v.subcliente || "N/A";
-        let cliName = (dataClientes[cliId] && dataClientes[cliId].nombre) ? dataClientes[cliId].nombre : "SIN CLIENTE";
-        let subName = (dataClientes[cliId] && dataClientes[cliId].subclientes && dataClientes[cliId].subclientes[subId]) ? dataClientes[cliId].subclientes[subId].nombre : "";
-        let subText = subName && subName !== "N/A" ? ` -> ${subName}` : '';
-        
-        let addrText = v.ubicacion_manual || "Buscando...";
-        let locLink = addrText;
-
-        if (pos) {
-            let domAddr = document.getElementById("addr_" + vId);
-            addrText = (domAddr && domAddr.innerText !== "Buscando...") ? domAddr.innerText : "Ubicación GPS";
-            locLink = `${addrText} \nhttps://maps.google.com/?q=${pos.y},${pos.x}`;
-        }
-
         let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
-                   `🏢 *Cliente:* ${cliName}${subText}\n\n` +
-                   `🚛 *Unidad:* ${nombreCamion}\n` +
-                   `📦 *Contenedores:* ${v.contenedores||'N/A'}\n` +
-                   `🛣️ *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n` +
+                   `🏢 *Cliente:* ${cli}${subText}\n\n` +
+                   `🚛 *Unidad:* ${u}\n` +
+                   `📦 *Contenedores:* ${cont||'N/A'}` + 
+                   mapLink + `\n` +
+                   `⏱️ *Vel:* ${vel} km/h\n` +
                    `🚦 *Estatus:* ${estNombre}\n` +
-                   `⏱️ *Vel:* ${speed} km/h\n` +
-                   `📍 *Ubicación:* ${locLink}\n\n` +
-                   `_Reporte generado por sistema C4_`;
+                   `🏁 *Ruta:* ${o||'N/A'} ➔ ${d||'N/A'}\n\n` +
+                   `_Reporte C4_`;
                    
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank'); 
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); 
     }
 
     function generarReporteGrupal(cId, sId, titulo) {
@@ -350,47 +335,47 @@
             let uData = encontrarUnidad(v, vId);
             let name = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
             let est = window.estatusData[v.estatus]?.nombre || "En Trayecto";
-            let pos = uData ? uData.pos : null; 
-            let speed = pos ? pos.s : 0;
+            let pos = uData ? uData.pos : null; let vel = pos ? pos.s : 0;
             
             let addrText = v.ubicacion_manual || "Manual";
-            let locLink = addrText;
-            
             if (pos) {
                 let domAddr = document.getElementById("addr_" + vId);
                 addrText = (domAddr && domAddr.innerText !== "Buscando...") ? domAddr.innerText : "Ubicación GPS";
-                locLink = `https://maps.google.com/?q=${pos.y},${pos.x}`;
             }
+            let mapLink = pos ? `https://maps.google.com/?q=...{pos.y},${pos.x}` : addrText;
             
             txt += `🚛 *Unidad:* ${name}\n` +
                    `📦 *Contenedores:* ${v.contenedores||'N/A'}\n` +
-                   `🛣️ *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n` +
+                   `📍 *Ubicación:* ${mapLink}\n` +
+                   `⏱️ *Vel:* ${vel} km/h\n` +
                    `🚦 *Estatus:* ${est}\n` +
-                   `⏱️ *Vel:* ${speed} km/h\n` +
-                   `📍 *Ubicación:* ${locLink}\n\n`;
+                   `🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n\n`;
         });
-        txt += `_Reporte generado por sistema C4_`;
+        txt += `_Reporte C4_`;
         
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
+        window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
     }
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
 
+    // ARRANQUE 
     window.onload = function () {
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
         inicializarMenuColumnas();
         
+        // LA BITÁCORA ES LA REINA: SE DIBUJA SOLA CON FIREBASE
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
         db.ref('operadores').on('value', s => { dbOperadores = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
         db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); if(mapVisible) actualizarMarcadoresMapa(); });
-        db.ref('sistema/tokens').on('value', s => { let tks = s.val() || {}; configSistema.tokens = Object.values(tks); actualizarListaTokensAdmin(tks); if(currentUser && !motorArrancado) arranqueMotor(); });
+        
+        db.ref('sistema/tokens').on('value', s => { let tks = s.val() || {}; configSistema.tokens = Object.values(tks); actualizarListaTokensAdmin(tks); if(currentUser) arranqueMotor(); });
         
         document.getElementById("logPass").addEventListener("keyup", e => e.key === "Enter" && autenticarUsuario());
         document.getElementById("nv_unidad_input").addEventListener("input", function() { let uN = this.value.toUpperCase(); document.getElementById("nv_operador").value = ramDrivers[uN] || dbOperadores[uN] || ""; });
         
         let sU = localStorage.getItem("tms_user"), sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
         
-        // Fila de espera Anti-Baneo
+        // MOTOR NOMINATIM SEGURO
         setInterval(procesarFilaDirecciones, 1100); 
     };
 
@@ -411,7 +396,7 @@
                 document.getElementById("loginOverlay").style.display = "none"; document.getElementById("dashboard").style.display = "block";
                 document.getElementById("lblUsuarioActivo").innerText = "Monitor: " + currentUser.nom;
                 if(currentUser.rol === "admin") document.getElementById("btnAdmin").style.display = "inline-block";
-                if(!motorArrancado) arranqueMotor();
+                arranqueMotor();
             } else { 
                 document.getElementById("status").innerText = "Credenciales Incorrectas"; 
                 document.getElementById("status").className = "mt-3 small fw-bold text-danger"; 
@@ -432,12 +417,7 @@
         });
     }
 
-    async function arranqueMotor() { 
-        if(pollingInterval) clearInterval(pollingInterval); 
-        motorArrancado = true;
-        await sincronizarFlotas(); 
-        pollingInterval = setInterval(sincronizarFlotas, 20000); 
-    }
+    async function arranqueMotor() { if(pollingInterval) clearInterval(pollingInterval); await sincronizarFlotas(); pollingInterval = setInterval(sincronizarFlotas, 20000); }
     
     function renderStatusTokens() {
         const lista = document.getElementById("listaStatusTokens"); let html = "";
@@ -445,78 +425,151 @@
         lista.innerHTML = html || '<li class="list-group-item text-center">No hay tokens</li>';
     }
 
-    // MOTOR PRINCIPAL WIALON BLINDADO CONTRA CRASHES
+    // EL MOTOR DE WIALON (DECORA, NO DESTRUYE LA TABLA)
     async function sincronizarFlotas() {
-        if(isSyncingFlotas) return;
-        isSyncingFlotas = true;
+        let ind = document.getElementById("syncIndicator"); 
+        ind.innerText = "Sincronizando flotas..."; 
+        ind.className = "badge bg-warning text-dark px-3 py-2 shadow-sm rounded-pill";
         
-        try {
-            let ind = document.getElementById("syncIndicator"); 
-            ind.innerText = "Sincronizando flotas..."; 
-            ind.className = "badge bg-warning text-dark px-3 py-2 shadow-sm rounded-pill";
-            
-            estadoTokens = {}; 
-            let tempUnits = {}, tempGeo = [], listDrv = new Set(), listUni = new Set(); 
-            let conexionesExitosas = 0;
+        estadoTokens = {}; let tempUnits = {}, tempGeo = [], listDrv = new Set(), listUni = new Set(); let conexionesExitosas = 0;
 
-            let promesas = configSistema.tokens.map(async (tk) => {
-                try {
-                    if(!tk.url || !tk.token) return;
-                    if(!activeSIDs[tk.token]) { 
-                        let l = await peticionWialon(tk.url, "token/login", {token: tk.token}); 
-                        if(l && l.eid) activeSIDs[tk.token] = { sid: l.eid, uid: (l.user ? l.user.id : 0) }; 
-                    }
-                    let auth = activeSIDs[tk.token]; 
-                    if(!auth || !auth.sid) { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; return; }
-
-                    let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025, from: 0, to: 0 }, auth.sid);
-                    if(reqU && reqU.items) {
-                        conexionesExitosas++; estadoTokens[tk.nombre] = { status: 'OK', count: reqU.items.length };
-                        let localMap = {}; 
-                        reqU.items.forEach(u => { 
-                            let n = String(u.nm || "Desconocida").toUpperCase(); 
-                            tempUnits[u.id] = { id: u.id, name: n, pos: u.pos }; 
-                            localMap[u.id] = n; listUni.add(n); 
-                        });
-                        
-                        let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 0 }, auth.sid);
-                        if(reqR && reqR.items) {
-                            reqR.items.forEach(r => { 
-                                if(r.drv) Object.values(r.drv).forEach(d => { let dn = String(d.n||"").toUpperCase(); listDrv.add(dn); if(d.bu && localMap[d.bu]) ramDrivers[localMap[d.bu]] = dn; }); 
-                                if(r.zl) Object.values(r.zl).forEach(z => tempGeo.push(z)); 
-                            });
-                        }
-                    } else { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; }
-                } catch(errTk) {
-                    console.error("Token Falló:", tk.nombre);
+        let promesas = configSistema.tokens.map(async (tk) => {
+            try {
+                if(!tk.url || !tk.token) return;
+                if(!activeSIDs[tk.token]) { 
+                    let l = await peticionWialon(tk.url, "token/login", {token: tk.token}); 
+                    if(l && l.eid) activeSIDs[tk.token] = { sid: l.eid, uid: (l.user ? l.user.id : 0) }; 
                 }
-            });
+                let auth = activeSIDs[tk.token]; 
+                if(!auth || !auth.sid) { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; return; }
 
-            await Promise.all(promesas); 
-            
-            unidadesGlobales = tempUnits; geocercasNativas = tempGeo;
-            document.getElementById("listaUnidadesTotales").innerHTML = Array.from(listUni).map(n => `<option value="${n}">`).join('');
-            document.getElementById("listaConductores").innerHTML = Array.from(listDrv).map(n => `<option value="${n}">`).join('');
-            document.getElementById("listaGeocercas").innerHTML = tempGeo.map(z => `<option value="${String(z.n).toUpperCase()}">`).join('');
-            
-            if(conexionesExitosas > 0) { 
-                ind.className = "badge bg-success px-3 py-2 shadow-sm rounded-pill"; 
-                ind.innerText = Object.keys(unidadesGlobales).length + " Camiones En Vivo"; 
-            } else { 
-                ind.className = "badge bg-danger px-3 py-2 shadow-sm rounded-pill"; 
-                ind.innerText = "Error GPS - Modo Offline"; 
+                let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025, from: 0, to: 0 }, auth.sid);
+                if(reqU && reqU.items) {
+                    conexionesExitosas++; estadoTokens[tk.nombre] = { status: 'OK', count: reqU.items.length };
+                    let localMap = {}; 
+                    reqU.items.forEach(u => { 
+                        let n = String(u.nm || "Desconocida").toUpperCase(); 
+                        tempUnits[u.id] = { id: u.id, name: n, pos: u.pos }; 
+                        localMap[u.id] = n; listUni.add(n); 
+                    });
+                    
+                    let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 0 }, auth.sid);
+                    if(reqR && reqR.items) {
+                        reqR.items.forEach(r => { 
+                            if(r.drv) Object.values(r.drv).forEach(d => { let dn = String(d.n||"").toUpperCase(); listDrv.add(dn); if(d.bu && localMap[d.bu]) ramDrivers[localMap[d.bu]] = dn; }); 
+                            if(r.zl) Object.values(r.zl).forEach(z => tempGeo.push(z)); 
+                        });
+                    }
+                } else { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; }
+            } catch(e) {
+                console.error("Fallo silencioso Wialon Token:", tk.nombre);
             }
-            
-            renderStatusTokens(); renderizarBitacora(); desencadenarGeocoding(); if(mapVisible) actualizarMarcadoresMapa();
+        });
+
+        await Promise.all(promesas); 
         
-        } catch(errSync) {
-            console.error("Error Global:", errSync);
-        } finally {
-            isSyncingFlotas = false;
+        unidadesGlobales = tempUnits; geocercasNativas = tempGeo;
+        document.getElementById("listaUnidadesTotales").innerHTML = Array.from(listUni).map(n => `<option value="${n}">`).join('');
+        document.getElementById("listaConductores").innerHTML = Array.from(listDrv).map(n => `<option value="${n}">`).join('');
+        document.getElementById("listaGeocercas").innerHTML = tempGeo.map(z => `<option value="${z.n.toUpperCase()}">`).join('');
+        
+        if(conexionesExitosas > 0) { 
+            ind.className = "badge bg-success px-3 py-2 shadow-sm rounded-pill"; 
+            ind.innerText = Object.keys(unidadesGlobales).length + " Camiones En Vivo"; 
+        } else { 
+            ind.className = "badge bg-danger px-3 py-2 shadow-sm rounded-pill"; 
+            ind.innerText = "Error GPS - Modo Manual"; 
         }
+        
+        renderStatusTokens(); 
+        
+        // LA MAGIA DE LA INYECCIÓN DIRECTA AL HTML YA DIBUJADO
+        inyectarGPSenTabla();
+        if(mapVisible) actualizarMarcadoresMapa();
     }
 
-    // GEOCODIFICACIÓN (Con Tu Código Exacto de Nominatim)
+    // ARQUITECTURA DESACOPLADA: Solo actualiza los iconos y textos del GPS, sin borrar lo que escribe el usuario
+    function inyectarGPSenTabla() {
+        Object.keys(viajesActivos).forEach(vId => {
+            let v = viajesActivos[vId];
+            if(typeof v !== 'object' || !v) return;
+            
+            let uData = encontrarUnidad(v, vId);
+            let isExternal = v.wialonId === "EXTERNO"; 
+            let pos = uData ? uData.pos : null; 
+            let speed = pos ? pos.s : 0; 
+            let isLost = !uData || (uData && !pos && !isExternal);
+            
+            // 1. Inyectar Velocidad y Icono
+            let elIcon = document.getElementById("icon_" + vId);
+            let elSpeed = document.getElementById("speed_" + vId);
+            if(elIcon && elSpeed) {
+                let speedBg = "#64748b"; if(speed > 0 && speed < 100) speedBg = "#10b981"; if(speed >= 100) speedBg = "#ef4444"; 
+                if (isExternal) {
+                    elIcon.innerHTML = '<i class="fa-solid fa-globe text-info me-1 fs-6" title="Plataforma Externa"></i>';
+                    elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
+                } else if (isLost) {
+                    elIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i>';
+                    elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
+                } else {
+                    let moveIcon = speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1 fs-5"></i>' : '<i class="fa-solid fa-truck text-secondary me-1 fs-5"></i>';
+                    elIcon.innerHTML = moveIcon;
+                    elSpeed.innerHTML = `<span class="speed-badge" style="background-color:${speedBg};">${speed} km/h</span>`;
+                }
+            }
+
+            // 2. Inyectar Tiempo (Hace X seg)
+            let elTime = document.getElementById("time_" + vId);
+            if(elTime) {
+                if (isExternal) elTime.innerHTML = '<span class="text-info fw-bold">Plataforma Externa</span>';
+                else if (isLost) elTime.innerHTML = '<span class="text-danger fw-bold">Modo Offline</span>';
+                else elTime.innerHTML = `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:800;">(hace ${timeAgo(pos.t)})</span>`;
+            }
+
+            // 3. Modificar Color de la Fila entera
+            let row = document.getElementById("row_" + vId);
+            if(row) {
+                let searchData = row.getAttribute("data-search") || "";
+                let baseClass = "data-row ";
+                if (isExternal) baseClass += "external-connection-row";
+                else if (isLost) baseClass += "lost-connection-row";
+                row.className = baseClass;
+            }
+
+            // 4. Inyectar Ubicación Manual o Geocerca si es necesario
+            let elAddrControl = document.getElementById("addr_control_" + vId);
+            if(elAddrControl) {
+                if (isLost || isExternal) {
+                    let uName = String(v.unidadN || "Desconocida");
+                    elAddrControl.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span class="${isExternal?'text-info':'text-danger'} fw-bold" style="font-size:0.75rem;">${isExternal?'<i class="fa-solid fa-globe"></i> GPS EXTERNO':'<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL'}</span>
+                            <button class="btn btn-sm btn-link p-0 ms-2 text-primary" title="Editar ubicación manual" onclick="editarUbicacionManual('${vId}')"><i class="fa-solid fa-pencil"></i></button>
+                        </div>
+                        <div style="font-size:0.85rem; color:#0f172a; font-weight:800; max-width:100%; margin:0 auto;" class="text-wrap">${v.ubicacion_manual||'--'}</div>`;
+                } else {
+                    let mapsLink = `https://maps.google.com/?q=...{pos.y},${pos.x}`;
+                    // Mantenemos el DIV de addr_vId vacío o con caché para que Nominatim lo llene
+                    let addrText = "<i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...";
+                    let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
+                    let zonaGeo = resolverGeocerca(pos.y, pos.x);
+                    
+                    if(zonaGeo) addrText = `<i class="fa-solid fa-map-location-dot me-1 text-success"></i> <b class="text-success">[GEOCERCA] ${zonaGeo}</b>`;
+                    else if(geocodeCache[geoKey]) addrText = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
+
+                    elAddrControl.innerHTML = `<a href="${mapsLink}" target="_blank" class="addr-link" title="Abrir en Maps"><div id="addr_${vId}">${addrText}</div></a>`;
+                    
+                    if(zonaGeo && v.destino && !v.t_arribo && zonaGeo.toUpperCase().includes(String(v.destino).toUpperCase())) {
+                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); registrarLog(vId, 'Arribo Automático (Geocerca)');
+                    }
+                }
+            }
+        });
+        
+        desencadenarGeocoding();
+    }
+
+    // EL QUE DISPARA A NOMINATIM
     function desencadenarGeocoding() {
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId];
@@ -524,40 +577,23 @@
             let uData = encontrarUnidad(v, vId); 
             
             if(uData && uData.pos) {
-                // 1. REVISIÓN INSTANTÁNEA DE GEOCERCAS WIALON
                 let zonaGeo = resolverGeocerca(uData.pos.y, uData.pos.x);
-                if(zonaGeo) {
-                    let el = document.getElementById("addr_" + vId);
-                    if(el) el.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-success"></i> <b class="text-success">[GEOCERCA] ${zonaGeo}</b>`;
-                    if(v.destino && !v.t_arribo && zonaGeo.toUpperCase().includes(String(v.destino).toUpperCase())) {
-                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); registrarLog(vId, 'Arribo Automático (Geocerca)');
-                    }
-                    return; 
-                }
+                if(zonaGeo) return; // Si es geocerca, no gastamos peticiones en Nominatim
 
-                // 2. NOMINATIM CON ID EXACTO (Tu código)
                 let geoKey = `${uData.pos.y.toFixed(4)}_${uData.pos.x.toFixed(4)}`;
                 if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) {
                     geoQueue.push({ key: geoKey, y: uData.pos.y, x: uData.pos.x, vId: vId, dest: v.destino });
-                } else if(geocodeCache[geoKey]) {
-                    let el = document.getElementById("addr_" + vId);
-                    if(el) el.innerText = geocodeCache[geoKey];
-                    
-                    let a = geocodeCache[geoKey];
-                    if(v.destino && !v.t_arribo && a.toUpperCase().includes(String(v.destino).toUpperCase())) {
-                        db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); registrarLog(vId, 'Arribo Automático (GPS)');
-                    }
                 }
             }
         });
     }
 
+    // EL CÓDIGO EXACTO DE NOMINATIM QUE ME PASASTE
     function procesarFilaDirecciones() {
         if(isGeocoding || geoQueue.length === 0) return;
         isGeocoding = true;
         let item = geoQueue.shift();
         
-        // PETICIÓN CLÁSICA A NOMINATIM (Aprobada por el usuario)
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=16`)
             .then(r => r.json())
             .then(d => {
@@ -567,11 +603,7 @@
                 localStorage.setItem('tms_geoCache', JSON.stringify(geocodeCache));
                 
                 let elId = document.getElementById("addr_" + item.vId);
-                if(elId) elId.innerText = a;
-
-                // ACTUALIZAR TODOS LOS CLONES EN PANTALLA
-                let els = document.querySelectorAll(`.addr-span-${item.key}`);
-                els.forEach(span => { span.innerText = a; });
+                if(elId) elId.innerHTML = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${a}`;
 
                 if(item.dest && a.toUpperCase().includes(String(item.dest).toUpperCase())) {
                     let v = viajesActivos[item.vId];
@@ -623,6 +655,7 @@
         }
     }
 
+    // EL RENDER MAESTRO (Construye el chasis HTML)
     function renderizarBitacora() {
         if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA") return;
         const tbody = document.getElementById('units-body'); let html = "";
@@ -633,7 +666,6 @@
         Object.keys(viajesActivos).forEach(vId => { 
             let v = viajesActivos[vId]; 
             if(typeof v !== 'object' || !v) return; 
-            
             let cId = String(v.cliente || "Sin_Cliente"); 
             let sId = String(v.subcliente || "N/A"); 
             if(!tree[cId]) tree[cId] = { "N/A": [] }; 
@@ -665,116 +697,93 @@
                 tree[cId][sId].sort((a, b) => { let estA = String(a.v.estatus || ""); let estB = String(b.v.estatus || ""); return estA.localeCompare(estB); });
 
                 tree[cId][sId].forEach(({vId, v}) => {
-                    try {
-                        let nombreCamion = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
-                        let uData = encontrarUnidad(v, vId);
-                        
-                        let isExternal = v.wialonId === "EXTERNO"; 
-                        let pos = uData ? uData.pos : null; 
-                        let speed = pos ? pos.s : 0; 
-                        let isLost = !uData || (uData && !pos && !isExternal); 
-                        
-                        let geoKey = pos ? `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}` : 'none';
-                        let uText = (isLost || isExternal) ? `<span class="unit-name ${isExternal?'text-info':'text-danger'}" title="${isExternal?'GPS Externo':'Sin señal Wialon'}">${nombreCamion}</span>` : `<span class="unit-name" onclick="centrarUnidadMapa(${pos.y}, ${pos.x})">${nombreCamion}</span>`;
-                        
-                        let speedBg = "#64748b"; if(speed > 0 && speed < 100) speedBg = "#10b981"; if(speed >= 100) speedBg = "#ef4444"; 
-                        let moveIcon = isExternal ? '<i class="fa-solid fa-globe text-info me-1 fs-6" title="Plataforma Externa"></i>' : 
-                                       (isLost ? '<i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i>' : 
-                                       (speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1 fs-5"></i>' : '<i class="fa-solid fa-truck text-secondary me-1 fs-5"></i>'));
+                    let nombreCamion = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
+                    let uText = `<span class="unit-name text-secondary" title="Sincronizando...">${nombreCamion}</span>`;
+                    let drvName = String(v.operador || ramDrivers[nombreCamion] || dbOperadores[nombreCamion] || "");
+                    let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a'; 
 
-                        let drvName = String(v.operador || ramDrivers[nombreCamion] || dbOperadores[nombreCamion] || "");
+                    let btnSalida = construirBotonHorario(vId, v.t_salida, 't_salida', 'SALIDA', 'success');
+                    let btnArribo = construirBotonHorario(vId, v.t_arribo, 't_arribo', 'ARRIBO', 'primary'); 
+                    let btnFin = construirBotonHorario(vId, v.t_fin, 't_fin', 'FINALIZADO', 'dark');
+                    
+                    let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
+                    let lastLog = logsArr.length > 0 ? 
+                        `<div class="text-start mb-1 text-wrap" style="line-height:1.2; width:100%;">
+                            <div style="font-size:0.65rem; color:#64748b; font-weight:800; margin-bottom:3px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(logsArr[0].t)}</div>
+                            <span style="font-size:0.75rem;"><b class="text-primary">${String(logsArr[0].usr)}:</b> ${String(logsArr[0].act)} <span class="text-muted">${String(logsArr[0].det||'')}</span></span>
+                        </div>` : `<div style="font-size:0.7rem; color:#94a3b8;">Sin eventos</div>`;
 
-                        let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a'; 
+                    let searchData = `${nombreCamion} ${drvName} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
+                    let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
-                        let btnSalida = construirBotonHorario(vId, v.t_salida, 't_salida', 'SALIDA', 'success');
-                        let btnArribo = construirBotonHorario(vId, v.t_arribo, 't_arribo', 'ARRIBO', 'primary'); 
-                        let btnFin = construirBotonHorario(vId, v.t_fin, 't_fin', 'FINALIZADO', 'dark');
-                        
-                        let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
-                        let lastLog = logsArr.length > 0 ? 
-                            `<div class="text-start mb-1 text-wrap" style="line-height:1.2; width:100%;">
-                                <div style="font-size:0.65rem; color:#64748b; font-weight:800; margin-bottom:3px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(logsArr[0].t)}</div>
-                                <span style="font-size:0.75rem;"><b class="text-primary">${String(logsArr[0].usr)}:</b> ${String(logsArr[0].act)} <span class="text-muted">${String(logsArr[0].det||'')}</span></span>
-                            </div>` : `<div style="font-size:0.7rem; color:#94a3b8;">Sin eventos</div>`;
-
-                        let timeAgoText = isExternal ? '<span class="text-info fw-bold">Plataforma Externa</span>' : 
-                                          (pos ? `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:800;">(hace ${timeAgo(pos.t)})</span>` : 
-                                          '<span class="text-danger fw-bold">Modo Offline</span>');
-                        
-                        let ubiControl = (isLost || isExternal) ? 
-                            `<div class="d-flex align-items-center justify-content-center">
-                                <span class="${isExternal?'text-info':'text-danger'} fw-bold" style="font-size:0.75rem;">${isExternal?'<i class="fa-solid fa-globe"></i> GPS EXTERNO':'<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL'}</span>
-                                <button class="btn btn-sm btn-link p-0 ms-2 text-primary" title="Editar ubicación manual" onclick="editarUbicacionManual('${vId}')"><i class="fa-solid fa-pencil"></i></button>
+                    cliHtml += `<tr class="data-row" id="row_${vId}" data-search="${searchData}">
+                        <td class="col-unidad align-middle">${uText}</td>
+                        <td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}">
+                            <div class="d-flex flex-column gap-1">
+                                <input class="input-ghost" value="${drvName}" placeholder="NOMBRE" onblur="if(this.value.toUpperCase() !== '${drvName.toUpperCase()}'){ registrarLog('${vId}', 'Cambió Operador', this.value); db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase()); }">
+                                <input class="input-ghost text-primary" value="${v.telefono||''}" placeholder="TELÉFONO" onblur="db.ref('viajes_activos/${vId}/telefono').set(this.value.toUpperCase())">
                             </div>
-                            <div style="font-size:0.85rem; color:#0f172a; font-weight:800; max-width:100%; margin:0 auto;" class="text-wrap">${v.ubicacion_manual||'--'}</div>` 
-                            : `<a href="https://maps.google.com/?q=${pos.y},${pos.x}" target="_blank" class="addr-link" title="Abrir en Maps"><div id="addr_${vId}" class="addr-span-${geoKey}"><i class='fa-solid fa-spinner fa-spin text-muted'></i> Buscando...</div></a>`;
+                        </td>
+                        <td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}">
+                            <div class="position-relative ps-2">
+                                <div style="position:absolute; left: 4px; top: 12px; bottom: 12px; width: 2px; background: var(--border-col);"></div>
+                                <div class="d-flex align-items-center mb-1 position-relative">
+                                    <i class="fa-solid fa-circle text-primary position-absolute" style="left: -7px; font-size: 8px;"></i>
+                                    <input class="input-ghost text-start ps-2" style="font-size:0.75rem;" value="${v.origen||''}" placeholder="ORIGEN" onblur="db.ref('viajes_activos/${vId}/origen').set(this.value.toUpperCase())">
+                                </div>
+                                <div class="d-flex align-items-center position-relative">
+                                    <i class="fa-solid fa-location-dot text-danger position-absolute" style="left: -7px; font-size: 10px;"></i>
+                                    <input class="input-ghost text-start ps-2" style="font-size:0.75rem;" value="${v.destino||''}" placeholder="DESTINO" onblur="db.ref('viajes_activos/${vId}/destino').set(this.value.toUpperCase())">
+                                </div>
+                            </div>
+                        </td>
+                        <td class="col-contenedores align-middle ${hiddenCols['col-contenedores'] ? 'd-none' : ''}"><textarea class="input-ghost text-start" style="min-height: 60px; resize:none;" placeholder="CONTENEDORES" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
+                        <td class="col-horarios align-middle ${hiddenCols['col-horarios'] ? 'd-none' : ''}">
+                            <div class="d-flex flex-column justify-content-center h-100">${btnSalida}${btnArribo}${btnFin}</div>
+                        </td>
+                        <td class="col-estatus align-middle">
+                            <select class="form-select status-select shadow-sm" style="color:${colEstatus}; border: 1px solid ${colEstatus};" onchange="this.style.color = window.estatusData[this.value].col; this.style.borderColor = window.estatusData[this.value].col; registrarLog('${vId}', 'Cambió estatus a', this.options[this.selectedIndex].text); db.ref('viajes_activos/${vId}/estatus').set(this.value)">
+                                ${optionsHtml}
+                            </select>
+                        </td>
+                        
+                        <td class="col-gps align-middle">
+                            <div class="d-flex flex-column align-items-center px-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <span id="icon_${vId}"><i class="fa-solid fa-spinner fa-spin text-muted me-1 fs-6"></i></span>
+                                    <span id="speed_${vId}"><span class="speed-badge bg-secondary">-- km/h</span></span>
+                                </div>
+                                <div class="w-100" id="addr_control_${vId}">
+                                    <div style="font-size:0.85rem; color:#64748b; font-weight:800;" class="text-center">Sincronizando Wialon...</div>
+                                </div>
+                                <div id="time_${vId}" style="font-size:0.75rem; color:#64748b; margin-top:4px; font-weight:600;">--</div>
+                            </div>
+                        </td>
 
-                        let searchData = `${nombreCamion} ${drvName} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
-                        let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
-
-                        let rowClass = isExternal ? 'external-connection-row' : (isLost ? 'lost-connection-row' : '');
-
-                        cliHtml += `<tr class="data-row ${rowClass}" data-search="${searchData}">
-                            <td class="col-unidad">${uText}</td>
-                            <td class="col-operador ${hiddenCols['col-operador'] ? 'd-none' : ''}">
-                                <div class="d-flex flex-column gap-1">
-                                    <input class="input-ghost" value="${drvName}" placeholder="NOMBRE" onblur="if(this.value.toUpperCase() !== '${drvName.toUpperCase()}'){ registrarLog('${vId}', 'Cambió Operador', this.value); db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase()); }">
-                                    <input class="input-ghost text-primary" value="${v.telefono||''}" placeholder="TELÉFONO" onblur="db.ref('viajes_activos/${vId}/telefono').set(this.value.toUpperCase())">
-                                </div>
-                            </td>
-                            <td class="col-ruta ${hiddenCols['col-ruta'] ? 'd-none' : ''}">
-                                <div class="position-relative ps-2">
-                                    <div style="position:absolute; left: 4px; top: 12px; bottom: 12px; width: 2px; background: var(--border-col);"></div>
-                                    <div class="d-flex align-items-center mb-1 position-relative">
-                                        <i class="fa-solid fa-circle text-primary position-absolute" style="left: -7px; font-size: 8px;"></i>
-                                        <input class="input-ghost text-start ps-2" style="font-size:0.75rem;" value="${v.origen||''}" placeholder="ORIGEN" onblur="db.ref('viajes_activos/${vId}/origen').set(this.value.toUpperCase())">
-                                    </div>
-                                    <div class="d-flex align-items-center position-relative">
-                                        <i class="fa-solid fa-location-dot text-danger position-absolute" style="left: -7px; font-size: 10px;"></i>
-                                        <input class="input-ghost text-start ps-2" style="font-size:0.75rem;" value="${v.destino||''}" placeholder="DESTINO" onblur="db.ref('viajes_activos/${vId}/destino').set(this.value.toUpperCase())">
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="col-contenedores ${hiddenCols['col-contenedores'] ? 'd-none' : ''}"><textarea class="input-ghost text-start" style="min-height: 60px; resize:none;" placeholder="CONTENEDORES" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>
-                            <td class="col-horarios ${hiddenCols['col-horarios'] ? 'd-none' : ''}">
-                                <div class="d-flex flex-column justify-content-center h-100">${btnSalida}${btnArribo}${btnFin}</div>
-                            </td>
-                            <td class="col-estatus">
-                                <select class="form-select status-select shadow-sm" style="color:${colEstatus}; border: 1px solid ${colEstatus};" onchange="this.style.color = window.estatusData[this.value].col; this.style.borderColor = window.estatusData[this.value].col; registrarLog('${vId}', 'Cambió estatus a', this.options[this.selectedIndex].text); db.ref('viajes_activos/${vId}/estatus').set(this.value)">
-                                    ${optionsHtml}
-                                </select>
-                            </td>
-                            <td class="col-gps">
-                                <div class="d-flex flex-column align-items-center px-1">
-                                    <div class="d-flex align-items-center mb-1">${moveIcon}<span class="speed-badge" style="background-color:${(isLost||isExternal)?'#94a3b8':speedBg};">${speed} km/h</span></div>
-                                    <div class="w-100">${ubiControl}</div>
-                                    <div style="font-size:0.75rem; color:#64748b; margin-top:4px; font-weight:600;">${timeAgoText}</div>
-                                </div>
-                            </td>
-                            <td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.75rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.75rem;">OK</span>'}</td>
-                            <td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}">
-                                <div class="d-flex flex-column justify-content-between h-100">
-                                    ${lastLog}
-                                    <button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-2 shadow-sm rounded-pill" style="font-size:0.70rem;" onclick="abrirModalLog('${vId}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Ver Historial</button>
-                                </div>
-                            </td>
-                            <td class="col-accion">
-                                <div class="d-flex flex-column gap-2 align-items-center">
-                                    <button onclick="enviarWA('${vId}')" class="btn btn-outline-success btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
-                                    <button onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-primary btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
-                                    <button onclick="finalizarViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-danger btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            </td>
-                        </tr>`;
-                    } catch(err) {
-                        console.error("Fila omitida por error de datos:", vId, err);
-                    }
+                        <td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.75rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.75rem;">OK</span>'}</td>
+                        <td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}">
+                            <div class="d-flex flex-column justify-content-between h-100">
+                                ${lastLog}
+                                <button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-2 shadow-sm rounded-pill" style="font-size:0.70rem;" onclick="abrirModalLog('${vId}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Ver Historial</button>
+                            </div>
+                        </td>
+                        <td class="col-accion align-middle">
+                            <div class="d-flex flex-column gap-2 align-items-center">
+                                <button onclick="enviarWA('${vId}')" class="btn btn-outline-success btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                                <button onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-primary btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Editar Cliente/Ruta"><i class="fa-solid fa-pencil"></i></button>
+                                <button onclick="finalizarViaje('${vId}', '${nombreCamion}')" class="btn btn-outline-danger btn-sm p-1 shadow-sm rounded-circle" style="width: 32px; height: 32px;" title="Archivar Viaje"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>`;
                 });
             }
             if(cliHtml !== "") html += `<tr class="header-cliente shadow-sm"><td colspan="10">📦 CLIENTE: ${cliName} ${btnWaCli}</td></tr>` + cliHtml;
         }
         tbody.innerHTML = html || '<tr><td colspan="10" class="p-5 text-muted fs-5"><i class="fa-solid fa-folder-open mb-3 fs-1 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>';
         filtrarTablaInteligente();
+        
+        // Disparamos la inyección en caso de que Wialon ya haya cargado antes en segundo plano
+        inyectarGPSenTabla();
     }
 
     function filtrarTablaInteligente() {
@@ -801,7 +810,7 @@
     function guardarLogManual() {
         let uId = document.getElementById("log_uid").value, txt = document.getElementById("log_txt").value.toUpperCase(); if(!txt) return;
         registrarLog(uId, "Agregó Nota", txt);
-        try{ bootstrap.Modal.getInstance(document.getElementById('modalLog')).hide(); }catch(e){}
+        try { bootstrap.Modal.getInstance(document.getElementById('modalLog')).hide(); } catch(e){}
     }
 
     function registrarViaje() {
