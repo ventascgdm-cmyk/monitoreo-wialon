@@ -2,32 +2,31 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Bitácora Maestra (Lógica API)</title>
+    <title>C4 - Bitácora Maestra FINAL</title>
     <script type="text/javascript" src="//code.jquery.com/jquery-latest.min.js"></script>
     <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', sans-serif; background: #f8fafc; padding: 20px; font-size: 0.85rem; }
-        .unit-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .unit-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .unit-table th { background: #0f172a; color: white; padding: 12px; text-align: left; }
-        .unit-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
-        .phone-badge { background: #2563eb; color: white; padding: 4px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; }
-        .btn-bind { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+        .unit-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .phone-link { color: #2563eb; text-decoration: none; font-weight: bold; background: #eff6ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #dbeafe; }
+        .drv-name { font-weight: bold; color: #1e293b; }
     </style>
 </head>
 <body>
 
-    <h2>Operativo C4: <span style="color: #3b82f6;">Sincronización Total</span></h2>
-    <div id="log" style="margin-bottom: 15px; font-weight: bold; color: #64748b;">Iniciando API Call...</div>
+    <h2 style="font-weight: 900; color: #0f172a;">OPERATIVO C4: <span style="color: #3b82f6;">BITÁCORA INTEGRAL</span></h2>
+    <div id="log" style="margin-bottom: 15px; font-weight: bold; color: #64748b;">Conectando...</div>
 
     <table class="unit-table">
         <thead>
             <tr>
                 <th>Unidad</th>
                 <th>Conductor Actual</th>
-                <th>Teléfono (pprops)</th>
-                <th>Asignar Nuevo</th>
-                <th>Acción</th>
+                <th>Teléfono (Wialon)</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody id="units-body"></tbody>
@@ -35,66 +34,65 @@
 
 <script type="text/javascript">
     const TOKEN = "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87";
-    var all_drivers = {}; 
-    var select_options = ""; 
+    var conductoresMap = {}; // Diccionario global: ID_UNIDAD -> DATOS_CONDUCTOR
 
     function init() {
         var sess = wialon.core.Session.getInstance();
         sess.loadLibrary("resourceDrivers");
         sess.loadLibrary("itemIcon");
 
-        // Realizamos la búsqueda EXACTA de tu Apps Script: Flag 1025
-        // 1025 = 1 (Base) + 1024 (pprops/propiedades personalizadas)
+        // Flags: Base (1) + Drivers (256) + pprops (1024)
+        var res_flags = wialon.util.Number.or(1, 256, 1024);
+
         sess.updateDataFlags(
             [{type: "type", data: "avl_unit", flags: 1, mode: 0},
-             {type: "type", data: "avl_driver", flags: 1025, mode: 0}], 
+             {type: "type", data: "avl_resource", flags: res_flags, mode: 0}],
             function (code) {
-                if (code) return;
+                if (code) { console.error("Error:", code); return; }
 
-                var drivers = sess.getItems("avl_driver");
                 var units = sess.getItems("avl_unit");
+                var ress = sess.getItems("avl_resource");
 
-                // 1. PROCESAR CONDUCTORES (Igual que tu Apps Script)
-                drivers.forEach(d => {
-                    // Accedemos a pprops igual que en tu función
-                    var props = d.pprops || {}; 
-                    var telefono = props.ph || props.phone || props.mobile || ''; //
-
-                    if (!all_drivers[d.bu]) all_drivers[d.bu] = [];
-                    all_drivers[d.bu].push({ 
-                        id: d.id, 
-                        name: d.nm, 
-                        phone: telefono, 
-                        icon: d.getIconUrl(32) 
-                    });
-                    
-                    select_options += `<option value="${d.id}">${d.nm} ${telefono ? `(${telefono})` : ''}</option>`;
+                // 1. MAPEAMOS CONDUCTORES DESDE LOS RECURSOS
+                ress.forEach(res => {
+                    var drivers = res.getDrivers() || {};
+                    for (var dId in drivers) {
+                        var d = drivers[dId];
+                        // Buscamos teléfono en p o pprops (como en tu Sheets)
+                        var props = d.p || d.pprops || {};
+                        var telefono = props.ph || props.phone || props.mobile || "---";
+                        
+                        // Guardamos usando el ID de la unidad vinculada (bu)
+                        if (d.bu) {
+                            conductoresMap[d.bu] = { name: d.n, phone: telefono };
+                        }
+                    }
                 });
 
-                // 2. RENDERIZAR TABLA
+                // 2. RENDERIZAMOS LA TABLA
                 var html = "";
                 units.forEach(u => {
                     var u_id = u.getId();
-                    var d = all_drivers[u_id] ? all_drivers[u_id][0] : null;
+                    var info = conductoresMap[u_id] || { name: "<i>Sin conductor</i>", phone: "---" };
 
                     html += `
                         <tr>
-                            <td><b>${u.getName()}</b></td>
-                            <td>${d ? d.name : '<i>Sin conductor</i>'}</td>
-                            <td>${d && d.phone ? `<a href="tel:${d.phone}" class="phone-badge"><i class="fa fa-phone"></i> ${d.phone}</a>` : '---'}</td>
-                            <td><select id="sel_${u_id}">${select_options}</select></td>
-                            <td><button class="btn-bind" onclick="vincular('${u_id}')">Vincular</button></td>
+                            <td><b style="color:#0284c7">${u.getName()}</b></td>
+                            <td class="drv-name">${info.name}</td>
+                            <td>
+                                ${info.phone !== "---" ? 
+                                `<a href="tel:${info.phone}" class="phone-link"><i class="fa fa-phone"></i> ${info.phone}</a>` : 
+                                '<span style="color:#94a3b8">---</span>'}
+                            </td>
+                            <td>
+                                <button onclick="location.reload()" style="border:none; background:none; color:#3b82f6; cursor:pointer;"><i class="fa fa-sync"></i></button>
+                            </td>
                         </tr>`;
                 });
                 document.getElementById("units-body").innerHTML = html;
-                document.getElementById("log").innerText = "Sincronización completa (Modo API 1025).";
+                document.getElementById("log").innerHTML = "<span style='color:green'>● Sincronización Exitosa</span>";
             }
         );
-    }
-
-    function vincular(u_id) {
-        // Lógica de vinculación simplificada
-        alert("Función de vinculación para unidad " + u_id);
     }
 
     $(document).ready(function () {
