@@ -40,7 +40,7 @@
         
         .table-custom { width: 100%; border-collapse: separate; border-spacing: 0 4px; margin-top: 0;}
         
-        /* ENCABEZADOS INYECTADOS DE COLUMNA */
+        /* ENCABEZADOS DE COLUMNA REPETIDOS */
         .header-columnas th { 
             background: var(--header-bg); color: #f8fafc; font-size: 0.65rem; font-weight: 800; text-align: center; vertical-align: bottom; padding: 8px 6px; text-transform: uppercase; letter-spacing: 0.05em;
             position: sticky; top: 0; z-index: 10; border-bottom: 3px solid var(--accent);
@@ -48,7 +48,7 @@
         
         /* FILAS Y FONDOS DINÁMICOS */
         .data-row td { 
-            background: transparent !important; /* Deja ver el color de fondo de la fila */
+            background: transparent !important; 
             padding: 10px 6px; vertical-align: middle; 
             border-top: 1px solid var(--border-col); border-bottom: 1px solid var(--border-col);
             transition: all 0.2s ease;
@@ -70,7 +70,6 @@
 
         .lost-connection-row { outline: 2px dashed #ef4444; outline-offset: -2px; border-radius: 8px;}
         
-        /* CELDA GPS EXTERNA (SOLO LA CELDA) */
         .external-gps-cell { background-color: rgba(14, 165, 233, 0.12) !important; border: 1px dashed #0ea5e9 !important; border-radius: 8px; }
         .dark-mode .external-gps-cell { background-color: rgba(14, 165, 233, 0.25) !important; }
 
@@ -91,7 +90,6 @@
         .col-historial { min-width: 200px; }
         .col-accion { min-width: 50px; }
 
-        /* BADGES (Estatus Tipo Píldora) */
         .status-select { border-radius: 20px; font-weight: 800; cursor: pointer; text-align: center; font-size: 0.75rem; padding: 6px 12px; background: transparent; border: 1.5px solid; outline: none; transition: all 0.2s; -webkit-appearance: none; -moz-appearance: none; appearance: none;}
         .status-select:hover { transform: scale(1.03); background-color: rgba(255,255,255,0.5); }
         
@@ -117,7 +115,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v16.0</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v17.0 (Pulido Final)</div>
     </div>
 </div>
 
@@ -132,25 +130,33 @@
         </div>
         <div>
             <div class="dropdown d-inline-block me-2">
-                <button class="btn btn-light btn-sm fw-bold dropdown-toggle border shadow-sm rounded-pill px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                    <i class="fa-solid fa-eye text-primary"></i> Columnas
+                <button class="btn btn-light btn-sm fw-bold dropdown-toggle border shadow-sm rounded-pill px-3 py-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                    <i class="fa-solid fa-gear text-primary"></i> Panel de Control
                 </button>
-                <ul class="dropdown-menu shadow-lg border-0 rounded-3" style="font-size: 0.8rem;" id="colTogglerMenu">
-                    <li><label class="dropdown-item cp py-2"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-operador', this.checked)"> Operador</label></li>
-                    <li><label class="dropdown-item cp py-2"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-ruta', this.checked)"> Ruta</label></li>
-                    <li><label class="dropdown-item cp py-2"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-contenedores', this.checked)"> Contenedores</label></li>
-                    <li><label class="dropdown-item cp py-2"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-horarios', this.checked)"> Horarios</label></li>
-                    <li><label class="dropdown-item cp py-2"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-alertas', this.checked)"> Alertas</label></li>
-                    <li><label class="dropdown-item cp py-2"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-historial', this.checked)"> Historial Log</label></li>
+                <ul class="dropdown-menu shadow-lg border-0 rounded-4 p-2" style="font-size: 0.8rem; width: 220px;" id="colTogglerMenu">
+                    
+                    <li><div class="px-3 py-2 fw-bold text-center text-dark bg-light rounded mb-2" id="menuSyncIndicator"><i class="fa-solid fa-satellite-dish text-primary"></i> Sincronizando...</div></li>
+                    
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="px-3 py-1 fw-bold text-secondary" style="font-size:0.65rem;">SISTEMA</li>
+                    <li><a class="dropdown-item cp py-2" data-bs-toggle="modal" data-bs-target="#modalStatusTokens"><i class="fa-solid fa-key me-2 text-warning"></i> Tokens Wialon</a></li>
+                    <li><a class="dropdown-item cp py-2" id="btnAdminMenu" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalAdmin"><i class="fa-solid fa-user-shield me-2 text-danger"></i> Admin DB</a></li>
+                    
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="px-3 py-1 fw-bold text-secondary" style="font-size:0.65rem;">COLUMNAS</li>
+                    <li><label class="dropdown-item cp py-1"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-operador', this.checked)"> Operador</label></li>
+                    <li><label class="dropdown-item cp py-1"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-ruta', this.checked)"> Ruta</label></li>
+                    <li><label class="dropdown-item cp py-1"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-contenedores', this.checked)"> Contenedores</label></li>
+                    <li><label class="dropdown-item cp py-1"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-horarios', this.checked)"> Horarios</label></li>
+                    <li><label class="dropdown-item cp py-1"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-alertas', this.checked)"> Alertas</label></li>
+                    <li><label class="dropdown-item cp py-1"><input type="checkbox" class="form-check-input me-2" onchange="toggleCol('col-historial', this.checked)"> Historial Log</label></li>
                 </ul>
             </div>
 
-            <button class="btn btn-warning btn-sm fw-bold me-2 text-dark shadow-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalStatusTokens"><i class="fa-solid fa-satellite-dish"></i> Tokens</button>
-            <button class="btn btn-info btn-sm fw-bold me-2 text-dark shadow-sm rounded-pill px-3" onclick="toggleMap()"><i class="fa-solid fa-map"></i> Ver Mapa</button>
-            <button class="btn btn-dark btn-sm fw-bold me-2 shadow-sm rounded-circle" style="width:32px; height:32px;" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
-            <button class="btn btn-primary btn-sm fw-bold me-1 shadow-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-truck-fast"></i> Registrar Viaje</button>
-            <button class="btn btn-danger btn-sm fw-bold me-2 shadow-sm rounded-pill px-3" id="btnAdmin" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalAdmin"><i class="fa-solid fa-gears"></i> ADMIN</button>
-            <button class="btn btn-outline-secondary btn-sm fw-bold rounded-pill px-3" onclick="cerrarSesion()"><i class="fa-solid fa-power-off"></i> Salir</button>
+            <button class="btn btn-info btn-sm fw-bold me-2 text-dark shadow-sm rounded-pill px-3 py-2" onclick="toggleMap()"><i class="fa-solid fa-map"></i> Ver Mapa</button>
+            <button class="btn btn-dark btn-sm fw-bold me-2 shadow-sm rounded-circle" style="width:34px; height:34px;" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
+            <button class="btn btn-primary btn-sm fw-bold me-2 shadow-sm rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-truck-fast me-1"></i> Registrar Viaje</button>
+            <button class="btn btn-outline-danger btn-sm fw-bold rounded-pill px-3 py-2" onclick="cerrarSesion()"><i class="fa-solid fa-power-off"></i> Salir</button>
         </div>
     </div>
 
@@ -158,8 +164,7 @@
         <div class="map-panel"><div id="map"></div></div>
         <div class="table-panel">
             <div class="row mb-3 align-items-center">
-                <div class="col-md-4"><input type="text" id="buscador" class="form-control border-0 shadow-sm rounded-pill px-4 py-2" placeholder="🔍 Buscar unidad, destino, estatus..." onkeyup="filtrarTablaInteligente()"></div>
-                <div class="col-md-8 text-end"><span id="syncIndicator" class="badge bg-secondary px-3 py-2 shadow-sm rounded-pill">Cargando Motores...</span></div>
+                <div class="col-md-5"><input type="text" id="buscador" class="form-control border-0 shadow-sm rounded-pill px-4 py-2" placeholder="🔍 Buscar unidad, operador, cliente, estatus..." onkeyup="filtrarTablaInteligente()"></div>
             </div>
             
             <div class="table-responsive h-100" style="overflow-x: auto; padding-bottom: 50px;">
@@ -230,7 +235,6 @@
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 
-    // EL BUSCADOR UNIVERSAL
     function encontrarUnidad(v, vId) {
         if(!v) return null;
         if(v.wialonId && v.wialonId !== "EXTERNO" && unidadesGlobales[v.wialonId]) return unidadesGlobales[v.wialonId];
@@ -244,7 +248,6 @@
         return null; 
     }
 
-    // MATEMÁTICA WIALON GEOCERCAS
     function isInsidePolygon(point, vs) {
         let x = point[0], y = point[1], inside = false;
         for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -270,7 +273,7 @@
         return null;
     }
 
-    // === FUNCIONES DE TIEMPO ===
+    // FECHAS
     function formatearFechaElegante(ms) {
         if (!ms) return "--:--"; let d = new Date(ms); let meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
         return `${String(d.getDate()).padStart(2, '0')} ${meses[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -315,7 +318,30 @@
         mapLayerGroup = L.layerGroup().addTo(lmap);
     }
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); } }, 400); }
-    function centrarUnidadMapa(lat, lng) { if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lng], 16), 400); }
+    
+    function centrarUnidadMapa(lat, lon) { 
+        if(!lat || !lon) { alert("Esta unidad no tiene coordenadas GPS válidas en este momento."); return; }
+        if(!mapVisible) toggleMap(); 
+        setTimeout(() => lmap.flyTo([lat, lon], 16), 400); 
+    }
+
+    // ACTUALIZACIÓN DE ESTATUS EN TIEMPO REAL VISUAL
+    function cambiarEstatus(selectEl, vId) {
+        let val = selectEl.value;
+        let txt = selectEl.options[selectEl.selectedIndex].text;
+        let col = window.estatusData[val].col;
+        
+        selectEl.style.color = col;
+        selectEl.style.borderColor = col;
+        
+        let row = document.getElementById("row_" + vId);
+        if(row && !row.classList.contains("external-connection-row") && !row.classList.contains("lost-connection-row")) {
+            row.style.setProperty('background-color', hexToRgba(col, 0.12), 'important');
+        }
+        
+        registrarLog(vId, 'Cambió estatus a', txt);
+        db.ref('viajes_activos/'+vId+'/estatus').set(val);
+    }
 
     function enviarWA(vId) {
         let v = viajesActivos[vId]; if(!v) return;
@@ -405,13 +431,7 @@
         
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
         db.ref('operadores').on('value', s => { dbOperadores = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
-        
-        db.ref('viajes_activos').on('value', s => { 
-            viajesActivos = s.val() || {}; 
-            renderizarBitacora(); 
-            if(mapVisible) actualizarMarcadoresMapa(); 
-        });
-        
+        db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); if(mapVisible) actualizarMarcadoresMapa(); });
         db.ref('sistema/tokens').on('value', s => { let tks = s.val() || {}; configSistema.tokens = Object.values(tks); actualizarListaTokensAdmin(tks); if(currentUser && !motorArrancado) arranqueMotor(); });
         
         document.getElementById("logPass").addEventListener("keyup", e => e.key === "Enter" && autenticarUsuario());
@@ -438,7 +458,7 @@
                 currentUser = user; localStorage.setItem("tms_user", u); localStorage.setItem("tms_pass", p);
                 document.getElementById("loginOverlay").style.display = "none"; document.getElementById("dashboard").style.display = "block";
                 document.getElementById("lblUsuarioActivo").innerText = "Monitor: " + currentUser.nom;
-                if(currentUser.rol === "admin") document.getElementById("btnAdmin").style.display = "inline-block";
+                if(currentUser.rol === "admin") document.getElementById("btnAdminMenu").style.display = "block";
                 if(!motorArrancado) arranqueMotor();
             } else { 
                 document.getElementById("status").innerText = "Credenciales Incorrectas"; 
@@ -478,9 +498,8 @@
         isSyncingFlotas = true;
         
         try {
-            let ind = document.getElementById("syncIndicator"); 
-            ind.innerText = "Sincronizando flotas..."; 
-            ind.className = "badge bg-warning text-dark px-3 py-2 shadow-sm rounded-pill";
+            let indMenu = document.getElementById("menuSyncIndicator"); 
+            if(indMenu) indMenu.innerHTML = `<i class="fa-solid fa-satellite-dish text-warning"></i> Sincronizando...`;
             
             estadoTokens = {}; 
             let tempUnits = {}, tempGeo = [], listDrv = new Set(), listUni = new Set(); 
@@ -526,12 +545,12 @@
             document.getElementById("listaConductores").innerHTML = Array.from(listDrv).map(n => `<option value="${n}">`).join('');
             document.getElementById("listaGeocercas").innerHTML = tempGeo.map(z => `<option value="${String(z.n).toUpperCase()}">`).join('');
             
-            if(conexionesExitosas > 0) { 
-                ind.className = "badge bg-success px-3 py-2 shadow-sm rounded-pill"; 
-                ind.innerText = Object.keys(unidadesGlobales).length + " Camiones En Vivo"; 
-            } else { 
-                ind.className = "badge bg-danger px-3 py-2 shadow-sm rounded-pill"; 
-                ind.innerText = "Error GPS - Modo Offline"; 
+            if(indMenu) {
+                if(conexionesExitosas > 0) { 
+                    indMenu.innerHTML = `<span class="badge bg-success shadow-sm rounded-pill py-2 px-3">${Object.keys(unidadesGlobales).length} Camiones En Vivo</span>`;
+                } else { 
+                    indMenu.innerHTML = `<span class="badge bg-danger shadow-sm rounded-pill py-2 px-3">Error GPS - Offline</span>`;
+                }
             }
             
             renderStatusTokens(); 
@@ -545,7 +564,6 @@
         }
     }
 
-    // ARQUITECTURA DESACOPLADA BLINDADA 
     function inyectarGPSenTabla() {
         Object.keys(viajesActivos).forEach(vId => {
             try {
@@ -558,7 +576,6 @@
                 let speed = pos ? pos.s : 0; 
                 let isLost = !uData || (uData && !pos && !isExternal);
                 
-                // 1. Iconos y Velocidad
                 let elIcon = document.getElementById("icon_" + vId);
                 let elSpeed = document.getElementById("speed_" + vId);
                 if(elIcon && elSpeed) {
@@ -575,7 +592,6 @@
                     }
                 }
 
-                // 2. Tiempo de Reporte
                 let elTime = document.getElementById("time_" + vId);
                 if(elTime) {
                     if (isExternal) elTime.innerHTML = '<span class="text-info fw-bold">Plataforma Externa</span>';
@@ -583,21 +599,26 @@
                     else elTime.innerHTML = `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:800;">(hace ${timeAgo(pos.t)})</span>`;
                 }
 
-                // 3. Celda Externa GPS
                 let elGpsCell = document.getElementById("gps_cell_" + vId);
                 if(elGpsCell) {
                     if(isExternal) elGpsCell.classList.add("external-gps-cell");
                     else elGpsCell.classList.remove("external-gps-cell");
                 }
 
-                // 4. Color de Fila (si está perdida)
                 let row = document.getElementById("row_" + vId);
                 if(row) {
                     if(isLost && !isExternal) row.classList.add("lost-connection-row");
                     else row.classList.remove("lost-connection-row");
                 }
+                
+                // Actualizar el botón del nombre del camión con las coordenadas para centrar el mapa
+                let btnName = document.getElementById("name_btn_" + vId);
+                if (btnName && pos) {
+                    btnName.setAttribute("onclick", `centrarUnidadMapa(${pos.y}, ${pos.x})`);
+                } else if (btnName) {
+                    btnName.setAttribute("onclick", `centrarUnidadMapa(null, null)`);
+                }
 
-                // 5. Panel de Ubicación
                 let elAddrControl = document.getElementById("addr_control_" + vId);
                 if(elAddrControl) {
                     if (isLost || isExternal) {
@@ -611,7 +632,6 @@
                             <div style="font-size:0.85rem; color:#0f172a; font-weight:800; max-width:100%; margin:0 auto;" class="text-wrap">${v.ubicacion_manual||'--'}</div>`;
                     } else {
                         let mapsLink = `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}`;
-                        
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
                         let zonaGeo = resolverGeocerca(pos.y, pos.x);
                         
@@ -630,7 +650,7 @@
                     }
                 }
             } catch(e) {
-                console.error("Error inyectando GPS en fila:", vId, e);
+                console.error("Error inyectando GPS:", vId, e);
             }
         });
 
@@ -673,7 +693,6 @@
             .then(r => r.json())
             .then(d => {
                 let a = d.display_name || "Sin dirección";
-                
                 geocodeCache[item.key] = a;
                 localStorage.setItem('tms_geoCache', JSON.stringify(geocodeCache));
                 
@@ -745,7 +764,6 @@
         </tr>`;
     }
 
-    // EL RENDER MAESTRO (Diseño Premium + Acordeón de Headers)
     function renderizarBitacora() {
         if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA") return;
         const tbody = document.getElementById('units-body'); let html = "";
@@ -771,12 +789,9 @@
             
             let cliHtml = "";
             let btnWaCli = cId !== "Sin_Cliente" ? `<button class="btn btn-primary btn-sm py-1 px-3 float-end shadow-sm border-light rounded-pill" onclick="generarReporteGrupal('${cId}', 'N/A', '${cliName}')"><i class="fa-brands fa-whatsapp"></i> Reporte WhatsApp</button>` : '';
-            
-            let hasClientUnits = false;
 
             for(let sId in tree[cId]) {
                 if(tree[cId][sId].length === 0) continue;
-                hasClientUnits = true;
                 
                 let subName = "";
                 if (sId !== "N/A" && dataClientes[cId] && dataClientes[cId].subclientes && dataClientes[cId].subclientes[sId]) {
@@ -787,7 +802,6 @@
                 
                 if(sId !== "N/A" && subName !== "") cliHtml += `<tr class="header-subcliente"><td colspan="10">↳ Subcliente: ${subName} ${btnWaSub}</td></tr>`;
                 
-                // INYECTAR ENCABEZADOS DE COLUMNA AQUÍ
                 cliHtml += getHeadersRow();
                 
                 tree[cId][sId].sort((a, b) => { let estA = String(a.v.estatus || ""); let estB = String(b.v.estatus || ""); return estA.localeCompare(estB); });
@@ -798,7 +812,7 @@
                         let isExternal = v.wialonId === "EXTERNO"; 
                         let drvName = String(v.operador || ramDrivers[nombreCamion] || dbOperadores[nombreCamion] || "");
                         let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a'; 
-                        let rowBg = hexToRgba(colEstatus, 0.12);
+                        let rowBg = isExternal ? '' : hexToRgba(colEstatus, 0.12);
 
                         let btnSalida = construirBotonHorario(vId, v.t_salida, 't_salida', 'SALIDA', 'success');
                         let btnArribo = construirBotonHorario(vId, v.t_arribo, 't_arribo', 'ARRIBO', 'primary'); 
@@ -814,10 +828,10 @@
                         let searchData = `${nombreCamion} ${drvName} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                         let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
-                        let trClass = isExternal ? '' : 'needs-gps-update'; // Marca para inyección posterior
+                        let trClass = isExternal ? 'external-connection-row' : '';
 
                         cliHtml += `<tr class="data-row ${trClass}" id="row_${vId}" data-search="${searchData}" style="background-color: ${rowBg} !important;">
-                            <td class="col-unidad align-middle"><span class="unit-name" onclick="centrarUnidadMapa(0, 0)">${nombreCamion}</span></td>
+                            <td class="col-unidad align-middle"><span class="unit-name" id="name_btn_${vId}" onclick="centrarUnidadMapa(null, null)">${nombreCamion}</span></td>
                             <td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}">
                                 <div class="d-flex flex-column gap-1">
                                     <input class="input-ghost" value="${drvName}" placeholder="NOMBRE" onblur="if(this.value.toUpperCase() !== '${drvName.toUpperCase()}'){ registrarLog('${vId}', 'Cambió Operador', this.value); db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase()); }">
@@ -842,7 +856,7 @@
                                 <div class="d-flex flex-column justify-content-center h-100">${btnSalida}${btnArribo}${btnFin}</div>
                             </td>
                             <td class="col-estatus align-middle">
-                                <select class="form-select status-select shadow-sm" style="color:${colEstatus}; border-color:${colEstatus};" onchange="this.style.color = window.estatusData[this.value].col; this.style.borderColor = window.estatusData[this.value].col; registrarLog('${vId}', 'Cambió estatus a', this.options[this.selectedIndex].text); db.ref('viajes_activos/${vId}/estatus').set(this.value)">
+                                <select class="form-select status-select shadow-sm" style="color:${colEstatus}; border-color:${colEstatus};" onchange="cambiarEstatus(this, '${vId}')">
                                     ${optionsHtml}
                                 </select>
                             </td>
@@ -880,7 +894,7 @@
                     }
                 });
             }
-            if(hasClientUnits) html += `<tr class="header-cliente"><td colspan="10">📦 CLIENTE: ${cliName} ${btnWaCli}</td></tr>` + cliHtml;
+            if(cliHtml !== "") html += `<tr class="header-cliente shadow-sm"><td colspan="10">📦 CLIENTE: ${cliName} ${btnWaCli}</td></tr>` + cliHtml;
         }
         tbody.innerHTML = html || '<tr><td colspan="10" class="p-5 text-muted fs-5"><i class="fa-solid fa-folder-open mb-3 fs-1 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>';
         filtrarTablaInteligente();
@@ -888,16 +902,34 @@
         if (motorArrancado) inyectarGPSenTabla();
     }
 
+    // EL FILTRO INTELIGENTE CORREGIDO
     function filtrarTablaInteligente() {
         let t = document.getElementById("buscador").value.toLowerCase();
         let rows = Array.from(document.querySelectorAll("#units-body tr"));
-        rows.forEach(r => { if(r.classList.contains("data-row")) { r.style.display = (r.getAttribute("data-search") || "").includes(t) ? "" : "none"; } });
-        let datosVisiblesSub = 0, datosVisiblesCli = 0;
+        
+        rows.forEach(r => { 
+            if(r.classList.contains("data-row")) { 
+                r.style.display = (r.getAttribute("data-search") || "").includes(t) ? "" : "none"; 
+            } 
+        });
+        
+        let visSub = 0, visCli = 0;
         for (let i = rows.length - 1; i >= 0; i--) {
             let r = rows[i];
-            if (r.classList.contains("data-row")) { if (r.style.display !== "none") { datosVisiblesSub++; datosVisiblesCli++; } } 
-            else if (r.classList.contains("header-subcliente")) { r.style.display = datosVisiblesSub > 0 ? "" : "none"; datosVisiblesSub = 0; } 
-            else if (r.classList.contains("header-cliente")) { r.style.display = datosVisiblesCli > 0 ? "" : "none"; datosVisiblesCli = 0; }
+            if (r.classList.contains("data-row")) { 
+                if (r.style.display !== "none") { visSub++; visCli++; } 
+            } 
+            else if (r.classList.contains("header-columnas")) {
+                r.style.display = visSub > 0 ? "" : "none";
+            }
+            else if (r.classList.contains("header-subcliente")) { 
+                r.style.display = visSub > 0 ? "" : "none"; 
+                visSub = 0; 
+            } 
+            else if (r.classList.contains("header-cliente")) { 
+                r.style.display = visCli > 0 ? "" : "none"; 
+                visCli = 0; 
+            }
         }
     }
 
