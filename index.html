@@ -76,13 +76,13 @@
         .dark-mode .input-ghost:hover { border-color: #475569; background: rgba(0,0,0,0.2); }
         .dark-mode .input-ghost:focus { background: #0f172a; }
         
-        .col-unidad { min-width: 100px; width: 110px; }
-        .col-operador { min-width: 130px; }
+        .col-unidad { min-width: 120px; width: 130px; }
+        .col-operador { min-width: 140px; }
         .col-ruta { min-width: 180px; }
         .col-contenedores { min-width: 110px; }
         .col-horarios { min-width: 130px; }
         .col-estatus { min-width: 140px; }
-        .col-gps { min-width: 250px; width: 300px; } 
+        .col-gps { min-width: 280px; width: 320px; } 
         .col-alertas { min-width: 70px; }
         .col-historial { min-width: 200px; }
         .col-accion { min-width: 50px; }
@@ -90,9 +90,13 @@
         .status-select { border-radius: 20px; font-weight: 800; cursor: pointer; text-align: center; font-size: 0.75rem; padding: 6px 12px; background: transparent; border: 1.5px solid; outline: none; transition: all 0.2s; -webkit-appearance: none; -moz-appearance: none; appearance: none;}
         .status-select:hover { transform: scale(1.03); background-color: rgba(255,255,255,0.5); }
         
-        .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.15rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
+        .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.15rem; letter-spacing: 0.5px; transition: 0.2s;}
         .dark-mode .unit-name { color: #38bdf8; }
         .unit-name:hover { color: #0284c7; text-decoration: underline; }
+        
+        /* DEEP LINK A WIALON */
+        .wialon-deep-link { color: #94a3b8; font-size: 0.85rem; transition: 0.2s; cursor: pointer; }
+        .wialon-deep-link:hover { color: #f59e0b; transform: scale(1.1); }
         
         .speed-badge { font-size: 0.85rem; font-weight: 900; border-radius: 8px; padding: 4px 12px; text-align: center; color: white; display: inline-block; margin-bottom: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
         .addr-link { font-size: 0.80rem; line-height: 1.2; color: #0284c7; text-decoration: none; display: block; width: 100%; margin: 0 auto; font-weight: 700; text-align: center; transition: 0.2s;}
@@ -112,7 +116,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v18.0</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v19.0 (La Bestia)</div>
     </div>
 </div>
 
@@ -229,11 +233,13 @@
         }
         return inside;
     }
+    
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
         const R = 6371000; const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180;
         const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
+    
     function resolverGeocerca(lat, lon) {
         if(!geocercasNativas || geocercasNativas.length === 0) return null;
         for(let z of geocercasNativas) {
@@ -249,6 +255,7 @@
         if (!ms) return "--:--"; let d = new Date(ms); let meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
         return `${String(d.getDate()).padStart(2, '0')} ${meses[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
+    
     function formatTimeFriendly(unixSecs) { 
         if(!unixSecs) return "--:--"; 
         let d = new Date(unixSecs * 1000); 
@@ -257,10 +264,12 @@
         if(d.toDateString() === today.toDateString()) return timeStr;
         return d.toLocaleDateString('es-MX', {day:'2-digit', month:'short'}) + " " + timeStr; 
     }
+    
     function getLocalISO(unixMillis) {
         if(!unixMillis) return ""; let tzoffset = (new Date()).getTimezoneOffset() * 60000;
         return (new Date(unixMillis - tzoffset)).toISOString().slice(0, 16);
     }
+    
     function timeAgo(unixSecs) {
         if(!unixSecs) return "N/A"; let diff = Math.floor(Date.now()/1000) - unixSecs;
         if(diff < 60) return `${diff} seg`; if(diff < 3600) return `${Math.floor(diff/60)} min`;
@@ -289,6 +298,7 @@
         mapLayerGroup = L.layerGroup().addTo(lmap);
         geofenceLayerGroup = L.layerGroup().addTo(lmap);
     }
+    
     function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); pintarGeocercasEnMapa(); } }, 400); }
     
     function centrarUnidadMapa(lat, lon) { 
@@ -351,8 +361,15 @@
             if(zonaGeo) geoTextWA = `\n📍 *Geocerca:* ${zonaGeo}`;
             
             let domAddr = document.getElementById("addr_" + vId);
-            addrText = (domAddr && domAddr.innerText !== "Buscando...") ? domAddr.innerText : "Ubicación GPS";
-            locLink = `${addrText} \nhttps://maps.google.com/?q=LAT,LON{pos.y},${pos.x}`;
+            // Evitar mandar el HTML verde de la geocerca en el nombre de la calle
+            if(domAddr && domAddr.innerText !== "Buscando...") {
+                let txtLimpio = domAddr.innerText.replace("[GEOCERCA]", "").trim();
+                let partes = txtLimpio.split("\n");
+                addrText = partes[partes.length - 1] || txtLimpio; 
+            } else {
+                addrText = "Ubicación GPS";
+            }
+            locLink = `${addrText} \nhttps://maps.google.com/?q=${pos.y},${pos.x}`;
         }
 
         let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n` +
@@ -391,8 +408,14 @@
                 if(zonaGeo) geoTextWA = `\n📍 *Geocerca:* ${zonaGeo}`;
                 
                 let domAddr = document.getElementById("addr_" + vId);
-                addrText = (domAddr && domAddr.innerText !== "Buscando...") ? domAddr.innerText : "Ubicación GPS";
-                locLink = `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}`;
+                if(domAddr && domAddr.innerText !== "Buscando...") {
+                    let txtLimpio = domAddr.innerText.replace("[GEOCERCA]", "").trim();
+                    let partes = txtLimpio.split("\n");
+                    addrText = partes[partes.length - 1] || txtLimpio; 
+                } else {
+                    addrText = "Ubicación GPS";
+                }
+                locLink = `https://maps.google.com/?q=${pos.y},${pos.x}`;
             }
             
             txt += `🚛 *Unidad:* ${name}\n` +
@@ -531,7 +554,8 @@
                         let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 4294967295 }, auth.sid);
                         if(reqR && reqR.items) {
                             reqR.items.forEach(r => { 
-                                if(r.drv) Object.values(r.drv).forEach(d => { let dn = String(d.n||"").toUpperCase(); listDrv.add(dn); if(d.bu && localMap[d.bu]) ramDrivers[localMap[d.bu]] = dn; }); 
+                                // Ojo aquí: d.bu es el ID numérico de la unidad a la que está atado el chofer
+                                if(r.drv) Object.values(r.drv).forEach(d => { if(d.bu) ramDrivers[d.bu] = String(d.n||"").toUpperCase(); listDrv.add(String(d.n||"").toUpperCase()); }); 
                                 if(r.zl) Object.values(r.zl).forEach(z => tempGeo.push(z)); 
                             });
                         }
@@ -567,19 +591,20 @@
         }
     }
 
+    // ARQUITECTURA DESACOPLADA: Solo inyecta, no borra
     function inyectarGPSenTabla() {
         Object.keys(viajesActivos).forEach(vId => {
             try {
                 let v = viajesActivos[vId];
                 if(typeof v !== 'object' || !v) return;
                 
-                let nombreCamion = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
                 let uData = encontrarUnidad(v, vId);
                 let isExternal = v.wialonId === "EXTERNO"; 
                 let pos = uData ? uData.pos : null; 
                 let speed = pos ? pos.s : 0; 
                 let isLost = !uData || (uData && !pos && !isExternal);
                 
+                // 1. Iconos y Velocidad
                 let elIcon = document.getElementById("icon_" + vId);
                 let elSpeed = document.getElementById("speed_" + vId);
                 if(elIcon && elSpeed) {
@@ -596,6 +621,7 @@
                     }
                 }
 
+                // 2. Tiempo de Reporte
                 let elTime = document.getElementById("time_" + vId);
                 if(elTime) {
                     if (isExternal) elTime.innerHTML = '<span class="text-info fw-bold">Plataforma Externa</span>';
@@ -603,6 +629,7 @@
                     else elTime.innerHTML = `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="text-primary ms-1" style="font-weight:800;">(hace ${timeAgo(pos.t)})</span>`;
                 }
 
+                // 3. Celda GPS (Bordes de pérdida)
                 let elGpsCell = document.getElementById("gps_cell_" + vId);
                 if(elGpsCell) {
                     if(isExternal) elGpsCell.classList.add("external-gps-cell");
@@ -615,6 +642,7 @@
                     else row.classList.remove("lost-connection-row");
                 }
                 
+                // 4. Centrar Mapa
                 let btnName = document.getElementById("name_btn_" + vId);
                 if (btnName && pos) {
                     btnName.setAttribute("onclick", `centrarUnidadMapa(${pos.y}, ${pos.x})`);
@@ -622,15 +650,18 @@
                     btnName.setAttribute("onclick", `centrarUnidadMapa(null, null)`);
                 }
 
-                // INYECCIÓN DINÁMICA DE OPERADOR DESDE WIALON
-                let opInput = document.getElementById("op_input_" + vId);
-                if (opInput && !v.operador) { 
-                    let wialonDriver = ramDrivers[nombreCamion] || "";
-                    if (wialonDriver && opInput.value === "") {
-                        opInput.value = wialonDriver;
+                // 5. INYECCIÓN DEL CHOFER DE WIALON EN SU BADGE
+                let wialonDriver = uData && ramDrivers[uData.id] ? ramDrivers[uData.id] : "";
+                let elOpWialon = document.getElementById("op_wialon_" + vId);
+                if (elOpWialon) {
+                    if (wialonDriver) {
+                        elOpWialon.innerHTML = `<div class="badge bg-info text-dark w-100 mt-1 shadow-sm border border-light" style="font-size:0.7rem; letter-spacing:0.5px;"><i class="fa-solid fa-id-card"></i> ${wialonDriver}</div>`;
+                    } else {
+                        elOpWialon.innerHTML = '';
                     }
                 }
 
+                // 6. DIRECCIONES Y GEOCERCAS
                 let elAddrControl = document.getElementById("addr_control_" + vId);
                 if(elAddrControl) {
                     if (isLost || isExternal) {
@@ -643,15 +674,15 @@
                             </div>
                             <div style="font-size:0.85rem; color:#0f172a; font-weight:800; max-width:100%; margin:0 auto;" class="text-wrap">${v.ubicacion_manual||'--'}</div>`;
                     } else {
-                        let mapsLink = `https://maps.google.com/?q=LAT,LON{pos.y},${pos.x}`;
+                        let mapsLink = `https://maps.google.com/?q=${pos.y},${pos.x}`;
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
                         let zonaGeo = resolverGeocerca(pos.y, pos.x);
                         
                         let addrText = `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`;
                         if(geocodeCache[geoKey]) addrText = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
                         
-                        // INYECCIÓN VISUAL DE LA GEOCERCA COMO EXTRA A LA DIRECCIÓN
-                        let geoHtml = zonaGeo ? `<div class="mb-1 py-1 px-2 rounded" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid #10b981;"><i class="fa-solid fa-draw-polygon text-success me-1"></i><b class="text-success">${zonaGeo}</b></div>` : '';
+                        // Si hay Geocerca, se muestra ARRIBA de la calle normal
+                        let geoHtml = zonaGeo ? `<div class="mb-1 py-1 px-2 rounded shadow-sm text-center" style="background-color: #d1fae5; border: 1px dashed #10b981; font-size:0.75rem;"><i class="fa-solid fa-draw-polygon text-success me-1"></i><b class="text-success">${zonaGeo}</b></div>` : '';
                         
                         let newHtml = `
                             ${geoHtml}
@@ -831,7 +862,7 @@
                     try {
                         let nombreCamion = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
                         let isExternal = v.wialonId === "EXTERNO"; 
-                        let drvName = String(v.operador || ramDrivers[nombreCamion] || dbOperadores[nombreCamion] || "");
+                        let drvName = String(v.operador || "");
                         let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a'; 
                         let rowBg = isExternal ? '' : hexToRgba(colEstatus, 0.12);
 
@@ -850,13 +881,21 @@
                         let optionsHtml = Object.keys(window.estatusData).map(k=>{ return `<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`; }).join('');
 
                         let trClass = isExternal ? 'external-connection-row' : 'needs-gps-update';
+                        
+                        let deepLinkHtml = !isExternal ? `<a href="https://hosting.wialon.com" target="_blank" class="ms-2 wialon-deep-link" title="Abrir en Wialon"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : '';
 
                         cliHtml += `<tr class="data-row ${trClass}" id="row_${vId}" data-search="${searchData}" style="background-color: ${rowBg} !important;">
-                            <td class="col-unidad align-middle"><span class="unit-name" id="name_btn_${vId}" onclick="centrarUnidadMapa(null, null)">${nombreCamion}</span></td>
+                            <td class="col-unidad align-middle">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="unit-name" id="name_btn_${vId}" onclick="centrarUnidadMapa(null, null)">${nombreCamion}</span>
+                                    ${deepLinkHtml}
+                                </div>
+                            </td>
                             <td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}">
                                 <div class="d-flex flex-column gap-1">
                                     <input class="input-ghost" id="op_input_${vId}" value="${drvName}" placeholder="NOMBRE" onblur="if(this.value.toUpperCase() !== '${drvName.toUpperCase()}'){ registrarLog('${vId}', 'Cambió Operador', this.value); db.ref('viajes_activos/${vId}/operador').set(this.value.toUpperCase()); }">
                                     <input class="input-ghost text-primary" value="${v.telefono||''}" placeholder="TELÉFONO" onblur="db.ref('viajes_activos/${vId}/telefono').set(this.value.toUpperCase())">
+                                    <div id="op_wialon_${vId}"></div>
                                 </div>
                             </td>
                             <td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}">
