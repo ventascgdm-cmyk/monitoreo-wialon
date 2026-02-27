@@ -1,83 +1,82 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Monitor de Unidades Wialon</title>
+    <meta charset="utf-8" />
+    <title>Wialon - Unidades y Conductores</title>
+    <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #004a99; color: white; }
-        tr:nth-child(even) { background-color: #f2f2f2; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #00529b; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .status-ok { color: green; font-weight: bold; }
+        .status-error { color: red; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2>Unidades y Conductores en Tiempo Real</h2>
-    <div id="status">Cargando datos...</div>
-    <br>
-    <table id="unitTable">
+    <h2>Unidades y Conductores en Tiempo Real (SDK)</h2>
+    <div id="log">Iniciando sesión...</div>
+
+    <table>
         <thead>
             <tr>
                 <th>Unidad</th>
                 <th>Conductor</th>
-                <th>ID Unidad</th>
+                <th>Último Mensaje</th>
             </tr>
         </thead>
-        <tbody id="tableBody">
-            </tbody>
+        <tbody id="units-body"></tbody>
     </table>
 
-    <script>
+    <script type="text/javascript">
         const TOKEN = "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87";
-        const HOST = "https://hst-api.wialon.com/wialon/ajax.html";
 
-        async function getWialonData() {
-            try {
-                // 1. Login para obtener SID
-                const loginRes = await fetch(`${HOST}?svc=token/login&params=${JSON.stringify({token: TOKEN})}`);
-                const loginData = await loginRes.json();
-                const sid = loginData.eid;
-
-                // 2. Buscar Unidades
-                const searchParams = {
-                    spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-                    force: 1,
-                    flags: 1 + 256, // Nombre y Conductores
-                    from: 0, to: 0
-                };
-
-                const searchRes = await fetch(`${HOST}?svc=core/search_items&params=${JSON.stringify(searchParams)}&sid=${sid}`);
-                const searchData = await searchRes.json();
-                
-                renderTable(searchData.items);
-                document.getElementById('status').innerText = "Datos actualizados correctamente.";
-
-            } catch (error) {
-                console.error("Error:", error);
-                document.getElementById('status').innerText = "Error al conectar con Wialon.";
-            }
-        }
-
-        function renderTable(units) {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = ""; // Limpiar tabla
-
-            units.forEach(unit => {
-                const row = document.createElement('tr');
-                const driverName = unit.prms?.driver?.v || "Sin conductor";
-                
-                row.innerHTML = `
-                    <td>${unit.nm}</td>
-                    <td>${driverName}</td>
-                    <td>${unit.id}</td>
-                `;
-                tbody.appendChild(row);
+        function init() {
+            wialon.core.Session.getInstance().initSession("https://hst-api.wialon.com");
+            
+            wialon.core.Session.getInstance().loginToken(TOKEN, "", (code) => {
+                if (code) {
+                    document.getElementById("log").innerHTML = "<span class='status-error'>Error de Login: " + code + "</span>";
+                    return;
+                }
+                document.getElementById("log").innerHTML = "<span class='status-ok'>Conectado con éxito</span>";
+                loadUnits();
             });
         }
 
-        // Ejecutar al cargar la página
-        getWialonData();
+        function loadUnits() {
+            const session = wialon.core.Session.getInstance();
+            // Especificamos que queremos unidades (avl_unit) y sus datos (flags)
+            // Flag 1: Nombre, Flag 256: Conductores
+            session.loadLibrary("itemIcon");
+            session.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 256, mode: 0}], (code) => {
+                if (code) { return; }
+
+                const units = session.getItems("avl_unit");
+                const tbody = document.getElementById("units-body");
+                
+                units.forEach(unit => {
+                    const row = tbody.insertRow();
+                    const nameCell = row.insertCell(0);
+                    const driverCell = row.insertCell(1);
+                    const timeCell = row.insertCell(2);
+
+                    nameCell.innerHTML = unit.getName();
+                    
+                    // Obtener conductor a través de las propiedades del SDK
+                    const driverInfo = unit.getCustomProperty("driver", "Sin conductor");
+                    driverCell.innerHTML = driverInfo;
+                    
+                    const lastMsg = unit.getLastMessage();
+                    timeCell.innerHTML = lastMsg ? new Date(lastMsg.t * 1000).toLocaleString() : "---";
+                });
+            });
+        }
+
+        // Ejecutar cuando la página y el SDK estén listos
+        window.onload = init;
     </script>
 </body>
 </html>
