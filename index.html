@@ -5,25 +5,26 @@
     <title>Wialon - Unidades y Conductores</title>
     <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f4f7f6; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background-color: #00529b; color: white; }
         tr:nth-child(even) { background-color: #f9f9f9; }
-        .status-ok { color: green; font-weight: bold; }
-        .status-error { color: red; font-weight: bold; }
+        .status { padding: 10px; margin-bottom: 10px; font-weight: bold; border-radius: 4px; }
+        .ok { background: #d4edda; color: #155724; }
     </style>
 </head>
 <body>
 
-    <h2>Unidades y Conductores en Tiempo Real (SDK)</h2>
-    <div id="log">Iniciando sesión...</div>
+    <h2>Monitoreo de Unidades y Conductores</h2>
+    <div id="log" class="status">Conectando...</div>
 
     <table>
         <thead>
             <tr>
                 <th>Unidad</th>
-                <th>Conductor</th>
+                <th>Conductor Actual</th>
+                <th>Teléfono</th>
                 <th>Último Mensaje</th>
             </tr>
         </thead>
@@ -32,50 +33,71 @@
 
     <script type="text/javascript">
         const TOKEN = "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87";
+        let conductoresMap = {}; // Aquí guardaremos ID_Conductor -> Nombre
 
         function init() {
-            wialon.core.Session.getInstance().initSession("https://hst-api.wialon.com");
-            
-            wialon.core.Session.getInstance().loginToken(TOKEN, "", (code) => {
+            const sess = wialon.core.Session.getInstance();
+            sess.initSession("https://hst-api.wialon.com");
+            sess.loginToken(TOKEN, "", (code) => {
                 if (code) {
-                    document.getElementById("log").innerHTML = "<span class='status-error'>Error de Login: " + code + "</span>";
+                    document.getElementById("log").innerText = "Error de Login: " + code;
                     return;
                 }
-                document.getElementById("log").innerHTML = "<span class='status-ok'>Conectado con éxito</span>";
-                loadUnits();
+                document.getElementById("log").innerText = "Conectado con éxito";
+                document.getElementById("log").classList.add("ok");
+                
+                // 1. Primero cargamos los conductores (como en tu Sheets)
+                cargarConductores();
             });
         }
 
-        function loadUnits() {
-            const session = wialon.core.Session.getInstance();
-            // Especificamos que queremos unidades (avl_unit) y sus datos (flags)
-            // Flag 1: Nombre, Flag 256: Conductores
-            session.loadLibrary("itemIcon");
-            session.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 256, mode: 0}], (code) => {
-                if (code) { return; }
-
-                const units = session.getItems("avl_unit");
-                const tbody = document.getElementById("units-body");
+        function cargarConductores() {
+            const sess = wialon.core.Session.getInstance();
+            // Flag 1: Propiedades básicas (nombre), Flag 256: Propiedades personalizadas (teléfono)
+            sess.updateDataFlags([{type: "type", data: "avl_driver", flags: 1 | 256, mode: 0}], (code) => {
+                const drivers = sess.getItems("avl_driver");
+                drivers.forEach(d => {
+                    const phone = d.getCustomProperty("ph", d.getCustomProperty("phone", "---"));
+                    conductoresMap[d.getId()] = {
+                        nombre: d.getName(),
+                        telefono: phone
+                    };
+                });
                 
+                // 2. Una vez que tenemos el mapa de conductores, cargamos las unidades
+                cargarUnidades();
+            });
+        }
+
+        function cargarUnidades() {
+            const sess = wialon.core.Session.getInstance();
+            // Flag 1: Nombre, Flag 1024: Posición/Mensajes
+            sess.updateDataFlags([{type: "type", data: "avl_unit", flags: 1 | 1024, mode: 0}], (code) => {
+                const units = sess.getItems("avl_unit");
+                const tbody = document.getElementById("units-body");
+                tbody.innerHTML = "";
+
                 units.forEach(unit => {
                     const row = tbody.insertRow();
-                    const nameCell = row.insertCell(0);
-                    const driverCell = row.insertCell(1);
-                    const timeCell = row.insertCell(2);
+                    
+                    // Obtener ID del conductor asignado a esta unidad
+                    // En el SDK se obtiene usualmente mediante getDriverId()
+                    const driverId = unit.getDriverId ? unit.getDriverId() : 0;
+                    const infoDriver = conductoresMap[driverId] || { nombre: "Sin conductor", telefono: "---" };
 
-                    nameCell.innerHTML = unit.getName();
-                    
-                    // Obtener conductor a través de las propiedades del SDK
-                    const driverInfo = unit.getCustomProperty("driver", "Sin conductor");
-                    driverCell.innerHTML = driverInfo;
-                    
                     const lastMsg = unit.getLastMessage();
-                    timeCell.innerHTML = lastMsg ? new Date(lastMsg.t * 1000).toLocaleString() : "---";
+                    const fecha = lastMsg ? new Date(lastMsg.t * 1000).toLocaleString() : "---";
+
+                    row.innerHTML = `
+                        <td><strong>${unit.getName()}</strong></td>
+                        <td>${infoDriver.nombre}</td>
+                        <td>${infoDriver.telefono}</td>
+                        <td>${fecha}</td>
+                    `;
                 });
             });
         }
 
-        // Ejecutar cuando la página y el SDK estén listos
         window.onload = init;
     </script>
 </body>
