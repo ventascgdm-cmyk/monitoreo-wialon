@@ -2,27 +2,24 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Bitácora con Cambio de Conductor y Teléfono</title>
+    <title>C4 - Bitácora Maestra (Teléfonos Corregidos)</title>
     <script type="text/javascript" src="//code.jquery.com/jquery-latest.min.js"></script>
     <script type="text/javascript" src="https://hst-api.wialon.com/wsdk/script/wialon.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', sans-serif; background: #f8fafc; padding: 20px; }
-        .unit-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .unit-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .unit-table th { background: #0f172a; color: white; padding: 12px; text-align: left; font-size: 0.85rem; }
         .unit-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
         .drv-container { display: flex; align-items: center; gap: 8px; font-weight: bold; color: #0284c7; }
-        .phone-link { color: #475569; text-decoration: none; font-weight: 600; font-size: 0.85rem; }
-        .phone-link:hover { color: #2563eb; }
+        .phone-badge { background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.8rem; }
         .btn-bind { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-bind:hover { background: #2563eb; }
-        select { padding: 5px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; width: 100%; }
     </style>
 </head>
 <body>
 
     <h2 style="color: #1e293b;">Operativo C4: <span style="color: #3b82f6;">Gestión de Conductores</span></h2>
-    <div id="log" style="margin-bottom: 15px; color: #64748b; font-weight: bold;">Conectando a Wialon...</div>
+    <div id="log" style="margin-bottom: 15px; color: #64748b; font-weight: bold;">Sincronizando datos...</div>
 
     <table class="unit-table">
         <thead>
@@ -30,7 +27,7 @@
                 <th>Unidad</th>
                 <th>Conductor Actual</th>
                 <th>Teléfono</th>
-                <th style="width: 200px;">Asignar Nuevo</th>
+                <th>Asignar Nuevo</th>
                 <th>Acción</th>
             </tr>
         </thead>
@@ -44,11 +41,11 @@
 
     function init() {
         var sess = wialon.core.Session.getInstance();
-        
         sess.loadLibrary("resourceDrivers");
         sess.loadLibrary("itemIcon");
 
         var unit_flags = wialon.item.Item.dataFlag.base;
+        // Flag 256 es vital para leer propiedades personalizadas (pprops)
         var res_flags = wialon.util.Number.or(wialon.item.Item.dataFlag.base, wialon.item.Resource.dataFlag.drivers);
 
         sess.updateDataFlags(
@@ -60,12 +57,17 @@
                 var units = sess.getItems("avl_unit");
                 var ress = sess.getItems("avl_resource");
 
-                // 1. Mapeamos conductores y extraemos el teléfono nativo (d.ph)
                 ress.forEach(res => {
                     var drivers = res.getDrivers() || {};
                     for (var dId in drivers) {
                         var d = drivers[dId];
-                        var phone = d.ph || "";
+                        
+                        // DEPURACIÓN: Verás en consola exactamente dónde Wialon guarda el teléfono
+                        console.log("Revisando conductor:", d.n, d);
+
+                        // BUSQUEDA PROFUNDA DEL TELÉFONO
+                        // Intentamos obtenerlo de d.ph, luego de d.p.ph (custom props), luego de d.pprops.ph
+                        var phone = d.ph || (d.p && d.p.ph) || (d.pprops && d.pprops.ph) || "";
 
                         if (!all_drivers[d.bu]) all_drivers[d.bu] = [];
                         all_drivers[d.bu].push({ 
@@ -76,35 +78,35 @@
                             icon: res.getDriverImageUrl(d, 32) 
                         });
                         
-                        // Opciones del select con teléfono
-                        select_options += `<option value="${res.getId()}_${d.id}">${d.n} ${phone ? `(${phone})` : ''}</option>`;
+                        select_options += `<option value="${res.getId()}_${d.id}">${d.n} ${phone ? `[${phone}]` : ''}</option>`;
                     }
                 });
 
-                // 2. Renderizamos la tabla
                 var html = "";
                 units.forEach(u => {
                     var u_id = u.getId();
-                    var drvHtml = "<i>Sin conductor</i>";
-                    var phoneHtml = "---";
-                    
+                    var drvName = "<i>Sin conductor</i>";
+                    var drvPhone = "---";
+                    var drvIcon = "";
+
                     if (all_drivers[u_id]) {
-                        var d = all_drivers[u_id][0]; // Obtenemos el primer conductor asignado
-                        drvHtml = `<div class="drv-container"><img src="${d.icon}" width="20"> ${d.name}</div>`;
-                        phoneHtml = d.phone ? `<a href="tel:${d.phone}" class="phone-link"><i class="fa-solid fa-phone me-1"></i>${d.phone}</a>` : "---";
+                        var d = all_drivers[u_id][0];
+                        drvName = d.name;
+                        drvPhone = d.phone;
+                        drvIcon = `<img src="${d.icon}" width="20">`;
                     }
 
                     html += `
-                        <tr id="row_${u_id}">
+                        <tr>
                             <td><b>${u.getName()}</b></td>
-                            <td id="assigned_${u_id}">${drvHtml}</td>
-                            <td>${phoneHtml}</td>
+                            <td><div class="drv-container">${drvIcon} ${drvName}</div></td>
+                            <td>${drvPhone !== "---" && drvPhone !== "" ? `<a href="tel:${drvPhone}" class="phone-badge"><i class="fa fa-phone"></i> ${drvPhone}</a>` : '<span class="text-muted">No reg.</span>'}</td>
                             <td><select id="sel_${u_id}">${select_options}</select></td>
                             <td><button class="btn-bind" onclick="vincular('${u_id}')">Vincular</button></td>
                         </tr>`;
                 });
                 document.getElementById("units-body").innerHTML = html;
-                document.getElementById("log").innerText = "Sincronización completa.";
+                document.getElementById("log").innerText = "Datos actualizados.";
             }
         );
     }
@@ -119,7 +121,7 @@
         
         res.bindDriverToUnit(driver, unit, 0, true, function(code) {
             if (code) { alert("Error: " + wialon.core.Errors.getErrorText(code)); return; }
-            alert("Conductor " + driver.n + " asignado a " + unit.getName());
+            alert("Asignado: " + driver.n);
             location.reload(); 
         });
     }
