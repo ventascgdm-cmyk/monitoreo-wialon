@@ -2,16 +2,17 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Bitácora Maestra Multitoken</title>
+    <title>C4 - Solo DSG (Héctor Calderón)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.85rem; }
         .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
         .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
-        .badge-geo { background: #d1fae5; color: #065f46; border: 1px solid #10b981; font-weight: 700; padding: 4px 8px; border-radius: 5px; }
-        .unit-id { font-weight: 900; color: #0284c7; }
-        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.7rem; }
+        .badge-geo { background: #d1fae5; color: #065f46; border: 1px solid #10b981; font-weight: 700; padding: 5px 10px; border-radius: 6px; }
+        .unit-id { font-weight: 900; color: #0284c7; font-size: 1rem; }
+        .wa-btn { background: #22c55e; color: white; padding: 4px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; }
+        .wa-btn:hover { color: white; background: #16a34a; }
     </style>
 </head>
 <body>
@@ -19,24 +20,25 @@
 <div class="container-fluid py-4">
     <div class="card card-c4 shadow">
         <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h5 class="m-0"><i class="fa-solid fa-shield-halved me-2 text-info"></i> OPERATIVO C4 | <small class="opacity-75">Filtrado por Recurso</small></h5>
-            <button onclick="sincronizarMaestro()" class="btn btn-info btn-sm fw-bold">ACTUALIZAR DATOS</button>
+            <h4 class="m-0"><i class="fa-solid fa-truck-fast me-2 text-info"></i> DSG | <small class="opacity-75">Héctor Calderón</small></h4>
+            <button onclick="cargarDSG()" class="btn btn-info btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR DSG
+            </button>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle m-0">
-                <thead class="table-dark text-uppercase" style="font-size: 0.7rem;">
+                <thead class="table-dark">
                     <tr>
-                        <th>Plataforma</th>
-                        <th>Recurso</th>
                         <th>Unidad</th>
-                        <th>Conductor Actual</th>
-                        <th>WhatsApp / Teléfono</th>
-                        <th>Ubicación (Geocerca Propia)</th>
-                        <th>Estatus</th>
+                        <th>Cod.</th>
+                        <th>Conductor</th>
+                        <th>WhatsApp</th>
+                        <th>Ubicación / Geocerca</th>
+                        <th>Velocidad</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="7" class="text-center p-5 text-muted text-uppercase">Inicie sincronización para separar flotas...</td></tr>
+                    <tr><td colspan="6" class="text-center p-5 text-muted">Presiona "Actualizar" para cargar la flota DSG.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -44,127 +46,103 @@
 </div>
 
 <script>
-const PLATAFORMAS = [
-    { nombre: "FLOTA RACEL", url: "https://hst-api.wialon.com", token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" },
-    { nombre: "FLOTA 2", url: "https://hst-api.wialon.com", token: "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418" }
-];
+// CONFIGURACIÓN ÚNICA
+const TOKEN_DSG = "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87";
+const HOST = "https://hst-api.wialon.com";
 
-let globalDrivers = {}; 
-let globalGeofences = {}; // Estructura: { RecursoID: { GeocercaID: { n: nombre, p: puntos } } }
+let driversDSG = {}; 
+let zonesDSG = {};
 
-async function sincronizarMaestro() {
+async function cargarDSG() {
     const tbody = document.getElementById("tabla-body");
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><br>SEPARANDO RECURSOS Y CONDUCTORES...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Cargando datos de DSG...</td></tr>';
     
-    globalDrivers = {};
-    globalGeofences = {};
-    let masterList = [];
+    driversDSG = {};
+    zonesDSG = {};
 
-    for (const p of PLATAFORMAS) {
-        const data = await procesarFlota(p);
-        if (data) masterList = masterList.concat(data);
-    }
-    
-    render(masterList);
-}
-
-async function procesarFlota(p) {
     try {
-        const login = await api(p.url, "token/login", { token: p.token });
+        const login = await api(HOST, "token/login", { token: TOKEN_DSG });
         const sid = login.eid;
-        if (!sid) return null;
+        if (!sid) throw "Error de Token";
 
-        const resReq = await api(p.url, "core/search_items", {
+        // 1. Recursos (Solo de Héctor Calderón)
+        const resReq = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 256 + 4096, from: 0, to: 0
         }, sid);
 
+        let zoneSpec = {};
         if (resReq.items) {
             resReq.items.forEach(res => {
-                globalGeofences[res.id] = {};
                 if (res.zl) {
+                    zoneSpec[res.id] = [];
                     Object.values(res.zl).forEach(z => {
-                        globalGeofences[res.id][z.id] = { n: z.n, p: z.p };
+                        zonesDSG[z.id] = z.n;
+                        zoneSpec[res.id].push(z.id);
                     });
                 }
                 if (res.drvrs) {
                     Object.values(res.drvrs).forEach(d => {
-                        globalDrivers[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu, rid: res.id, rname: res.nm };
+                        driversDSG[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu };
                     });
                 }
             });
         }
 
-        const unitReq = await api(p.url, "core/search_items", {
+        // 2. Unidades
+        const unitReq = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 1024 + 4, from: 0, to: 0
         }, sid);
 
-        return (unitReq.items || []).map(u => {
-            let chofer = buscarChofer(u);
-            let ubicacion = "En ruta";
+        const uIds = unitReq.items ? unitReq.items.map(u => u.id) : [];
 
-            // LÓGICA DE FILTRADO: Solo buscar en geocercas del recurso que posee al chofer
-            if (chofer.rid && globalGeofences[chofer.rid] && u.pos) {
-                for (let zId in globalGeofences[chofer.rid]) {
-                    let geo = globalGeofences[chofer.rid][zId];
-                    if (estaEnPoligono(u.pos.x, u.pos.y, geo.p)) {
-                        ubicacion = geo.n;
-                        break;
+        // 3. Geocercas reales por API
+        const zonesByUnit = await api(HOST, "resource/get_zones_by_unit", {
+            spec: { zoneId: zoneSpec, units: uIds, time: 0 }
+        }, sid);
+
+        let html = "";
+        (unitReq.items || []).sort((a,b) => a.nm.localeCompare(b.nm)).forEach(u => {
+            let uLoc = "En ruta";
+            // Traducir Geocerca
+            for (let rId in zonesByUnit) {
+                for (let zId in zonesByUnit[rId]) {
+                    if (zonesByUnit[rId][zId].includes(u.id)) {
+                        uLoc = `<span class="badge-geo"><i class="fa fa-map-pin me-1"></i>${zonesDSG[zId]}</span>`;
                     }
                 }
             }
 
-            return {
-                nm: u.nm, plat: p.nombre, recurso: chofer.rname || "Sin Recurso",
-                pos: u.pos, zona: ubicacion, chofer: chofer
-            };
+            // Buscar Conductor (Doble método para asegurar a Mario)
+            let chofer = { n: "Sin asignar", tel: "", cod: "---" };
+            if (u.cd && driversDSG[u.cd]) {
+                chofer = driversDSG[u.cd];
+            } else {
+                for (let id in driversDSG) {
+                    if (driversDSG[id].bu == u.id) { chofer = driversDSG[id]; break; }
+                }
+            }
+
+            const cleanTel = chofer.tel.replace(/\D/g,'');
+
+            html += `
+                <tr>
+                    <td><span class="unit-id">${u.nm}</span></td>
+                    <td><code>${chofer.cod}</code></td>
+                    <td class="fw-bold">${chofer.n}</td>
+                    <td>
+                        ${chofer.tel ? `<a href="https://wa.me/${cleanTel}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp me-1"></i>${chofer.tel}</a>` : '---'}
+                    </td>
+                    <td>${uLoc}</td>
+                    <td class="fw-bold ${u.pos && u.pos.s > 0 ? 'text-success' : 'text-muted'}">${u.pos ? u.pos.s : 0} km/h</td>
+                </tr>`;
         });
-    } catch (e) { return null; }
-}
+        tbody.innerHTML = html;
 
-function buscarChofer(u) {
-    if (u.cd && globalDrivers[u.cd]) return globalDrivers[u.cd];
-    for (let id in globalDrivers) {
-        if (globalDrivers[id].bu == u.id) return globalDrivers[id];
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-5 text-danger">Error: ${e}</td></tr>`;
     }
-    return { n: "Sin asignar", tel: "", cod: "---", rid: null, rname: "Desconocido" };
-}
-
-function estaEnPoligono(x, y, puntos) {
-    if (!puntos || puntos.length < 3) return false;
-    let dentro = false;
-    for (let i = 0, j = puntos.length - 1; i < puntos.length; j = i++) {
-        let xi = puntos[i].x, yi = puntos[i].y, xj = puntos[j].x, yj = puntos[j].y;
-        if (((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) dentro = !dentro;
-    }
-    return dentro;
-}
-
-function render(data) {
-    const tbody = document.getElementById("tabla-body");
-    let html = "";
-    data.sort((a, b) => a.nm.localeCompare(b.nm));
-
-    data.forEach(u => {
-        const vel = u.pos ? u.pos.s : 0;
-        const numWA = u.chofer.tel.replace(/\D/g,'');
-        const zonaHtml = u.zona !== "En ruta" ? `<span class="badge-geo"><i class="fa fa-location-dot me-1"></i>${u.zona}</span>` : `<span class="text-muted small text-uppercase">En ruta</span>`;
-        
-        html += `
-            <tr>
-                <td><span class="badge bg-light text-dark border small text-uppercase">${u.plat}</span></td>
-                <td><small class="fw-bold text-secondary text-uppercase">${u.recurso}</small></td>
-                <td><span class="unit-id">${u.nm}</span></td>
-                <td class="fw-bold text-dark text-uppercase">${u.chofer.n}</td>
-                <td>
-                    ${u.chofer.tel ? `<a href="https://wa.me/${numWA}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp me-1"></i>${u.chofer.tel}</a>` : '<span class="text-muted small text-uppercase">Sin Teléfono</span>'}
-                </td>
-                <td>${zonaHtml}</td>
-                <td class="fw-bold ${vel > 0 ? 'text-success' : 'text-muted'}">${vel} km/h</td>
-            </tr>`;
-    });
-    tbody.innerHTML = html;
 }
 
 function api(url, svc, params, sid = null) {
