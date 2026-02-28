@@ -2,92 +2,140 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>Diagnóstico MRL-501</title>
+    <title>C4 - Control MRL (Solución Definitiva)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #1e1e1e; color: #00ff00; font-family: monospace; padding: 20px; }
-        .console-box { background: #000; border: 1px solid #00ff00; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; font-size: 0.85rem; color: #fff; }
-        h4 { color: #00ff00; border-bottom: 1px solid #00ff00; padding-bottom: 5px; }
-        .btn-scan { background: #00ff00; color: #000; font-weight: bold; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; margin-bottom: 20px; }
-        .btn-scan:hover { background: #00cc00; }
+        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.85rem; }
+        .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
+        .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
+        .unit-name { font-weight: 900; color: #0284c7; font-size: 0.95rem; }
+        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; }
     </style>
 </head>
 <body>
 
-    <h2><i class="fa fa-bug"></i> MODO DIAGNÓSTICO: MRL-501</h2>
-    <p>Este script bajará toda la información cruda de la unidad y del conductor para ver cómo están vinculados realmente.</p>
-    
-    <button class="btn-scan" onclick="escanear() ">INICIAR ESCANEO PROFUNDO</button>
-
-    <div class="row">
-        <div class="col-md-6">
-            <h4>Datos crudos de Unidad: MRL-501</h4>
-            <div id="output-unit" class="console-box">Esperando escaneo...</div>
+<div class="container-fluid">
+    <div class="card card-c4 shadow">
+        <div class="header-c4 d-flex justify-content-between align-items-center">
+            <h3 class="m-0"><i class="fa-solid fa-satellite me-2 text-info"></i> OPERATIVO C4</h3>
+            <button onclick="arranque()" class="btn btn-info btn-sm fw-bold">SINCRONIZAR</button>
         </div>
-        <div class="col-md-6">
-            <h4>Datos crudos de Conductor: Mario Alberto</h4>
-            <div id="output-driver" class="console-box">Esperando escaneo...</div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle m-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Unidad</th>
+                        <th>Cod.</th>
+                        <th>Conductor</th>
+                        <th>WhatsApp</th>
+                        <th>Velocidad</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-body">
+                    <tr><td colspan="5" class="text-center p-5 text-muted">Haga clic en sincronizar para cargar datos...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
 
 <script>
 const TOKEN = "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418";
 const HOST = "https://hst-api.wialon.com";
 
-// 4294967295 es el flag máximo de Wialon (0xFFFFFFFF) que trae TODA la info oculta
-const FLAG_ALL = 4294967295; 
+// DICCIONARIO GLOBAL: Guardará a los conductores indexados por el ID de la unidad a la que están vinculados (bu)
+let globalConductoresPorUnidad = {};
 
-async function escanear() {
-    document.getElementById("output-unit").innerText = "Consultando API...";
-    document.getElementById("output-driver").innerText = "Consultando API...";
-
+async function arranque() {
+    const body = document.getElementById("tabla-body");
+    body.innerHTML = '<tr><td colspan="5" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Consultando API...</td></tr>';
+    
+    globalConductoresPorUnidad = {}; // Reiniciar diccionario
+    
     try {
-        const login = await api(HOST, "token/login", { token: TOKEN });
+        const login = await apiCall(HOST, "token/login", { token: TOKEN });
         const sid = login.eid;
-        if (!sid) throw "Error de sesión. Verifica el token.";
+        if (!sid) throw "Error de sesión";
 
-        // 1. BUSCAR UNIDAD MRL-501 CON BANDERAS AL MÁXIMO
-        const unitReq = await api(HOST, "core/search_items", {
-            spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "MRL-501", sortType: "sys_name" },
-            force: 1, flags: FLAG_ALL, from: 0, to: 0
-        }, sid);
-
-        let unitData = "No se encontró la unidad MRL-501.";
-        if (unitReq.items && unitReq.items.length > 0) {
-            unitData = JSON.stringify(unitReq.items[0], null, 4);
-        }
-        document.getElementById("output-unit").innerText = unitData;
-
-        // 2. BUSCAR A MARIO EN LOS RECURSOS
-        const resReq = await api(HOST, "core/search_items", {
+        // 1. OBTENER TODOS LOS CONDUCTORES DE TODOS LOS RECURSOS (Flag 256)
+        const resReq = await apiCall(HOST, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: FLAG_ALL, from: 0, to: 0
+            force: 1, flags: 256, from: 0, to: 0
         }, sid);
 
-        let driverData = "No se encontró a Mario Alberto González González.";
+        // Llenar el diccionario global
         if (resReq.items) {
-            let found = false;
             resReq.items.forEach(res => {
                 if (res.drvrs) {
                     Object.values(res.drvrs).forEach(d => {
-                        // Buscamos a Mario por su nombre
-                        if (d.n.toUpperCase().includes("MARIO ALBERTO GONZÁLEZ") || d.n.toUpperCase().includes("MARIO")) {
-                            driverData = "ID Recurso: " + res.id + "\n\n" + JSON.stringify(d, null, 4);
-                            found = true;
+                        // Solo guardamos si tienen un vínculo activo a una unidad (bu > 0)
+                        if (d.bu && d.bu > 0) {
+                            globalConductoresPorUnidad[d.bu] = {
+                                nombre: d.n,
+                                tel: d.p || "",
+                                cod: d.c || "---"
+                            };
                         }
                     });
                 }
             });
         }
-        document.getElementById("output-driver").innerText = driverData;
+
+        // 2. OBTENER UNIDADES (Flag 1=base, 1024=pos)
+        // Ya no pedimos el flag 4 porque tu configuración no usa u.cd
+        const unitReq = await apiCall(HOST, "core/search_items", {
+            spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
+            force: 1, flags: 1 + 1024, from: 0, to: 0
+        }, sid);
+
+        let listaUnidades = [];
+        if (unitReq.items) {
+            listaUnidades = unitReq.items.map(u => ({
+                nm: u.nm,
+                id: u.id,
+                pos: u.pos,
+                // Búsqueda ultrarrápida en el diccionario global
+                chofer: globalConductoresPorUnidad[u.id] || { nombre: "Sin asignar", tel: "", cod: "---" }
+            }));
+        }
+
+        dibujarTabla(listaUnidades);
 
     } catch (e) {
-        document.getElementById("output-unit").innerText = "ERROR: " + e;
-        document.getElementById("output-driver").innerText = "ERROR: " + e;
+        body.innerHTML = `<tr><td colspan="5" class="text-center p-5 text-danger">Error: ${e}</td></tr>`;
     }
 }
 
-function api(url, svc, params, sid = null) {
+function dibujarTabla(lista) {
+    const tbody = document.getElementById("tabla-body");
+    let html = "";
+    
+    lista.sort((a, b) => a.nm.localeCompare(b.nm));
+
+    lista.forEach(u => {
+        const vel = u.pos ? u.pos.s : 0;
+        const telLimpio = u.chofer.tel.replace(/\D/g,'');
+        
+        html += `
+            <tr>
+                <td><span class="unit-name">${u.nm}</span></td>
+                <td><code>${u.chofer.cod}</code></td>
+                <td class="fw-bold text-uppercase">${u.chofer.nombre}</td>
+                <td>
+                    ${u.chofer.tel ? 
+                    `<a href="https://wa.me/${telLimpio}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> ${u.chofer.tel}</a>` : 
+                    '<span class="text-muted small">---</span>'}
+                </td>
+                <td class="fw-bold ${vel > 0 ? 'text-success' : 'text-muted'}">${vel} km/h</td>
+            </tr>`;
+    });
+    
+    tbody.innerHTML = html || '<tr><td colspan="5" class="text-center">No se encontraron unidades.</td></tr>';
+}
+
+function apiCall(url, svc, params, sid = null) {
     return new Promise(resolve => {
         const cb = "cb_" + Math.random().toString(36).substring(7);
         window[cb] = d => { delete window[cb]; resolve(d); };
