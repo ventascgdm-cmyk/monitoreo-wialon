@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Bitácora Multitoken Final</title>
+    <title>C4 - Bitácora Multitoken + Geocercas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -10,17 +10,17 @@
         .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
         .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
         .unit-name { font-weight: 900; color: #0284c7; font-size: 0.95rem; }
-        .plat-tag { font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; background: #e2e8f0; color: #475569; font-weight: 800; text-transform: uppercase; }
+        .badge-geo { background: #d1fae5; color: #065f46; border: 1px solid #10b981; font-weight: 700; padding: 4px 8px; border-radius: 5px; font-size: 0.75rem; }
         .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; }
     </style>
 </head>
 <body>
 
 <div class="container-fluid">
-    <div class="card card-c4 shadow">
+    <div class="card card-c4">
         <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h3 class="m-0"><i class="fa-solid fa-satellite me-2 text-info"></i> OPERATIVO C4 | MULTITOKEN</h3>
-            <button onclick="arranque()" class="btn btn-info btn-sm fw-bold">
+            <h3 class="m-0"><i class="fa-solid fa-map-location-dot me-2 text-info"></i> OPERATIVO C4 | <small class="fs-6 opacity-75">Control de Geocercas</small></h3>
+            <button onclick="sincronizarTodo()" class="btn btn-info btn-sm fw-bold">
                 <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR TODO
             </button>
         </div>
@@ -33,12 +33,13 @@
                         <th>Unidad</th>
                         <th>Cod.</th>
                         <th>Conductor</th>
-                        <th>WhatsApp / Teléfono</th>
+                        <th>WhatsApp</th>
+                        <th>Ubicación / Geocerca</th>
                         <th>Velocidad</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="6" class="text-center p-5 text-muted">Haga clic en actualizar para cargar los datos de ambas plataformas...</td></tr>
+                    <tr><td colspan="7" class="text-center p-5">Presiona el botón para cargar todas las plataformas.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -46,117 +47,134 @@
 </div>
 
 <script>
-// --- CONFIGURACIÓN DE PLATAFORMAS (Tus 2 Tokens) ---
-const FLOTAS = [
-    { 
-        nombre: "FLOTA RACEL", 
-        url: "https://hst-api.wialon.com", 
-        token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" 
-    },
-    { 
-        nombre: "FLOTA 2", 
-        url: "https://hst-api.wialon.com", 
-        token: "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418" 
-    }
+// --- CONFIGURACIÓN DE TUS TOKENS ---
+const MIS_PLATAFORMAS = [
+    { nombre: "FLOTA RACEL", url: "https://hst-api.wialon.com", token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" },
+    { nombre: "FLOTA 2", url: "https://hst-api.wialon.com", token: "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418" }
 ];
 
-let mapChoferes = {};
+let globalDrivers = {}; 
+let globalGeofences = [];
 
-async function arranque() {
+async function sincronizarTodo() {
     const body = document.getElementById("tabla-body");
-    body.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Consultando recursos y unidades...</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Cargando datos y validando geocercas...</td></tr>';
     
-    mapChoferes = {};
-    let masterList = [];
+    globalDrivers = {};
+    globalGeofences = [];
+    let todasUnidades = [];
 
-    // Procesar ambas plataformas al mismo tiempo
-    for (let f of FLOTAS) {
-        const data = await procesarFlota(f);
-        if (data) masterList = masterList.concat(data);
-    }
+    const promesas = MIS_PLATAFORMAS.map(p => procesarPlataforma(p));
+    const resultados = await Promise.all(promesas);
     
-    dibujarTabla(masterList);
+    resultados.forEach(res => { if(res) todasUnidades = todasUnidades.concat(res); });
+    
+    renderizar(todasUnidades);
 }
 
-async function procesarFlota(f) {
+async function procesarPlataforma(p) {
     try {
-        const login = await apiCall(f.url, "token/login", { token: f.token });
+        const login = await consultaAPI(p.url, "token/login", { token: p.token });
         const sid = login.eid;
         if (!sid) return null;
 
-        // 1. OBTENER CONDUCTORES: Usamos flag 256 (Drivers) para acceder a 'p' y 'c'
-        const resReq = await apiCall(f.url, "core/search_items", {
+        // 1. CARGAR RECURSOS (Conductores + Geocercas)
+        // Flag 256 (Conductores) + Flag 4096 (Zonas/Geocercas)
+        const resReq = await consultaAPI(p.url, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 256, from: 0, to: 0
+            force: 1, flags: 256 + 4096, from: 0, to: 0
         }, sid);
 
         if (resReq.items) {
             resReq.items.forEach(res => {
+                // Mapear conductores según el manual (p = teléfono, c = código)
                 if (res.drvrs) {
                     Object.values(res.drvrs).forEach(d => {
-                        // Según manual: 'p' = teléfono, 'c' = código, 'bu' = unidad vinculada
-                        mapChoferes[d.id] = {
-                            nombre: d.n,
-                            tel: d.p || "",
-                            cod: d.c || "---",
-                            bu: d.bu // Bind Unit
-                        };
+                        globalDrivers[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu };
+                    });
+                }
+                // Mapear geocercas localmente para validación geométrica rápida
+                if (res.zl) {
+                    Object.values(res.zl).forEach(z => {
+                        globalGeofences.push({ id: z.id, n: z.n, p: z.p }); // n=nombre, p=puntos del polígono
                     });
                 }
             });
         }
 
-        // 2. OBTENER UNIDADES
-        const unitReq = await apiCall(f.url, "core/search_items", {
+        // 2. CARGAR UNIDADES
+        const unitReq = await consultaAPI(p.url, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 1024, from: 0, to: 0
         }, sid);
 
-        return (unitReq.items || []).map(u => ({
-            nm: u.nm,
-            plat: f.nombre,
-            pos: u.pos,
-            id: u.id,
-            chofer: cruzarChofer(u.id)
-        }));
+        return (unitReq.items || []).map(u => {
+            // Detectar si la unidad está en alguna geocerca
+            let zonaActual = "En ruta";
+            if (u.pos) {
+                globalGeofences.forEach(geo => {
+                    if (estaEnPoligono(u.pos.x, u.pos.y, geo.p)) zonaActual = geo.n;
+                });
+            }
+
+            return {
+                nm: u.nm,
+                plat: p.nombre,
+                pos: u.pos,
+                id: u.id,
+                zona: zonaActual,
+                chofer: vincularChofer(u.id)
+            };
+        });
     } catch (e) { return null; }
 }
 
-function cruzarChofer(uId) {
-    for (let id in mapChoferes) {
-        if (mapChoferes[id].bu == uId) return mapChoferes[id];
+function vincularChofer(uId) {
+    for (let id in globalDrivers) {
+        if (globalDrivers[id].bu == uId) return globalDrivers[id];
     }
-    return { nombre: "Sin asignar", tel: "", cod: "---" };
+    return { n: "Sin asignar", tel: "", cod: "---" };
 }
 
-function dibujarTabla(lista) {
+function renderizar(unidades) {
     const tbody = document.getElementById("tabla-body");
     let html = "";
-    lista.sort((a, b) => a.nm.localeCompare(b.nm));
+    unidades.sort((a, b) => a.nm.localeCompare(b.nm));
 
-    lista.forEach(u => {
+    unidades.forEach(u => {
         const vel = u.pos ? u.pos.s : 0;
-        const telLimpio = u.chofer.tel.replace(/\D/g,'');
+        const geoHtml = u.zona !== "En ruta" ? `<span class="badge-geo"><i class="fa fa-draw-polygon me-1"></i>${u.zona}</span>` : `<span class="text-muted small">En ruta</span>`;
         
         html += `
             <tr>
-                <td><span class="plat-tag">${u.plat}</span></td>
+                <td><span class="badge bg-light text-dark border">${u.plat}</span></td>
                 <td><span class="unit-name">${u.nm}</span></td>
                 <td><code>${u.chofer.cod}</code></td>
-                <td class="fw-bold">${u.chofer.nombre}</td>
+                <td class="fw-bold">${u.chofer.n}</td>
                 <td>
-                    ${u.chofer.tel ? 
-                    `<a href="https://wa.me/${telLimpio}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> ${u.chofer.tel}</a>` : 
-                    '<span class="text-muted small">Sin teléfono</span>'}
+                    ${u.chofer.tel ? `<a href="https://wa.me/${u.chofer.tel.replace(/\D/g,'')}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> ${u.chofer.tel}</a>` : '---'}
                 </td>
+                <td>${geoHtml}</td>
                 <td class="fw-bold ${vel > 0 ? 'text-success' : 'text-muted'}">${vel} km/h</td>
             </tr>`;
     });
-    tbody.innerHTML = html || '<tr><td colspan="6" class="text-center">No se encontraron datos.</td></tr>';
+    tbody.innerHTML = html;
 }
 
-// Función técnica JSONP para evitar bloqueos de CORS
-function apiCall(url, svc, params, sid = null) {
+// Lógica geométrica: Ray Casting Algorithm (Para saber si un punto está dentro de un polígono)
+function estaEnPoligono(x, y, puntos) {
+    if (!puntos || puntos.length < 3) return false;
+    let dentro = false;
+    for (let i = 0, j = puntos.length - 1; i < puntos.length; j = i++) {
+        let xi = puntos[i].x, yi = puntos[i].y;
+        let xj = puntos[j].x, yj = puntos[j].y;
+        let intersecta = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersecta) dentro = !dentro;
+    }
+    return dentro;
+}
+
+function consultaAPI(url, svc, params, sid = null) {
     return new Promise(resolve => {
         const cb = "cb_" + Math.random().toString(36).substring(7);
         window[cb] = d => { delete window[cb]; resolve(d); };
