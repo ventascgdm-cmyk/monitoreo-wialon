@@ -43,6 +43,7 @@
 </div>
 
 <script>
+// USANDO TU TOKEN DE GRUDICOM
 const TOKEN_DSG = "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418";
 const HOST = "https://hst-api.wialon.com";
 
@@ -61,7 +62,7 @@ async function sincronizarMRL() {
         const sid = login.eid;
         if (!sid) throw "Sesión no válida";
 
-        // 1. Obtener Recursos (Conductores + Geocercas) - Flags 4097 + 256
+        // 1. OBTENER TODOS LOS RECURSOS (Flags 4097 + 256) para cargar Geocercas y Conductores
         const resData = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 4097 + 256, from: 0, to: 0
@@ -78,13 +79,13 @@ async function sincronizarMRL() {
             }
             if (res.drvrs) {
                 Object.values(res.drvrs).forEach(d => {
-                    // Guardamos por ID de conductor y registramos su Recurso (rid)
+                    // Guardamos por ID de conductor y anotamos su Recurso (rid)
                     repoConductores[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu, rid: res.id };
                 });
             }
         });
 
-        // 2. Obtener Unidades - Flag 1 (Base) + 1024 (Estatus) + 4 (Conductor Asignado)
+        // 2. OBTENER UNIDADES - Flag 1 (Base) + 1024 (Estatus) + 4 (CONDUCTOR ASIGNADO)
         const unitData = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 1024 + 4, from: 0, to: 0
@@ -92,25 +93,26 @@ async function sincronizarMRL() {
 
         const idsUnidades = unitData.items.map(u => u.id);
 
-        // 3. Consulta Oficial de Geocercas
+        // 3. CONSULTA OFICIAL DE GEOCERCAS (get_zones_by_unit)
         const resultZonas = await api(HOST, "resource/get_zones_by_unit", {
             spec: { zoneId: paramZoneId, units: idsUnidades, time: 0 }
         }, sid);
 
-        // 4. Mapeo y Renderizado
+        // 4. MAPEO Y RENDERIZADO FINAL
         let html = "";
         unitData.items.sort((a,b) => a.nm.localeCompare(b.nm)).forEach(u => {
-            // Buscar Conductor por ID de asignación (u.cd) o por vínculo (bu)
+            // BUSCAR CONDUCTOR: Primero por ID de asignación actual (u.cd)
             let c = { n: "Sin asignar", tel: "", cod: "---", rid: null };
             if (u.cd && repoConductores[u.cd]) {
                 c = repoConductores[u.cd];
             } else {
+                // Si no, buscar por vínculo de conductor (bu)
                 for (let id in repoConductores) {
                     if (repoConductores[id].bu == u.id) { c = repoConductores[id]; break; }
                 }
             }
 
-            // Ubicación: Solo aceptamos la geocerca si pertenece al Recurso del conductor
+            // UBICACIÓN: Solo aceptamos la geocerca si pertenece al Recurso del conductor detectado
             let uLoc = "En ruta";
             if (c.rid && resultZonas[c.rid]) {
                 for (let zId in resultZonas[c.rid]) {
