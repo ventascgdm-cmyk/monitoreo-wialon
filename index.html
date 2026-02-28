@@ -2,16 +2,15 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Bitácora Multitoken + Geocercas</title>
+    <title>OPERATIVO C4 | Control Total</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
         .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
         .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
-        .unit-name { font-weight: 900; color: #0284c7; font-size: 0.95rem; }
-        .badge-geo { background: #d1fae5; color: #065f46; border: 1px solid #10b981; font-weight: 700; padding: 4px 8px; border-radius: 5px; font-size: 0.75rem; }
-        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; }
+        .badge-geo { background: #d1fae5; color: #065f46; border: 1px solid #10b981; font-weight: 700; padding: 4px 8px; border-radius: 5px; }
+        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -19,12 +18,9 @@
 <div class="container-fluid">
     <div class="card card-c4">
         <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h3 class="m-0"><i class="fa-solid fa-map-location-dot me-2 text-info"></i> OPERATIVO C4 | <small class="fs-6 opacity-75">Control de Geocercas</small></h3>
-            <button onclick="sincronizarTodo()" class="btn btn-info btn-sm fw-bold">
-                <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR TODO
-            </button>
+            <h3 class="m-0"><i class="fa-solid fa-map-location-dot me-2 text-info"></i> OPERATIVO C4 | <small class="fs-6 opacity-75">Geocercas Live</small></h3>
+            <button onclick="sincronizar()" class="btn btn-info btn-sm fw-bold"><i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR TODO</button>
         </div>
-        
         <div class="table-responsive">
             <table class="table table-hover align-middle m-0">
                 <thead class="table-light">
@@ -35,11 +31,11 @@
                         <th>Conductor</th>
                         <th>WhatsApp</th>
                         <th>Ubicación / Geocerca</th>
-                        <th>Velocidad</th>
+                        <th>Estatus</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="7" class="text-center p-5">Presiona el botón para cargar todas las plataformas.</td></tr>
+                    <tr><td colspan="7" class="text-center p-5 text-muted">Haga clic en el botón para cargar todas las plataformas...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -47,134 +43,129 @@
 </div>
 
 <script>
-// --- CONFIGURACIÓN DE TUS TOKENS ---
-const MIS_PLATAFORMAS = [
+// --- CONFIGURACIÓN DE TOKENS ---
+const PLATAFORMAS = [
     { nombre: "FLOTA RACEL", url: "https://hst-api.wialon.com", token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" },
     { nombre: "FLOTA 2", url: "https://hst-api.wialon.com", token: "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418" }
 ];
 
 let globalDrivers = {}; 
-let globalGeofences = [];
+let globalZones = [];
 
-async function sincronizarTodo() {
+async function sincronizar() {
     const body = document.getElementById("tabla-body");
-    body.innerHTML = '<tr><td colspan="7" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Cargando datos y validando geocercas...</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Consultando Recursos...</td></tr>';
     
     globalDrivers = {};
-    globalGeofences = [];
-    let todasUnidades = [];
+    globalZones = [];
+    let allUnits = [];
 
-    const promesas = MIS_PLATAFORMAS.map(p => procesarPlataforma(p));
-    const resultados = await Promise.all(promesas);
+    // Procesar cada token
+    for (const p of PLATAFORMAS) {
+        const data = await procesarFlota(p);
+        if (data) allUnits = allUnits.concat(data);
+    }
     
-    resultados.forEach(res => { if(res) todasUnidades = todasUnidades.concat(res); });
-    
-    renderizar(todasUnidades);
+    renderizar(allUnits);
 }
 
-async function procesarPlataforma(p) {
+async function procesarFlota(p) {
     try {
-        const login = await consultaAPI(p.url, "token/login", { token: p.token });
+        const login = await apiCall(p.url, "token/login", { token: p.token });
         const sid = login.eid;
         if (!sid) return null;
 
-        // 1. CARGAR RECURSOS (Conductores + Geocercas)
-        // Flag 256 (Conductores) + Flag 4096 (Zonas/Geocercas)
-        const resReq = await consultaAPI(p.url, "core/search_items", {
+        // 1. CARGAR RECURSOS: Flag 256 (Conductores) + Flag 4096 (Geocercas)
+        const resReq = await apiCall(p.url, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 256 + 4096, from: 0, to: 0
         }, sid);
 
         if (resReq.items) {
             resReq.items.forEach(res => {
-                // Mapear conductores según el manual (p = teléfono, c = código)
+                // Mapear conductores (p = tel, c = cod, bu = unidad)
                 if (res.drvrs) {
                     Object.values(res.drvrs).forEach(d => {
                         globalDrivers[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu };
                     });
                 }
-                // Mapear geocercas localmente para validación geométrica rápida
+                // Mapear geocercas (p = puntos geométricos)
                 if (res.zl) {
                     Object.values(res.zl).forEach(z => {
-                        globalGeofences.push({ id: z.id, n: z.n, p: z.p }); // n=nombre, p=puntos del polígono
+                        globalZones.push({ n: z.n, p: z.p }); 
                     });
                 }
             });
         }
 
         // 2. CARGAR UNIDADES
-        const unitReq = await consultaAPI(p.url, "core/search_items", {
+        const unitReq = await apiCall(p.url, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 1024, from: 0, to: 0
         }, sid);
 
         return (unitReq.items || []).map(u => {
-            // Detectar si la unidad está en alguna geocerca
-            let zonaActual = "En ruta";
+            let zona = "En ruta";
             if (u.pos) {
-                globalGeofences.forEach(geo => {
-                    if (estaEnPoligono(u.pos.x, u.pos.y, geo.p)) zonaActual = geo.n;
-                });
+                // Algoritmo local de punto en polígono
+                for (const geo of globalZones) {
+                    if (isInside(u.pos.x, u.pos.y, geo.p)) {
+                        zona = geo.n;
+                        break;
+                    }
+                }
             }
-
             return {
-                nm: u.nm,
-                plat: p.nombre,
-                pos: u.pos,
-                id: u.id,
-                zona: zonaActual,
-                chofer: vincularChofer(u.id)
+                nm: u.nm, plat: p.nombre, pos: u.pos, id: u.id, zona: zona,
+                chofer: buscarChofer(u.id)
             };
         });
     } catch (e) { return null; }
 }
 
-function vincularChofer(uId) {
-    for (let id in globalDrivers) {
+function buscarChofer(uId) {
+    for (const id in globalDrivers) {
         if (globalDrivers[id].bu == uId) return globalDrivers[id];
     }
     return { n: "Sin asignar", tel: "", cod: "---" };
 }
 
-function renderizar(unidades) {
+function renderizar(data) {
     const tbody = document.getElementById("tabla-body");
     let html = "";
-    unidades.sort((a, b) => a.nm.localeCompare(b.nm));
+    data.sort((a, b) => a.nm.localeCompare(b.nm));
 
-    unidades.forEach(u => {
+    data.forEach(u => {
         const vel = u.pos ? u.pos.s : 0;
-        const geoHtml = u.zona !== "En ruta" ? `<span class="badge-geo"><i class="fa fa-draw-polygon me-1"></i>${u.zona}</span>` : `<span class="text-muted small">En ruta</span>`;
+        const zonaHtml = u.zona !== "En ruta" ? `<span class="badge-geo"><i class="fa fa-map-pin me-1"></i>${u.zona}</span>` : `<span class="text-muted small">En ruta</span>`;
         
         html += `
             <tr>
                 <td><span class="badge bg-light text-dark border">${u.plat}</span></td>
-                <td><span class="unit-name">${u.nm}</span></td>
+                <td><b class="text-primary">${u.nm}</b></td>
                 <td><code>${u.chofer.cod}</code></td>
                 <td class="fw-bold">${u.chofer.n}</td>
-                <td>
-                    ${u.chofer.tel ? `<a href="https://wa.me/${u.chofer.tel.replace(/\D/g,'')}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> ${u.chofer.tel}</a>` : '---'}
-                </td>
-                <td>${geoHtml}</td>
+                <td>${u.chofer.tel ? `<a href="https://wa.me/${u.chofer.tel.replace(/\D/g,'')}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> ${u.chofer.tel}</a>` : '---'}</td>
+                <td>${zonaHtml}</td>
                 <td class="fw-bold ${vel > 0 ? 'text-success' : 'text-muted'}">${vel} km/h</td>
             </tr>`;
     });
     tbody.innerHTML = html;
 }
 
-// Lógica geométrica: Ray Casting Algorithm (Para saber si un punto está dentro de un polígono)
-function estaEnPoligono(x, y, puntos) {
-    if (!puntos || puntos.length < 3) return false;
-    let dentro = false;
-    for (let i = 0, j = puntos.length - 1; i < puntos.length; j = i++) {
-        let xi = puntos[i].x, yi = puntos[i].y;
-        let xj = puntos[j].x, yj = puntos[j].y;
-        let intersecta = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersecta) dentro = !dentro;
+// Algoritmo Ray Casting para detección de Geocercas
+function isInside(x, y, poly) {
+    if (!poly || poly.length < 3) return false;
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        let xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
+        let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
     }
-    return dentro;
+    return inside;
 }
 
-function consultaAPI(url, svc, params, sid = null) {
+function apiCall(url, svc, params, sid = null) {
     return new Promise(resolve => {
         const cb = "cb_" + Math.random().toString(36).substring(7);
         window[cb] = d => { delete window[cb]; resolve(d); };
