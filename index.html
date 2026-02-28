@@ -2,181 +2,126 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>OPERATIVO C4 | Control Total</title>
+    <title>C4 - Detección Oficial de Geocercas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-latest.min.js"></script>
     <style>
-        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
-        .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
-        .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
-        .geo-badge { background: #dcfce7; color: #166534; border: 1px solid #16a34a; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
-        .unit-id { font-weight: 900; color: #0284c7; }
-        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; }
+        body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding: 20px; font-size: 0.8rem; }
+        .table-main { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .geo-active { background: #dcfce7; color: #166534; font-weight: bold; padding: 4px 8px; border-radius: 6px; border: 1px solid #16a34a; }
+        .unit-name { font-weight: 800; color: #0284c7; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid py-4">
-    <div class="card card-c4">
-        <div class="header-c4 d-flex justify-content-between align-items-center text-uppercase">
-            <h5 class="m-0"><i class="fa-solid fa-map-location-dot me-2 text-info"></i> Operativo C4 | Bitácora de Campo</h5>
-            <button onclick="sincronizarFlotas()" class="btn btn-info btn-sm fw-bold shadow-sm">
-                <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR TODO
-            </button>
-        </div>
-        
-        <div class="table-responsive">
-            <table class="table table-hover align-middle m-0">
-                <thead class="table-light text-uppercase" style="font-size: 0.7rem;">
-                    <tr>
-                        <th>Plataforma</th>
-                        <th>Unidad</th>
-                        <th>Cod.</th>
-                        <th>Conductor</th>
-                        <th>Ubicación / Geocerca</th>
-                        <th>Estatus</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-body">
-                    <tr><td colspan="6" class="text-center p-5 text-muted text-uppercase">Haga clic en el botón para iniciar la sincronización masiva...</td></tr>
-                </tbody>
-            </table>
+<div class="container">
+    <div class="card border-0 shadow-sm p-3 mb-4 bg-dark text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="m-0">Operativo C4: Monitoreo de Ubicación</h4>
+            <button onclick="iniciarMonitoreo()" class="btn btn-info btn-sm fw-bold">SINCRONIZAR AHORA</button>
         </div>
     </div>
+    
+    <table class="table table-hover table-main align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Unidad</th>
+                <th>Cod.</th>
+                <th>Operador (WhatsApp)</th>
+                <th>Ubicación / Geocerca</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-body">
+            <tr><td colspan="4" class="text-center p-5 text-muted">Haga clic en sincronizar para consultar la API...</td></tr>
+        </tbody>
+    </table>
 </div>
 
 <script>
-const PLATAFORMAS = [
-    { nombre: "FLOTA RACEL", url: "https://hst-api.wialon.com", token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" },
-    { nombre: "FLOTA 2", url: "https://hst-api.wialon.com", token: "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418" }
-];
+const TOKEN = "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418";
+const HOST = "https://hst-api.wialon.com";
 
-let globalDrivers = {}; 
-let globalZones = {};
+let mapaNombresZonas = {};
+let conductores = {};
 
-async function sincronizarFlotas() {
+async function iniciarMonitoreo() {
     const tbody = document.getElementById("tabla-body");
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>BUSCANDO CONDUCTORES Y GEOCERCAS...</td></tr>';
-    
-    globalDrivers = {};
-    globalZones = {};
-    let masterList = [];
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4">Consultando Wialon API...</td></tr>';
 
-    // Procesamos flotas en paralelo para que ninguna bloquee a la otra
-    const promesas = PLATAFORMAS.map(p => procesarHost(p));
-    const resultados = await Promise.all(promesas);
-    
-    resultados.forEach(res => { if(res) masterList = masterList.concat(res); });
-    
-    if (masterList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5 text-danger fw-bold">ERROR AL CARGAR DATOS. REVISE SUS TOKENS.</td></tr>';
-    } else {
-        renderFinal(masterList);
-    }
-}
-
-async function procesarHost(p) {
     try {
-        const login = await api(p.url, "token/login", { token: p.token });
+        const login = await api(HOST, "token/login", { token: TOKEN });
         const sid = login.eid;
-        if (!sid) return null;
+        if (!sid) throw "Error de Sesión";
 
-        // 1. CARGAR CONDUCTORES Y NOMBRES DE ZONAS (Flags 256 + 4096)
-        const resReq = await api(p.url, "core/search_items", {
+        // 1. Obtener Recursos (Geocercas y Conductores) - Flags 4097 y 256
+        const resData = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 256 + 4096, from: 0, to: 0
+            force: 1, flags: 4097 + 256, from: 0, to: 0
         }, sid);
 
-        let zSpec = {}; 
-        if (resReq.items) {
-            resReq.items.forEach(res => {
-                if (res.zl) {
-                    zSpec[res.id] = [];
-                    Object.values(res.zl).forEach(z => {
-                        globalZones[z.id] = z.n;
-                        zSpec[res.id].push(z.id);
-                    });
-                }
-                if (res.drvrs) {
-                    Object.values(res.drvrs).forEach(d => {
-                        globalDrivers[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu };
-                    });
-                }
-            });
-        }
+        let zoneSpec = {}; 
+        resData.items.forEach(res => {
+            if (res.zl) {
+                zoneSpec[res.id] = [];
+                Object.values(res.zl).forEach(z => {
+                    mapaNombresZonas[z.id] = z.n;
+                    zoneSpec[res.id].push(z.id);
+                });
+            }
+            if (res.drvrs) {
+                Object.values(res.drvrs).forEach(d => {
+                    conductores[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu };
+                });
+            }
+        });
 
-        // 2. CARGAR UNIDADES (Flags 1 + 1024 + 4 para conductores asignados)
-        const unitReq = await api(p.url, "core/search_items", {
+        // 2. Obtener Unidades (Flag 1)
+        const unitData = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 1 + 1024 + 4, from: 0, to: 0
+            force: 1, flags: 1, from: 0, to: 0
         }, sid);
 
-        if (!unitReq.items) return [];
+        const uIds = unitData.items.map(u => u.id);
 
-        const uIds = unitReq.items.map(u => u.id);
-
-        // 3. CONSULTA GEOCERCAS (get_zones_by_unit)
-        const checkZones = await api(p.url, "resource/get_zones_by_unit", {
-            spec: { zoneId: zSpec, units: uIds, time: 0 }
+        // 3. CONSULTA SEGÚN DOCUMENTACIÓN: resource/get_zones_by_unit
+        const infoZonas = await api(HOST, "resource/get_zones_by_unit", {
+            spec: { zoneId: zoneSpec, units: uIds, time: 0 }
         }, sid);
 
-        return unitReq.items.map(u => {
-            let uLoc = "En ruta";
-            for (let rId in checkZones) {
-                for (let zId in checkZones[rId]) {
-                    if (checkZones[rId][zId].includes(u.id)) {
-                        uLoc = `<span class="geo-badge">${globalZones[zId]}</span>`;
+        // 4. Mapear y Mostrar
+        let html = "";
+        unitData.items.forEach(u => {
+            let u_id = u.id;
+            let ubicacion = "En ruta";
+            let d = Object.values(conductores).find(c => c.bu == u_id) || { n: "Sin asignar", tel: "", cod: "---" };
+
+            // Verificamos si la unidad está en alguna zona (Respuesta de la API)
+            for (let resId in infoZonas) {
+                for (let zId in infoZonas[resId]) {
+                    if (infoZonas[resId][zId].includes(u_id)) {
+                        ubicacion = `<span class="geo-active">${mapaNombresZonas[zId]}</span>`;
                     }
                 }
             }
-            return {
-                nm: u.nm, plat: p.nombre, pos: u.pos, id: u.id, zona: uLoc,
-                chofer: buscarMario(u) // Función para encontrar a conductores "invisibles"
-            };
-        });
-    } catch (e) { return null; }
-}
 
-function buscarMario(unit) {
-    // 1. Buscar por asignación directa de ID (Detección de MRL-501)
-    if (unit.cd && globalDrivers[unit.cd]) return globalDrivers[unit.cd];
-    
-    // 2. Buscar por vínculo inverso (bu)
-    for (let id in globalDrivers) {
-        if (globalDrivers[id].bu == unit.id) return globalDrivers[id];
-    }
-    
-    return { n: "Sin asignar", tel: "", cod: "---" };
-}
-
-function renderFinal(lista) {
-    const tbody = document.getElementById("tabla-body");
-    let html = "";
-    lista.sort((a, b) => a.nm.localeCompare(b.nm));
-
-    lista.forEach(u => {
-        const vel = u.pos ? u.pos.s : 0;
-        const nWA = u.chofer.tel.replace(/\D/g,'');
-        
-        html += `
-            <tr>
-                <td><span class="badge bg-light text-dark border small text-uppercase">${u.plat}</span></td>
-                <td><span class="unit-id">${u.nm}</span></td>
-                <td><code>${u.chofer.cod}</code></td>
-                <td>
-                    <i class="fab fa-whatsapp text-success me-1"></i> <strong>${u.chofer.n}</strong>
-                    ${u.chofer.tel ? `<br><small class="text-muted">+${nWA}</small>` : ''}
-                </td>
-                <td>${u.zona}</td>
-                <td class="fw-bold ${vel > 0 ? 'text-success text-uppercase' : 'text-muted text-uppercase'}">${vel} km/h</td>
+            html += `<tr>
+                <td><span class="unit-name">${u.nm}</span></td>
+                <td><code>${d.cod}</code></td>
+                <td><i class="fab fa-whatsapp text-success me-1"></i> <strong>${d.n}</strong></td>
+                <td>${ubicacion}</td>
             </tr>`;
-    });
-    tbody.innerHTML = html;
+        });
+        tbody.innerHTML = html;
+
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-danger text-center">Error: ${e}</td></tr>`;
+    }
 }
 
+// Función AJAX vía JSONP
 function api(url, svc, params, sid = null) {
     return new Promise(resolve => {
-        const cb = "cb_" + Math.random().toString(36).substring(7);
+        const cb = "cb_" + Math.floor(Math.random() * 1000000);
         window[cb] = d => { delete window[cb]; resolve(d); };
         const script = document.createElement("script");
         script.src = `${url}/wialon/ajax.html?svc=${svc}&params=${JSON.stringify(params)}&callback=${cb}${sid ? '&sid=' + sid : ''}`;
@@ -184,5 +129,7 @@ function api(url, svc, params, sid = null) {
     });
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 </body>
 </html>
+
