@@ -2,43 +2,43 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>OPERATIVO C4 | Sincronización Total</title>
+    <title>OPERATIVO C4 | Control Total</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
         .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
         .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
-        .badge-geo { background: #d1fae5; color: #065f46; border: 1px solid #10b981; font-weight: 700; padding: 4px 8px; border-radius: 5px; }
-        .unit-name { font-weight: 900; color: #0284c7; }
+        .geo-badge { background: #dcfce7; color: #166534; border: 1px solid #16a34a; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+        .unit-id { font-weight: 900; color: #0284c7; }
         .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
+<div class="container-fluid py-4">
     <div class="card card-c4">
-        <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h3 class="m-0"><i class="fa-solid fa-tower-broadcast me-2 text-info"></i> OPERATIVO C4 | <small class="fs-6 opacity-75">Sincronización Total Conductores</small></h3>
+        <div class="header-c4 d-flex justify-content-between align-items-center text-uppercase">
+            <h5 class="m-0"><i class="fa-solid fa-map-location-dot me-2 text-info"></i> Operativo C4 | Bitácora de Campo</h5>
             <button onclick="sincronizarFlotas()" class="btn btn-info btn-sm fw-bold shadow-sm">
-                <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR FLOTAS
+                <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR TODO
             </button>
         </div>
         
         <div class="table-responsive">
             <table class="table table-hover align-middle m-0">
-                <thead class="table-light">
+                <thead class="table-light text-uppercase" style="font-size: 0.7rem;">
                     <tr>
                         <th>Plataforma</th>
                         <th>Unidad</th>
                         <th>Cod.</th>
-                        <th>Operador (WhatsApp)</th>
+                        <th>Conductor</th>
                         <th>Ubicación / Geocerca</th>
                         <th>Estatus</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="6" class="text-center p-5 text-muted">Presiona el botón para iniciar la sincronización...</td></tr>
+                    <tr><td colspan="6" class="text-center p-5 text-muted text-uppercase">Haga clic en el botón para iniciar la sincronización masiva...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -46,130 +46,135 @@
 </div>
 
 <script>
-const MIS_PLATAFORMAS = [
+const PLATAFORMAS = [
     { nombre: "FLOTA RACEL", url: "https://hst-api.wialon.com", token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" },
     { nombre: "FLOTA 2", url: "https://hst-api.wialon.com", token: "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418" }
 ];
 
-let masterDrivers = {};
-let masterZonesNames = {};
+let globalDrivers = {}; 
+let globalZones = {};
 
 async function sincronizarFlotas() {
     const tbody = document.getElementById("tabla-body");
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Consultando conductores y geocercas...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>BUSCANDO CONDUCTORES Y GEOCERCAS...</td></tr>';
     
-    masterDrivers = {};
-    masterZonesNames = {};
-    let flotasUnidas = [];
+    globalDrivers = {};
+    globalZones = {};
+    let masterList = [];
 
-    try {
-        const promesas = MIS_PLATAFORMAS.map(p => procesarFlota(p));
-        const resultados = await Promise.all(promesas);
-        resultados.forEach(res => { if(res) flotasUnidas = flotasUnidas.concat(res); });
-        
-        if (flotasUnidas.length === 0) throw "No se obtuvieron datos";
-        renderizar(flotasUnidas);
-    } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-5 text-danger">Error: ${e}</td></tr>`;
+    // Procesamos flotas en paralelo para que ninguna bloquee a la otra
+    const promesas = PLATAFORMAS.map(p => procesarHost(p));
+    const resultados = await Promise.all(promesas);
+    
+    resultados.forEach(res => { if(res) masterList = masterList.concat(res); });
+    
+    if (masterList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5 text-danger fw-bold">ERROR AL CARGAR DATOS. REVISE SUS TOKENS.</td></tr>';
+    } else {
+        renderFinal(masterList);
     }
 }
 
-async function procesarFlota(p) {
+async function procesarHost(p) {
     try {
-        const login = await apiCall(p.url, "token/login", { token: p.token });
-        if (!login.eid) return null;
+        const login = await api(p.url, "token/login", { token: p.token });
         const sid = login.eid;
+        if (!sid) return null;
 
-        // Cargar Recursos (Flags 256 + 4096 para conductores y zonas)
-        const resReq = await apiCall(p.url, "core/search_items", {
+        // 1. CARGAR CONDUCTORES Y NOMBRES DE ZONAS (Flags 256 + 4096)
+        const resReq = await api(p.url, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 256 + 4096, from: 0, to: 0
         }, sid);
 
-        let zoneSpec = {};
+        let zSpec = {}; 
         if (resReq.items) {
             resReq.items.forEach(res => {
                 if (res.zl) {
-                    zoneSpec[res.id] = [];
+                    zSpec[res.id] = [];
                     Object.values(res.zl).forEach(z => {
-                        masterZonesNames[z.id] = z.n;
-                        zoneSpec[res.id].push(z.id);
+                        globalZones[z.id] = z.n;
+                        zSpec[res.id].push(z.id);
                     });
                 }
                 if (res.drvrs) {
                     Object.values(res.drvrs).forEach(d => {
-                        masterDrivers[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu };
+                        globalDrivers[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu };
                     });
                 }
             });
         }
 
-        // Cargar Unidades (Flags 1 + 1024 + 4 para conductores asignados)
-        const unitReq = await apiCall(p.url, "core/search_items", {
+        // 2. CARGAR UNIDADES (Flags 1 + 1024 + 4 para conductores asignados)
+        const unitReq = await api(p.url, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 1024 + 4, from: 0, to: 0
         }, sid);
 
-        const uIds = unitReq.items ? unitReq.items.map(u => u.id) : [];
+        if (!unitReq.items) return [];
 
-        // Consultar Geocercas mediante API oficial
-        const zonesByUnit = await apiCall(p.url, "resource/get_zones_by_unit", {
-            spec: { zoneId: zoneSpec, units: uIds, time: 0 }
+        const uIds = unitReq.items.map(u => u.id);
+
+        // 3. CONSULTA GEOCERCAS (get_zones_by_unit)
+        const checkZones = await api(p.url, "resource/get_zones_by_unit", {
+            spec: { zoneId: zSpec, units: uIds, time: 0 }
         }, sid);
 
-        return (unitReq.items || []).map(u => {
-            let geocerca = "En ruta";
-            for (const rId in zonesByUnit) {
-                for (const zId in zonesByUnit[rId]) {
-                    if (zonesByUnit[rId][zId].includes(u.id)) {
-                        geocerca = masterZonesNames[zId] || "Zona Detectada";
+        return unitReq.items.map(u => {
+            let uLoc = "En ruta";
+            for (let rId in checkZones) {
+                for (let zId in checkZones[rId]) {
+                    if (checkZones[rId][zId].includes(u.id)) {
+                        uLoc = `<span class="geo-badge">${globalZones[zId]}</span>`;
                     }
                 }
             }
             return {
-                nm: u.nm, plat: p.nombre, pos: u.pos, id: u.id, zona: geocerca,
-                chofer: vincularConductor(u)
+                nm: u.nm, plat: p.nombre, pos: u.pos, id: u.id, zona: uLoc,
+                chofer: buscarMario(u) // Función para encontrar a conductores "invisibles"
             };
         });
     } catch (e) { return null; }
 }
 
-function vincularConductor(unit) {
-    // Busca por vínculo d.bu o por asignación directa unit.cd
-    for (let id in masterDrivers) {
-        if (masterDrivers[id].bu == unit.id) return masterDrivers[id];
+function buscarMario(unit) {
+    // 1. Buscar por asignación directa de ID (Detección de MRL-501)
+    if (unit.cd && globalDrivers[unit.cd]) return globalDrivers[unit.cd];
+    
+    // 2. Buscar por vínculo inverso (bu)
+    for (let id in globalDrivers) {
+        if (globalDrivers[id].bu == unit.id) return globalDrivers[id];
     }
-    if (unit.cd && masterDrivers[unit.cd]) return masterDrivers[unit.cd];
+    
     return { n: "Sin asignar", tel: "", cod: "---" };
 }
 
-function renderizar(unidades) {
+function renderFinal(lista) {
     const tbody = document.getElementById("tabla-body");
     let html = "";
-    unidades.sort((a, b) => a.nm.localeCompare(b.nm));
+    lista.sort((a, b) => a.nm.localeCompare(b.nm));
 
-    unidades.forEach(u => {
+    lista.forEach(u => {
         const vel = u.pos ? u.pos.s : 0;
-        const numWA = u.chofer.tel.replace(/\D/g,'');
-        const zonaHtml = u.zona !== "En ruta" ? `<span class="badge-geo"><i class="fa fa-map-pin me-1"></i>${u.zona}</span>` : `<span class="text-muted small">En ruta</span>`;
+        const nWA = u.chofer.tel.replace(/\D/g,'');
         
         html += `
             <tr>
-                <td><span class="badge bg-light text-dark border">${u.plat}</span></td>
-                <td><span class="unit-name">${u.nm}</span></td>
+                <td><span class="badge bg-light text-dark border small text-uppercase">${u.plat}</span></td>
+                <td><span class="unit-id">${u.nm}</span></td>
                 <td><code>${u.chofer.cod}</code></td>
                 <td>
                     <i class="fab fa-whatsapp text-success me-1"></i> <strong>${u.chofer.n}</strong>
-                    ${u.chofer.tel ? `<br><small class="text-muted">${u.chofer.tel}</small>` : ''}
+                    ${u.chofer.tel ? `<br><small class="text-muted">+${nWA}</small>` : ''}
                 </td>
-                <td>${zonaHtml}</td>
-                <td class="fw-bold ${vel > 0 ? 'text-success' : 'text-muted'}">${vel} km/h</td>
+                <td>${u.zona}</td>
+                <td class="fw-bold ${vel > 0 ? 'text-success text-uppercase' : 'text-muted text-uppercase'}">${vel} km/h</td>
             </tr>`;
     });
     tbody.innerHTML = html;
 }
 
-function apiCall(url, svc, params, sid = null) {
+function api(url, svc, params, sid = null) {
     return new Promise(resolve => {
         const cb = "cb_" + Math.random().toString(36).substring(7);
         window[cb] = d => { delete window[cb]; resolve(d); };
