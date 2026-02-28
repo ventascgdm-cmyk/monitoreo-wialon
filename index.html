@@ -2,40 +2,45 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>OPERATIVO C4 | Sincronización Total MRL</title>
+    <title>C4 - CONTROL DE FLOTA MRL</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
-        .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
-        .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
-        .badge-geo { background: #dcfce7; color: #166534; border: 1px solid #16a34a; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
-        .unit-id { font-weight: 900; color: #0284c7; }
-        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; }
+        body { background-color: #0f172a; font-family: 'Inter', sans-serif; font-size: 0.8rem; color: #f8fafc; }
+        .card-master { background: #1e293b; border: 1px solid #334155; border-radius: 12px; margin-top: 20px; overflow: hidden; }
+        .header-c4 { background: linear-gradient(90deg, #0ea5e9, #2563eb); padding: 1.2rem; display: flex; justify-content: space-between; align-items: center; }
+        .table { color: #f8fafc; margin-bottom: 0; }
+        .table-hover tbody tr:hover { background-color: #334155; }
+        .badge-geo { background: #dcfce7; color: #166534; font-weight: 800; padding: 4px 10px; border-radius: 6px; border: 1px solid #22c55e; }
+        .unit-id { font-weight: 900; color: #38bdf8; font-size: 0.9rem; }
+        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; border: none; }
+        .wa-btn:hover { background: #16a34a; color: white; }
     </style>
 </head>
 <body>
 
 <div class="container-fluid py-4">
-    <div class="card card-c4 shadow">
-        <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h5 class="m-0"><i class="fa-solid fa-sync-alt me-2 text-info"></i> OPERATIVO C4 | <small class="opacity-75">Control de Flota MRL</small></h5>
-            <button onclick="sincronizarMRL()" class="btn btn-info btn-sm fw-bold">SINCRONIZAR DATOS</button>
+    <div class="card card-master shadow-lg">
+        <div class="header-c4">
+            <h5 class="m-0 text-white"><i class="fa-solid fa-satellite-dish me-2"></i> OPERATIVO C4 | <small>Control Grudicom GPS</small></h5>
+            <button onclick="sincronizar()" class="btn btn-light btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-rotate me-1"></i> REFRESCAR FLOTA
+            </button>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle m-0">
-                <thead class="table-dark text-uppercase" style="font-size: 0.7rem;">
+            <table class="table table-hover align-middle">
+                <thead style="background: #0f172a; border-bottom: 2px solid #334155;">
                     <tr>
-                        <th>Unidad</th>
-                        <th>Cod.</th>
-                        <th>Conductor Actual</th>
-                        <th>WhatsApp / Teléfono</th>
-                        <th>Ubicación (Geocerca Real)</th>
-                        <th>Estatus</th>
+                        <th class="py-3">UNIDAD</th>
+                        <th>CÓDIGO</th>
+                        <th>OPERADOR ACTUAL</th>
+                        <th>WHATSAPP / TEL</th>
+                        <th>UBICACIÓN REAL (GEOCERCA)</th>
+                        <th>VELOCIDAD</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-body">
-                    <tr><td colspan="6" class="text-center p-5 text-muted text-uppercase">Haga clic en el botón para sincronizar la ubicación de Mario y el equipo MRL...</td></tr>
+                <tbody id="tabla-body" class="border-0">
+                    <tr><td colspan="6" class="text-center p-5 text-muted">Haga clic en refrescar para iniciar el escaneo profundo...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -43,102 +48,100 @@
 </div>
 
 <script>
-// USANDO TU TOKEN DE GRUDICOM
-const TOKEN_DSG = "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418";
+// USANDO TU TOKEN MASTER
+const TOKEN_MASTER = "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418";
 const HOST = "https://hst-api.wialon.com";
 
-let mapaNombresZonas = {}; 
-let repoConductores = {};
+let globalZonas = {}; 
+let globalOperadores = {};
 
-async function sincronizarMRL() {
+async function sincronizar() {
     const tbody = document.getElementById("tabla-body");
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><br>IDENTIFICANDO CONDUCTORES Y RECURSOS...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-info"></i><br><br>CONSULTANDO ESTADO DE UNIDADES Y RECURSOS...</td></tr>';
     
-    mapaNombresZonas = {};
-    repoConductores = {};
+    globalZonas = {};
+    globalOperadores = {};
 
     try {
-        const login = await api(HOST, "token/login", { token: TOKEN_DSG });
+        const login = await api(HOST, "token/login", { token: TOKEN_MASTER });
         const sid = login.eid;
-        if (!sid) throw "Sesión no válida";
+        if (!sid) throw "ERROR DE SESIÓN";
 
-        // 1. OBTENER TODOS LOS RECURSOS (Flags 4097 + 256) para cargar Geocercas y Conductores
-        const resData = await api(HOST, "core/search_items", {
+        // 1. ESCANEO DE RECURSOS (Zonas 4096 + Conductores 256)
+        const resReq = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 4097 + 256, from: 0, to: 0
+            force: 1, flags: 4096 + 256, from: 0, to: 0
         }, sid);
 
-        let paramZoneId = {};
-        resData.items.forEach(res => {
+        let queryZones = {};
+        resReq.items.forEach(res => {
+            queryZones[res.id] = [];
             if (res.zl) {
-                paramZoneId[res.id] = [];
                 Object.values(res.zl).forEach(z => {
-                    mapaNombresZonas[z.id] = z.n;
-                    paramZoneId[res.id].push(z.id);
+                    globalZonas[z.id] = z.n;
+                    queryZones[res.id].push(z.id);
                 });
             }
             if (res.drvrs) {
                 Object.values(res.drvrs).forEach(d => {
-                    // Guardamos por ID de conductor y anotamos su Recurso (rid)
-                    repoConductores[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu, rid: res.id };
+                    globalOperadores[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu, rid: res.id };
                 });
             }
         });
 
-        // 2. OBTENER UNIDADES - Flag 1 (Base) + 1024 (Estatus) + 4 (CONDUCTOR ASIGNADO)
-        const unitData = await api(HOST, "core/search_items", {
+        // 2. ESCANEO DE UNIDADES (Flags: 1 (base), 4 (conductor actual), 1024 (posición))
+        const unitReq = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 1 + 1024 + 4, from: 0, to: 0
+            force: 1, flags: 1 + 4 + 1024, from: 0, to: 0
         }, sid);
 
-        const idsUnidades = unitData.items.map(u => u.id);
+        const idsU = unitReq.items.map(u => u.id);
 
-        // 3. CONSULTA OFICIAL DE GEOCERCAS (get_zones_by_unit)
-        const resultZonas = await api(HOST, "resource/get_zones_by_unit", {
-            spec: { zoneId: paramZoneId, units: idsUnidades, time: 0 }
+        // 3. CONSULTA DE GEOCERCAS OFICIAL (get_zones_by_unit)
+        const checkGeo = await api(HOST, "resource/get_zones_by_unit", {
+            spec: { zoneId: queryZones, units: idsU, time: 0 }
         }, sid);
 
-        // 4. MAPEO Y RENDERIZADO FINAL
+        // 4. ENSAMBLAJE DE DATOS
         let html = "";
-        unitData.items.sort((a,b) => a.nm.localeCompare(b.nm)).forEach(u => {
-            // BUSCAR CONDUCTOR: Primero por ID de asignación actual (u.cd)
-            let c = { n: "Sin asignar", tel: "", cod: "---", rid: null };
-            if (u.cd && repoConductores[u.cd]) {
-                c = repoConductores[u.cd];
+        unitReq.items.sort((a,b) => a.nm.localeCompare(b.nm)).forEach(u => {
+            // DETECTAR CONDUCTOR: Prioridad absoluta al ID de asignación actual (u.cd)
+            let op = { n: "Sin asignar", tel: "", cod: "---", rid: null };
+            if (u.cd && globalOperadores[u.cd]) {
+                op = globalOperadores[u.cd];
             } else {
-                // Si no, buscar por vínculo de conductor (bu)
-                for (let id in repoConductores) {
-                    if (repoConductores[id].bu == u.id) { c = repoConductores[id]; break; }
+                for (let id in globalOperadores) {
+                    if (globalOperadores[id].bu == u.id) { op = globalOperadores[id]; break; }
                 }
             }
 
-            // UBICACIÓN: Solo aceptamos la geocerca si pertenece al Recurso del conductor detectado
+            // DETECTAR UBICACIÓN: Solo permitimos zonas que pertenezcan al Recurso (rid) del conductor
             let uLoc = "En ruta";
-            if (c.rid && resultZonas[c.rid]) {
-                for (let zId in resultZonas[c.rid]) {
-                    if (resultZonas[c.rid][zId].includes(u.id)) {
-                        uLoc = `<span class="badge-geo"><i class="fa fa-location-dot me-1"></i>${mapaNombresZonas[zId]}</span>`;
+            if (op.rid && checkGeo[op.rid]) {
+                for (let zId in checkGeo[op.rid]) {
+                    if (checkGeo[op.rid][zId].includes(u.id)) {
+                        uLoc = `<span class="badge-geo"><i class="fa fa-location-dot me-1"></i>${globalZonas[zId]}</span>`;
                     }
                 }
             }
 
-            const cleanWA = c.tel.replace(/\D/g,'');
+            const cleanTel = op.tel.replace(/\D/g,'');
 
             html += `<tr>
-                <td><span class="unit-id text-uppercase">${u.nm}</span></td>
-                <td><code>${c.cod}</code></td>
-                <td class="fw-bold text-uppercase">${c.n}</td>
+                <td class="py-3"><span class="unit-id">${u.nm}</span></td>
+                <td><code>${op.cod}</code></td>
+                <td class="fw-bold">${op.n}</td>
                 <td>
-                    ${c.tel ? `<a href="https://wa.me/${cleanWA}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp me-1"></i>${c.tel}</a>` : '---'}
+                    ${op.tel ? `<a href="https://wa.me/${cleanTel}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp me-1"></i>${op.tel}</a>` : '---'}
                 </td>
                 <td>${uLoc}</td>
-                <td class="fw-bold ${u.pos && u.pos.s > 0 ? 'text-success' : 'text-muted'} text-uppercase">${u.pos ? u.pos.s : 0} km/h</td>
+                <td class="fw-bold ${u.pos && u.pos.s > 0 ? 'text-info' : 'text-muted'}">${u.pos ? u.pos.s : 0} KM/H</td>
             </tr>`;
         });
         tbody.innerHTML = html;
 
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-5 text-danger">Error: ${e}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-5 text-danger">ERROR CRÍTICO: ${e}</td></tr>`;
     }
 }
 
