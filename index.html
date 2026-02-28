@@ -2,56 +2,39 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Master Multitoken</title>
+    <title>C4 - Bitácora Multitoken Final</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --dark-blue: #0f172a; --info-blue: #0284c7; }
         body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
         .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
-        .header-c4 { background: var(--dark-blue); color: white; padding: 1rem; border-radius: 12px 12px 0 0; }
-        .unit-name { font-weight: 900; color: var(--info-blue); font-size: 0.95rem; }
-        .plat-tag { font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; background: #e2e8f0; color: #475569; font-weight: 800; }
-        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; transition: 0.3s; }
-        .wa-btn:hover { background: #16a34a; color: white; transform: scale(1.05); }
-        .stat-card { background: white; padding: 10px; border-radius: 8px; text-align: center; border-left: 4px solid var(--info-blue); }
-        #searchBar { border-radius: 20px; border: 1px solid #cbd5e1; padding: 5px 15px; }
+        .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
+        .unit-name { font-weight: 900; color: #0284c7; font-size: 0.95rem; }
+        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid py-3">
-    <div class="row g-2 mb-3">
-        <div class="col-md-3"><div class="stat-card shadow-sm"><strong>Total Unidades:</strong> <span id="count-total">0</span></div></div>
-        <div class="col-md-3"><div class="stat-card shadow-sm text-success"><strong>En Movimiento:</strong> <span id="count-moving">0</span></div></div>
-        <div class="col-md-3"><div class="stat-card shadow-sm text-muted"><strong>Detenidos:</strong> <span id="count-idle">0</span></div></div>
-        <div class="col-md-3">
-            <input type="text" id="searchBar" class="form-control" placeholder="🔍 Buscar unidad u operador..." onkeyup="filtrar()">
-        </div>
-    </div>
-
+<div class="container-fluid">
     <div class="card card-c4 shadow">
         <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h4 class="m-0"><i class="fa-solid fa-tower-observation me-2 text-info"></i> OPERATIVO C4</h4>
-            <button onclick="arranque()" class="btn btn-info btn-sm fw-bold">
-                <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR FLOTAS
-            </button>
+            <h3 class="m-0"><i class="fa-solid fa-satellite me-2 text-info"></i> OPERATIVO C4 | MULTITOKEN</h3>
+            <button onclick="arranque()" class="btn btn-info btn-sm fw-bold">ACTUALIZAR TODO</button>
         </div>
-        
         <div class="table-responsive">
-            <table class="table table-hover align-middle m-0" id="masterTable">
+            <table class="table table-hover align-middle m-0">
                 <thead class="table-light">
                     <tr>
                         <th>Plataforma</th>
                         <th>Unidad</th>
                         <th>Cod.</th>
-                        <th>Conductor Actual</th>
+                        <th>Conductor</th>
                         <th>WhatsApp / Teléfono</th>
                         <th>Velocidad</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="6" class="text-center p-5 text-muted text-uppercase">Haga clic en actualizar para sincronizar datos...</td></tr>
+                    <tr><td colspan="6" class="text-center p-5 text-muted">Haga clic en actualizar...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -68,25 +51,25 @@ let mapChoferes = {};
 
 async function arranque() {
     const body = document.getElementById("tabla-body");
-    body.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Sincronizando flotas en paralelo...</td></tr>';
-    
+    body.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Consultando recursos...</td></tr>';
     mapChoferes = {};
-    
-    // MEJORA: Peticiones en paralelo (más rápido)
+    let masterList = [];
+
+    // Procesar en paralelo para evitar bloqueos
     const promesas = FLOTAS.map(f => procesarFlota(f));
     const resultados = await Promise.all(promesas);
     
-    const masterList = resultados.flat().filter(item => item !== null);
+    resultados.forEach(res => { if(res) masterList = masterList.concat(res); });
     dibujarTabla(masterList);
 }
 
 async function procesarFlota(f) {
     try {
         const login = await apiCall(f.url, "token/login", { token: f.token });
-        if (!login.eid) return null;
         const sid = login.eid;
+        if (!sid) return null;
 
-        // 1. OBTENER CONDUCTORES (Flag 256)
+        // OBTENER CONDUCTORES (Flag 256)
         const resReq = await apiCall(f.url, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 256, from: 0, to: 0
@@ -102,8 +85,7 @@ async function procesarFlota(f) {
             });
         }
 
-        // 2. OBTENER UNIDADES (Flag 1=base, 1024=pos, 4=CD ID actual)
-        // MEJORA: Flag 4 es vital para ver quién está manejando AHORA
+        // OBTENER UNIDADES (Flag 1=base, 1024=pos, 4=Conductor Asignado)
         const unitReq = await apiCall(f.url, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 1024 + 4, from: 0, to: 0
@@ -113,16 +95,17 @@ async function procesarFlota(f) {
             nm: u.nm,
             plat: f.nombre,
             pos: u.pos,
-            chofer: cruzarChofer(u) // Pasamos toda la unidad
+            id: u.id,
+            chofer: vincularConductor(u)
         }));
     } catch (e) { return null; }
 }
 
-function cruzarChofer(u) {
-    // MEJORA: Validar primero u.cd (Conductor dinámico asignado)
+function vincularConductor(u) {
+    // 1. Intentar por ID de conductor asignado directamente (u.cd)
     if (u.cd && mapChoferes[u.cd]) return mapChoferes[u.cd];
     
-    // Luego validar u.id en el mapa (Bind unit)
+    // 2. Intentar por vínculo de unidad (bu)
     for (let id in mapChoferes) {
         if (mapChoferes[id].bu == u.id) return mapChoferes[id];
     }
@@ -132,46 +115,24 @@ function cruzarChofer(u) {
 function dibujarTabla(lista) {
     const tbody = document.getElementById("tabla-body");
     let html = "";
-    let moviendo = 0;
-    
     lista.sort((a, b) => a.nm.localeCompare(b.nm));
 
     lista.forEach(u => {
         const vel = u.pos ? u.pos.s : 0;
-        if (vel > 0) moviendo++;
         const telLimpio = u.chofer.tel.replace(/\D/g,'');
-        
         html += `
             <tr>
-                <td><span class="plat-tag">${u.plat}</span></td>
+                <td><span class="badge bg-light text-dark border">${u.plat}</span></td>
                 <td><span class="unit-name">${u.nm}</span></td>
                 <td><code>${u.chofer.cod}</code></td>
                 <td class="fw-bold">${u.chofer.nombre}</td>
                 <td>
-                    ${u.chofer.tel ? 
-                    `<a href="https://wa.me/${telLimpio}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> ${u.chofer.tel}</a>` : 
-                    '<span class="text-muted small">Sin teléfono</span>'}
+                    ${u.chofer.tel ? `<a href="https://wa.me/${telLimpio}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> ${u.chofer.tel}</a>` : '---'}
                 </td>
-                <td>
-                    <span class="fw-bold ${vel > 0 ? 'text-success' : 'text-muted'}">${vel} km/h</span>
-                    ${vel > 0 ? ' <i class="fa-solid fa-angles-right fa-beat-flash text-success"></i>' : ''}
-                </td>
+                <td class="fw-bold ${vel > 0 ? 'text-success' : 'text-muted'}">${vel} km/h</td>
             </tr>`;
     });
-    
     tbody.innerHTML = html;
-    document.getElementById("count-total").innerText = lista.length;
-    document.getElementById("count-moving").innerText = moviendo;
-    document.getElementById("count-idle").innerText = lista.length - moviendo;
-}
-
-function filtrar() {
-    let input = document.getElementById("searchBar").value.toUpperCase();
-    let rows = document.getElementById("tabla-body").getElementsByTagName("tr");
-    for (let i = 0; i < rows.length; i++) {
-        let text = rows[i].innerText.toUpperCase();
-        rows[i].style.display = text.indexOf(input) > -1 ? "" : "none";
-    }
 }
 
 function apiCall(url, svc, params, sid = null) {
