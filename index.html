@@ -2,40 +2,40 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>OPERATIVO C4 | Sincronización Total MRL</title>
+    <title>C4 - Centro de Monitoreo Localizador</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
-        .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
-        .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
-        .badge-geo { background: #dcfce7; color: #166534; font-weight: 700; padding: 4px 8px; border-radius: 6px; border: 1px solid #16a34a; }
-        .unit-id { font-weight: 900; color: #0284c7; }
-        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; }
+        body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: white; padding: 20px; }
+        .card-c4 { background: #1e293b; border: 1px solid #334155; border-radius: 12px; }
+        .header-c4 { background: linear-gradient(90deg, #0ea5e9, #2563eb); padding: 15px; border-radius: 12px 12px 0 0; }
+        .table { color: #f8fafc; }
+        .unit-id { font-weight: 900; color: #38bdf8; }
+        .btn-locator { background: #6366f1; color: white; border: none; font-size: 0.75rem; font-weight: bold; }
+        .btn-locator:hover { background: #4f46e5; color: white; }
+        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-size: 0.75rem; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid py-4">
-    <div class="card card-c4 shadow">
+<div class="container-fluid">
+    <div class="card card-c4 shadow-lg">
         <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h5 class="m-0"><i class="fa-solid fa-sync-alt me-2 text-info"></i> OPERATIVO C4 | <small class="opacity-75">Control de Flota MRL</small></h5>
-            <button onclick="sincronizarMRL()" class="btn btn-info btn-sm fw-bold">SINCRONIZAR DATOS</button>
+            <h4 class="m-0"><i class="fa-solid fa-map-location-dot me-2"></i> OPERATIVO C4 | <small>Rastreo por Localizador</small></h4>
+            <button onclick="generarBitacora()" class="btn btn-light btn-sm fw-bold">SINCRONIZAR LOCALIZADORES</button>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle m-0">
-                <thead class="table-dark text-uppercase" style="font-size: 0.7rem;">
+                <thead class="table-dark">
                     <tr>
-                        <th>Unidad</th>
-                        <th>Cod.</th>
-                        <th>Conductor Actual</th>
-                        <th>WhatsApp / Teléfono</th>
-                        <th>Ubicación (Geocerca Real)</th>
-                        <th>Estatus</th>
+                        <th>UNIDAD</th>
+                        <th>CONDUCTOR</th>
+                        <th>TELÉFONO</th>
+                        <th>ACCIONES</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="6" class="text-center p-5 text-muted text-uppercase">Haga clic en el botón para sincronizar la ubicación de Mario y el equipo MRL...</td></tr>
+                    <tr><td colspan="4" class="text-center p-5 text-muted text-uppercase">Presione el botón para generar los enlaces de rastreo...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -43,100 +43,73 @@
 </div>
 
 <script>
-const TOKEN_DSG = "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418";
+const TOKENS = [
+    "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87", // DSG
+    "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418"  // GRUDICOM
+];
 const HOST = "https://hst-api.wialon.com";
 
-let mapaNombresZonas = {}; 
-let repoConductores = {};
-
-async function sincronizarMRL() {
+async function generarBitacora() {
     const tbody = document.getElementById("tabla-body");
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-info"></i><br>IDENTIFICANDO CONDUCTORES Y RECURSOS...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><br>GENERANDO LINKS DE LOCALIZADOR...</td></tr>';
     
-    mapaNombresZonas = {};
-    repoConductores = {};
+    let htmlTotal = "";
 
-    try {
-        const login = await api(HOST, "token/login", { token: TOKEN_DSG });
-        const sid = login.eid;
-        if (!sid) throw "Sesión no válida";
+    for (const token of TOKENS) {
+        try {
+            const login = await api(HOST, "token/login", { token: token });
+            const sid = login.eid;
+            if (!sid) continue;
 
-        // 1. Obtener Recursos (Zonas 4097 + Conductores 256)
-        const resData = await api(HOST, "core/search_items", {
-            spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 4097 + 256, from: 0, to: 0
-        }, sid);
+            // 1. Obtener Unidades y Conductores (Flags 1 + 256)
+            const data = await api(HOST, "core/search_items", {
+                spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
+                force: 1, flags: 1 + 4 + 256, from: 0, to: 0
+            }, sid);
 
-        let paramZoneId = {};
-        resData.items.forEach(res => {
-            if (res.zl) {
-                paramZoneId[res.id] = [];
-                Object.values(res.zl).forEach(z => {
-                    mapaNombresZonas[z.id] = z.n;
-                    paramZoneId[res.id].push(z.id);
-                });
-            }
-            if (res.drvrs) {
-                Object.values(res.drvrs).forEach(d => {
-                    repoConductores[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu, rid: res.id };
-                });
-            }
-        });
+            // 2. Obtener Conductores para los teléfonos
+            const resData = await api(HOST, "core/search_items", {
+                spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
+                force: 1, flags: 256, from: 0, to: 0
+            }, sid);
 
-        // 2. Obtener Unidades - Flag 1 (Base) + 1024 (Estatus) + 4 (Conductor Asignado)
-        const unitData = await api(HOST, "core/search_items", {
-            spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 1 + 1024 + 4, from: 0, to: 0
-        }, sid);
-
-        const idsUnidades = unitData.items.map(u => u.id);
-
-        // 3. Consulta de Geocercas (get_zones_by_unit)
-        const resultZonas = await api(HOST, "resource/get_zones_by_unit", {
-            spec: { zoneId: paramZoneId, units: idsUnidades, time: 0 }
-        }, sid);
-
-        // 4. Mapeo y Renderizado
-        let html = "";
-        unitData.items.sort((a,b) => a.nm.localeCompare(b.nm)).forEach(u => {
-            // Buscar Conductor - Prioridad al ID asignado u.cd
-            let c = { n: "Sin asignar", tel: "", cod: "---", rid: null };
-            if (u.cd && repoConductores[u.cd]) {
-                c = repoConductores[u.cd];
-            } else {
-                for (let id in repoConductores) {
-                    if (repoConductores[id].bu == u.id) { c = repoConductores[id]; break; }
+            let conductores = {};
+            resData.items.forEach(res => {
+                if (res.drvrs) {
+                    Object.values(res.drvrs).forEach(d => { conductores[d.id] = d; });
                 }
+            });
+
+            // 3. Para cada unidad, pedir el Link de Localizador
+            for (const unit of data.items) {
+                // Solicitamos link por 24 horas (86400 segundos)
+                const locReq = await api(HOST, "core/create_locator", {
+                    units: [unit.id],
+                    lifeTime: 86400,
+                    flags: 1 // Ver unidades y geocercas
+                }, sid);
+
+                const link = locReq.url || "#";
+                let chofer = (unit.cd && conductores[unit.cd]) ? conductores[unit.cd] : { n: "Sin asignar", p: "" };
+                const cleanTel = chofer.p.replace(/\D/g,'');
+
+                htmlTotal += `
+                    <tr>
+                        <td><span class="unit-id">${unit.nm}</span></td>
+                        <td class="text-uppercase fw-bold">${chofer.n}</td>
+                        <td>
+                            ${chofer.p ? `<a href="https://wa.me/${cleanTel}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp me-1"></i>${chofer.p}</a>` : '---'}
+                        </td>
+                        <td>
+                            <a href="${link}" target="_blank" class="btn btn-locator btn-sm">
+                                <i class="fa-solid fa-eye me-1"></i> VER MAPA EN VIVO
+                            </a>
+                        </td>
+                    </tr>`;
             }
-
-            // Ubicación Real - Solo aceptamos geocercas del Recurso del conductor
-            let uLoc = "En ruta";
-            if (c.rid && resultZonas[c.rid]) {
-                for (let zId in resultZonas[c.rid]) {
-                    if (resultZonas[c.rid][zId].includes(u.id)) {
-                        uLoc = `<span class="badge-geo"><i class="fa fa-location-dot me-1"></i>${mapaNombresZonas[zId]}</span>`;
-                    }
-                }
-            }
-
-            const cleanWA = c.tel.replace(/\D/g,'');
-
-            html += `<tr>
-                <td><span class="unit-id text-uppercase">${u.nm}</span></td>
-                <td><code>${c.cod}</code></td>
-                <td class="fw-bold text-uppercase">${c.n}</td>
-                <td>
-                    ${c.tel ? `<a href="https://wa.me/${cleanWA}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp me-1"></i>${c.tel}</a>` : '---'}
-                </td>
-                <td>${uLoc}</td>
-                <td class="fw-bold ${u.pos && u.pos.s > 0 ? 'text-success' : 'text-muted'} text-uppercase">${u.pos ? u.pos.s : 0} km/h</td>
-            </tr>`;
-        });
-        tbody.innerHTML = html;
-
-    } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-5 text-danger">Error: ${e}</td></tr>`;
+        } catch (e) { console.error(e); }
     }
+    tbody.innerHTML = htmlTotal;
 }
 
 function api(url, svc, params, sid = null) {
