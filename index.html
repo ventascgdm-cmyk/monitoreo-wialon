@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>OPERATIVO C4 | Sincronización Grudicom</title>
+    <title>C4 - Control de Flotas GRUDICOM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -19,9 +19,9 @@
 <div class="container-fluid py-4">
     <div class="card card-c4 shadow">
         <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h4 class="m-0"><i class="fa-solid fa-shield-halved me-2 text-info"></i> OPERATIVO C4 | <small class="opacity-75">Control de Flota MRL</small></h4>
-            <button onclick="sincronizarMRL()" class="btn btn-info btn-sm fw-bold">
-                <i class="fa-solid fa-sync-alt me-1"></i> SINCRONIZAR GRUDICOM
+            <h4 class="m-0"><i class="fa-solid fa-shield-halved me-2 text-info"></i> OPERATIVO C4 | <small class="opacity-75">Sincronización MRL</small></h4>
+            <button onclick="cargarMRL()" class="btn btn-info btn-sm fw-bold shadow-sm">
+                <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR MRL
             </button>
         </div>
         <div class="table-responsive">
@@ -33,11 +33,11 @@
                         <th>Conductor Actual</th>
                         <th>WhatsApp / Teléfono</th>
                         <th>Ubicación (Geocerca Real)</th>
-                        <th>Velocidad</th>
+                        <th>Estatus</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="6" class="text-center p-5 text-muted">Haga clic para sincronizar la ubicación de Mario y el equipo MRL...</td></tr>
+                    <tr><td colspan="6" class="text-center p-5 text-muted">Haga clic en el botón para sincronizar a Mario y la flota MRL...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -45,25 +45,25 @@
 </div>
 
 <script>
-const TOKEN_DSG = "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418";
+const TOKEN_GRUDICOM = "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418";
 const HOST = "https://hst-api.wialon.com";
 
-let mapaNombresZonas = {}; 
-let repoConductores = {};
+let mapaZonas = {}; 
+let repoDrivers = {};
 
-async function sincronizarMRL() {
+async function cargarMRL() {
     const tbody = document.getElementById("tabla-body");
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><br>IDENTIFICANDO CONDUCTORES Y RECURSOS...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><br>FILTRANDO RECURSOS POR UNIDAD...</td></tr>';
     
-    mapaNombresZonas = {};
-    repoConductores = {};
+    mapaZonas = {};
+    repoDrivers = {};
 
     try {
-        const login = await api(HOST, "token/login", { token: TOKEN_DSG });
+        const login = await api(HOST, "token/login", { token: TOKEN_GRUDICOM });
         const sid = login.eid;
         if (!sid) throw "Sesión no válida";
 
-        // 1. Recursos (Geocercas 4097 + Conductores 256)
+        // 1. Recursos (4097) y Conductores (256)
         const resData = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 4097 + 256, from: 0, to: 0
@@ -74,19 +74,19 @@ async function sincronizarMRL() {
             if (res.zl) {
                 paramZoneId[res.id] = [];
                 Object.values(res.zl).forEach(z => {
-                    mapaNombresZonas[z.id] = z.n;
+                    mapaZonas[z.id] = z.n;
                     paramZoneId[res.id].push(z.id);
                 });
             }
             if (res.drvrs) {
                 Object.values(res.drvrs).forEach(d => {
-                    // Guardamos el conductor con su ID de Recurso (rid)
-                    repoConductores[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu, rid: res.id };
+                    // CLAVE: Guardamos el Recurso (rid) al que pertenece el conductor
+                    repoDrivers[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu, rid: res.id };
                 });
             }
         });
 
-        // 2. Unidades (Flag 1 + 1024 + 4 para conductores)
+        // 2. Unidades (Flag 1 + 1024 + 4 para conductores asignados)
         const unitData = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 1024 + 4, from: 0, to: 0
@@ -99,25 +99,24 @@ async function sincronizarMRL() {
             spec: { zoneId: paramZoneId, units: idsUnidades, time: 0 }
         }, sid);
 
-        // 4. Renderizado con Filtro de Recurso (Clave para evitar Abarrotes Abeja)
         let html = "";
         unitData.items.sort((a,b) => a.nm.localeCompare(b.nm)).forEach(u => {
             // Buscamos al Conductor (Primero por ID asignado u.cd)
             let c = { n: "Sin asignar", tel: "", cod: "---", rid: null };
-            if (u.cd && repoConductores[u.cd]) {
-                c = repoConductores[u.cd];
+            if (u.cd && repoDrivers[u.cd]) {
+                c = repoDrivers[u.cd];
             } else {
-                for (let id in repoConductores) {
-                    if (repoConductores[id].bu == u.id) { c = repoConductores[id]; break; }
+                for (let id in repoDrivers) {
+                    if (repoDrivers[id].bu == u.id) { c = repoDrivers[id]; break; }
                 }
             }
 
-            // Ubicación Real: Solo aceptamos la geocerca si pertenece al recurso del conductor
+            // FILTRO DE SEGURIDAD: Solo mostramos geocerca si el Recurso coincide con el Conductor
             let ubicacionText = "En ruta";
             if (c.rid && resultZonas[c.rid]) {
                 for (let zId in resultZonas[c.rid]) {
                     if (resultZonas[c.rid][zId].includes(u.id)) {
-                        ubicacionText = `<span class="badge-geo"><i class="fa fa-location-dot me-1"></i>${mapaNombresZonas[zId]}</span>`;
+                        ubicacionText = `<span class="badge-geo"><i class="fa fa-location-dot me-1"></i>${mapaZonas[zId]}</span>`;
                     }
                 }
             }
