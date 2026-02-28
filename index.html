@@ -21,7 +21,7 @@
 <div class="container-fluid py-3">
     <div class="card card-c4 shadow">
         <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h4 class="m-0"><i class="fa-solid fa-satellite-dish me-2 text-info"></i> OPERATIVO C4 | <small class="opacity-75">Control Total</small></h4>
+            <h4 class="m-0"><i class="fa-solid fa-satellite-dish me-2 text-info"></i> OPERATIVO C4 | <small class="opacity-75">Control Total Multihost</small></h4>
             <button onclick="arranque()" class="btn btn-info btn-sm fw-bold shadow-sm">
                 <i class="fa-solid fa-sync-alt me-1"></i> SINCRONIZAR FLOTAS
             </button>
@@ -41,7 +41,7 @@
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="7" class="text-center p-5 text-muted">Haga clic en Sincronizar para arrancar el radar...</td></tr>
+                    <tr><td colspan="7" class="text-center p-5 text-muted">Haga clic en Sincronizar para arrancar el radar maestro...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -49,10 +49,10 @@
 </div>
 
 <script>
-// --- TUS TOKENS OFICIALES ---
+// --- TUS TOKENS OFICIALES (MULTISERVÍDOR) ---
 const FLOTAS = [
     { 
-        nombre: "FLOTA RACEL", 
+        nombre: "FLOTA DSG", // Corregido el nombre
         url: "https://hst-api.wialon.com", 
         token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" 
     },
@@ -60,16 +60,21 @@ const FLOTAS = [
         nombre: "FLOTA GRUDICOM", 
         url: "https://hst-api.wialon.com", 
         token: "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418" 
+    },
+    { 
+        nombre: "FLOTA RACEL", // La verdadera flota RACEL con su propio host
+        url: "https://plataforma.sosgps.mx", 
+        token: "062c52a452863bb27dea789d10dce5ec4872E97E0A727910B1426B5308F11029B1EB7E02" 
     }
 ];
 
 async function arranque() {
     const body = document.getElementById("tabla-body");
-    body.innerHTML = '<tr><td colspan="7" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Ensamblando datos y geocercas...</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Ensamblando datos de múltiples servidores...</td></tr>';
     
     let masterList = [];
 
-    // Procesar ambas plataformas en paralelo
+    // Procesar las 3 plataformas al mismo tiempo en paralelo
     const promesas = FLOTAS.map(f => procesarFlota(f));
     const resultados = await Promise.all(promesas);
     
@@ -79,16 +84,16 @@ async function arranque() {
 
 async function procesarFlota(f) {
     try {
+        // Al usar f.url, el script sabe si ir a hst-api.wialon.com o a plataforma.sosgps.mx
         const login = await apiCall(f.url, "token/login", { token: f.token });
         const sid = login.eid;
         if (!sid) return null;
 
         let diccChoferes = {};
         let diccZonasReq = {};
-        let diccZonasNombres = {}; // Guardará los nombres así: { rId: { zId: "Nombre Zona" } }
+        let diccZonasNombres = {};
 
         // 1. OBTENER RECURSOS (1: Base ID + 256: Choferes + 4096: Zonas)
-        // ¡Aquí estaba el error! Si no pides el 1, Wialon no te da el ID del recurso.
         const resReq = await apiCall(f.url, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 256 + 4096, from: 0, to: 0
@@ -116,7 +121,7 @@ async function procesarFlota(f) {
                                 nombre: d.n,
                                 tel: d.p || "",
                                 cod: d.c || "---",
-                                rid: rId // Guardamos la carpeta dueña del chofer
+                                rid: rId
                             };
                         }
                     });
@@ -143,14 +148,10 @@ async function procesarFlota(f) {
 
         // 4. ENSAMBLAJE FINAL
         return unidades.map(u => {
-            // Asignar Chofer (Buscamos si su u.id está en el diccionario de vínculos)
             let chofer = diccChoferes[u.id] || { nombre: "Sin asignar", tel: "", cod: "---", rid: null };
-
-            // FILTRO LÁSER DE GEOCERCAS
             let miZona = "En ruta";
             
             if (chofer.rid && checkGeo[chofer.rid]) {
-                // Si la unidad tiene chofer, SOLO buscamos en las geocercas de su mismo recurso
                 for (let zId in checkGeo[chofer.rid]) {
                     if (checkGeo[chofer.rid][zId].includes(u.id)) {
                         miZona = `<span class="badge-geo"><i class="fa-solid fa-location-dot me-1"></i>${diccZonasNombres[chofer.rid][zId]}</span>`;
@@ -158,7 +159,6 @@ async function procesarFlota(f) {
                     }
                 }
             } else {
-                // Si la unidad no tiene chofer asignado, buscamos en todas las carpetas a ver dónde está
                 for (let rId in checkGeo) {
                     for (let zId in checkGeo[rId]) {
                         if (checkGeo[rId][zId].includes(u.id)) {
@@ -211,6 +211,7 @@ function apiCall(url, svc, params, sid = null) {
         const cb = "cb_" + Math.random().toString(36).substring(7);
         window[cb] = d => { delete window[cb]; resolve(d); };
         const script = document.createElement("script");
+        // El script jalará la URL correcta dependiendo del servidor de la flota
         script.src = `${url}/wialon/ajax.html?svc=${svc}&params=${JSON.stringify(params)}&callback=${cb}${sid ? '&sid=' + sid : ''}`;
         document.head.appendChild(script);
     });
