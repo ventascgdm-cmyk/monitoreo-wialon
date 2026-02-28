@@ -2,17 +2,16 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - DSG (Héctor Calderón)</title>
+    <title>DSG | Héctor Calderón - Geocercas Oficial</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.85rem; }
         .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
         .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
-        .badge-geo { background: #d1fae5; color: #065f46; border: 1px solid #10b981; font-weight: 700; padding: 5px 10px; border-radius: 6px; }
-        .unit-id { font-weight: 900; color: #0284c7; font-size: 1rem; }
-        .wa-btn { background: #22c55e; color: white; padding: 4px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; }
-        .wa-btn:hover { color: white; background: #16a34a; }
+        .badge-geo { background: #dcfce7; color: #166534; border: 1px solid #16a34a; font-weight: 700; padding: 5px 10px; border-radius: 6px; }
+        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; }
+        .unit-id { font-weight: 900; color: #0284c7; }
     </style>
 </head>
 <body>
@@ -20,25 +19,25 @@
 <div class="container-fluid py-4">
     <div class="card card-c4 shadow">
         <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h4 class="m-0"><i class="fa-solid fa-truck-fast me-2 text-info"></i> DSG | <small class="opacity-75">Héctor Calderón</small></h4>
-            <button onclick="cargarDSG()" class="btn btn-info btn-sm fw-bold shadow-sm">
-                <i class="fa-solid fa-sync-alt me-1"></i> ACTUALIZAR DSG
+            <h4 class="m-0"><i class="fa-solid fa-location-crosshairs me-2 text-info"></i> DSG | <small class="opacity-75">Héctor Calderón</small></h4>
+            <button onclick="cargarFlotaOficial()" class="btn btn-info btn-sm fw-bold">
+                <i class="fa-solid fa-sync-alt me-1"></i> SINCRONIZAR API
             </button>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle m-0">
-                <thead class="table-dark text-uppercase" style="font-size: 0.75rem;">
+                <thead class="table-dark text-uppercase" style="font-size: 0.7rem;">
                     <tr>
                         <th>Unidad</th>
                         <th>Cod.</th>
                         <th>Conductor</th>
-                        <th>WhatsApp</th>
+                        <th>WhatsApp / Teléfono</th>
                         <th>Ubicación / Geocerca</th>
                         <th>Velocidad</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="6" class="text-center p-5 text-muted text-uppercase">Presiona "Actualizar" para cargar la flota DSG.</td></tr>
+                    <tr><td colspan="6" class="text-center p-5 text-muted text-uppercase">Haga clic para iniciar la consulta oficial...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -49,94 +48,95 @@
 const TOKEN_DSG = "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87";
 const HOST = "https://hst-api.wialon.com";
 
-let driversDSG = {}; 
-let zonesDSG = {};
+let mapaZonas = {}; 
+let repoConductores = {};
 
-async function cargarDSG() {
+async function cargarFlotaOficial() {
     const tbody = document.getElementById("tabla-body");
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Consultando Recursos...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x"></i><br>CONSULTANDO API SEGÚN DOCUMENTACIÓN...</td></tr>';
     
-    driversDSG = {};
-    zonesDSG = {};
+    mapaZonas = {};
+    repoConductores = {};
 
     try {
         const login = await api(HOST, "token/login", { token: TOKEN_DSG });
         const sid = login.eid;
-        if (!sid) throw "Error de Token";
+        if (!sid) throw "Sesión no válida";
 
-        // 1. Recursos (Geocercas 4096 + Conductores 256)
-        const resReq = await api(HOST, "core/search_items", {
+        // PASO 1: Obtener Recursos y construir zoneId (Flags 4097 + 256)
+        const resData = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 4096 + 256, from: 0, to: 0
+            force: 1, flags: 4097 + 256, from: 0, to: 0
         }, sid);
 
-        let zoneSpec = {};
-        if (resReq.items) {
-            resReq.items.forEach(res => {
-                zonesDSG[res.id] = {}; // Inicializar por recurso
-                zoneSpec[res.id] = [];
-                if (res.zl) {
-                    Object.values(res.zl).forEach(z => {
-                        zonesDSG[res.id][z.id] = z.n;
-                        zoneSpec[res.id].push(z.id);
-                    });
-                }
-                if (res.drvrs) {
-                    Object.values(res.drvrs).forEach(d => {
-                        driversDSG[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu };
-                    });
-                }
-            });
-        }
+        let paramZoneId = {};
+        resData.items.forEach(res => {
+            if (res.zl) {
+                paramZoneId[res.id] = [];
+                Object.values(res.zl).forEach(z => {
+                    mapaZonas[z.id] = z.n; // Guardar nombre para mostrar después
+                    paramZoneId[res.id].push(z.id); // ID de geocerca para la consulta
+                });
+            }
+            if (res.drvrs) {
+                Object.values(res.drvrs).forEach(d => {
+                    repoConductores[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu };
+                });
+            }
+        });
 
-        // 2. Unidades (Base 1 + Posición 1024 + Conductor 4)
-        const unitReq = await api(HOST, "core/search_items", {
+        // PASO 2: Obtener Unidades (Flag 1 + 1024 + 4)
+        const unitData = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
             force: 1, flags: 1 + 1024 + 4, from: 0, to: 0
         }, sid);
 
-        const uIds = unitReq.items ? unitReq.items.map(u => u.id) : [];
+        const idsUnidades = unitData.items.map(u => u.id);
 
-        // 3. Geocercas mediante API oficial
-        const zonesByUnit = await api(HOST, "resource/get_zones_by_unit", {
-            spec: { zoneId: zoneSpec, units: uIds, time: 0 }
+        // PASO 3: Solicitar resource/get_zones_by_unit
+        const resultZonas = await api(HOST, "resource/get_zones_by_unit", {
+            spec: {
+                zoneId: paramZoneId,
+                units: idsUnidades,
+                time: 0
+            }
         }, sid);
 
+        // PASO 4: Renderizar resultados
         let html = "";
-        unitReq.items.sort((a,b) => a.nm.localeCompare(b.nm)).forEach(u => {
-            // Ubicación
-            let ubicacion = "En ruta";
-            for (let rId in zonesByUnit) {
-                for (let zId in zonesByUnit[rId]) {
-                    if (zonesByUnit[rId][zId].includes(u.id)) {
-                        ubicacion = `<span class="badge-geo"><i class="fa fa-map-pin me-1"></i>${zonesDSG[rId][zId]}</span>`;
+        unitData.items.sort((a,b) => a.nm.localeCompare(b.nm)).forEach(u => {
+            // Identificar Geocerca desde la respuesta JSON
+            let ubicacionText = "En ruta";
+            for (let rId in resultZonas) {
+                for (let zId in resultZonas[rId]) {
+                    if (resultZonas[rId][zId].includes(u.id)) {
+                        ubicacionText = `<span class="badge-geo"><i class="fa fa-location-dot me-1"></i>${mapaZonas[zId]}</span>`;
                     }
                 }
             }
 
-            // Conductor (Asignación Directa 'cd' o Vínculo 'bu')
-            let d = { n: "Sin asignar", tel: "", cod: "---" };
-            if (u.cd && driversDSG[u.cd]) {
-                d = driversDSG[u.cd];
+            // Identificar Conductor (Detección por u.cd o u.id)
+            let c = { n: "Sin asignar", tel: "", cod: "---" };
+            if (u.cd && repoConductores[u.cd]) {
+                c = repoConductores[u.cd];
             } else {
-                for (let id in driversDSG) {
-                    if (driversDSG[id].bu == u.id) { d = driversDSG[id]; break; }
+                for (let id in repoConductores) {
+                    if (repoConductores[id].bu == u.id) { c = repoConductores[id]; break; }
                 }
             }
 
-            const cleanTel = d.tel.replace(/\D/g,'');
+            const waLimpio = c.tel.replace(/\D/g,'');
 
-            html += `
-                <tr>
-                    <td><span class="unit-id">${u.nm}</span></td>
-                    <td><code>${d.cod}</code></td>
-                    <td class="fw-bold text-dark text-uppercase">${d.n}</td>
-                    <td>
-                        ${d.tel ? `<a href="https://wa.me/${cleanTel}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp me-1"></i>${d.tel}</a>` : '---'}
-                    </td>
-                    <td>${ubicacion}</td>
-                    <td class="fw-bold ${u.pos && u.pos.s > 0 ? 'text-success' : 'text-muted'}">${u.pos ? u.pos.s : 0} km/h</td>
-                </tr>`;
+            html += `<tr>
+                <td><span class="unit-id text-uppercase">${u.nm}</span></td>
+                <td><code>${c.cod}</code></td>
+                <td class="fw-bold text-uppercase">${c.n}</td>
+                <td>
+                    ${c.tel ? `<a href="https://wa.me/${waLimpio}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp me-1"></i>${c.tel}</a>` : '---'}
+                </td>
+                <td>${ubicacionText}</td>
+                <td class="fw-bold ${u.pos && u.pos.s > 0 ? 'text-success' : 'text-muted'} text-uppercase">${u.pos ? u.pos.s : 0} km/h</td>
+            </tr>`;
         });
         tbody.innerHTML = html;
 
