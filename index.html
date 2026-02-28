@@ -2,205 +2,116 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - Bitácora Maestra Definitiva</title>
+    <title>Radiografía Geocercas MRL-501</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.85rem; }
-        .card-c4 { border: none; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 20px; }
-        .header-c4 { background: #0f172a; color: white; padding: 1.2rem; border-radius: 12px 12px 0 0; }
-        .unit-name { font-weight: 900; color: #0284c7; font-size: 0.95rem; }
-        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; }
-        .wa-btn:hover { background: #16a34a; color: white; }
-        .badge-geo { background: #dcfce7; color: #166534; font-weight: 700; padding: 5px 10px; border-radius: 6px; border: 1px solid #16a34a; }
-        .plat-tag { font-size: 0.65rem; padding: 3px 8px; border-radius: 10px; background: #e2e8f0; color: #475569; font-weight: 800; }
+        body { background-color: #1e1e1e; color: #00ff00; font-family: monospace; padding: 20px; }
+        .console-box { background: #000; border: 1px solid #00ff00; padding: 15px; border-radius: 5px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; font-size: 0.85rem; color: #fff; margin-bottom: 20px; }
+        h4 { color: #00ff00; border-bottom: 1px dashed #00ff00; padding-bottom: 5px; font-size: 1.1rem; text-transform: uppercase;}
+        .btn-scan { background: #00ff00; color: #000; font-weight: bold; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; margin-bottom: 20px; font-size: 1.2rem; }
+        .btn-scan:hover { background: #00cc00; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid py-3">
-    <div class="card card-c4 shadow">
-        <div class="header-c4 d-flex justify-content-between align-items-center">
-            <h4 class="m-0"><i class="fa-solid fa-satellite-dish me-2 text-info"></i> OPERATIVO C4 | <small class="opacity-75">Control Total</small></h4>
-            <button onclick="arranque()" class="btn btn-info btn-sm fw-bold shadow-sm">
-                <i class="fa-solid fa-sync-alt me-1"></i> SINCRONIZAR FLOTAS
-            </button>
+    <h2><i class="fa fa-bug"></i> MODO DIAGNÓSTICO: GEOCERCAS MRL-501</h2>
+    <p>Vamos a ver qué demonios está respondiendo Wialon cuando le preguntamos por la ubicación.</p>
+    
+    <button class="btn-scan" onclick="escanear()">INICIAR RADIOGRAFÍA DE GEOCERCAS</button>
+
+    <div class="row">
+        <div class="col-md-4">
+            <h4>1. Posición GPS de MRL-501</h4>
+            <div id="out-pos" class="console-box">Esperando...</div>
         </div>
-        
-        <div class="table-responsive">
-            <table class="table table-hover align-middle m-0">
-                <thead class="table-light text-uppercase" style="font-size: 0.75rem;">
-                    <tr>
-                        <th>Flota</th>
-                        <th>Unidad</th>
-                        <th>Cod.</th>
-                        <th>Conductor</th>
-                        <th>WhatsApp</th>
-                        <th>Ubicación / Geocerca</th>
-                        <th>Velocidad</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-body">
-                    <tr><td colspan="7" class="text-center p-5 text-muted">Haga clic en Sincronizar para arrancar el radar...</td></tr>
-                </tbody>
-            </table>
+        <div class="col-md-4">
+            <h4>2. Recursos y sus Geocercas (Zonas)</h4>
+            <div id="out-res" class="console-box">Esperando...</div>
+        </div>
+        <div class="col-md-4">
+            <h4>3. Respuesta API Oficial (get_zones_by_unit)</h4>
+            <div id="out-api" class="console-box">Esperando...</div>
         </div>
     </div>
-</div>
 
 <script>
-// --- CONFIGURACIÓN DE PLATAFORMAS ---
-const FLOTAS = [
-    { 
-        nombre: "FLOTA RACEL", 
-        url: "https://hst-api.wialon.com", 
-        token: "9929a644617dd97b53d18cd6491fad66CEFFEDAAAEA1386033D128438DC0D19FFEA54F87" 
-    },
-    { 
-        nombre: "FLOTA GRUDICOM", 
-        url: "https://hst-api.wialon.com", 
-        token: "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418" 
-    }
-];
+const TOKEN = "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418";
+const HOST = "https://hst-api.wialon.com";
+const ID_MRL501 = 600805211; // Ya sabemos que este es el ID del MRL-501 por la radiografía pasada
 
-async function arranque() {
-    const body = document.getElementById("tabla-body");
-    body.innerHTML = '<tr><td colspan="7" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Ensamblando datos (Conductores y Geocercas)...</td></tr>';
-    
-    let masterList = [];
+async function escanear() {
+    document.getElementById("out-pos").innerText = "Consultando...";
+    document.getElementById("out-res").innerText = "Consultando...";
+    document.getElementById("out-api").innerText = "Consultando...";
 
-    // Procesar ambas plataformas en paralelo para máxima velocidad
-    const promesas = FLOTAS.map(f => procesarFlota(f));
-    const resultados = await Promise.all(promesas);
-    
-    resultados.forEach(res => { if(res) masterList = masterList.concat(res); });
-    dibujarTabla(masterList);
-}
-
-async function procesarFlota(f) {
     try {
-        const login = await apiCall(f.url, "token/login", { token: f.token });
+        const login = await api(HOST, "token/login", { token: TOKEN });
         const sid = login.eid;
-        if (!sid) return null;
+        if (!sid) throw "Error de sesión.";
 
-        // DICCIONARIOS LOCALES PARA ESTA FLOTA
-        let diccChoferes = {};
-        let diccZonasReq = {};
-        let diccZonasNombres = {};
+        // 1. OBTENER POSICIÓN DE MRL-501 (Flag 1024)
+        const unitReq = await api(HOST, "core/search_items", {
+            spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "MRL-501", sortType: "sys_name" },
+            force: 1, flags: 1024, from: 0, to: 0
+        }, sid);
+        
+        if (unitReq.items && unitReq.items.length > 0) {
+            document.getElementById("out-pos").innerText = JSON.stringify(unitReq.items[0].pos, null, 4);
+        } else {
+            document.getElementById("out-pos").innerText = "No se encontró pos de MRL-501";
+        }
 
-        // 1. OBTENER RECURSOS (Conductores 256 + Geocercas 4096)
-        const resReq = await apiCall(f.url, "core/search_items", {
+        // 2. OBTENER TODOS LOS RECURSOS Y SUS GEOCERCAS (Flag 4096)
+        const resReq = await api(HOST, "core/search_items", {
             spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 256 + 4096, from: 0, to: 0
+            force: 1, flags: 4096, from: 0, to: 0
         }, sid);
 
+        let reporteZonas = "";
+        let diccZoneIdParams = {}; // Esto lo vamos a armar para pasárselo a la API oficial
+        
         if (resReq.items) {
             resReq.items.forEach(res => {
-                // Preparamos el array de geocercas para este recurso
-                diccZonasReq[res.id] = [];
+                let totalZonas = res.zl ? Object.keys(res.zl).length : 0;
+                reporteZonas += `RECURSO ID: ${res.id}\nNombre: ${res.nm}\nTotal Geocercas: ${totalZonas}\n`;
                 
-                // Mapeo de Zonas
-                if (res.zl) {
+                if (totalZonas > 0) {
+                    diccZoneIdParams[res.id] = [];
+                    // Mostrar los nombres de las primeras 3 zonas para no saturar la caja
+                    let contador = 0;
                     Object.values(res.zl).forEach(z => {
-                        diccZonasReq[res.id].push(z.id);
-                        diccZonasNombres[z.id] = z.n; // Guardamos el nombre real
-                    });
-                }
-                
-                // Mapeo de Conductores (El truco que ya nos funcionó)
-                if (res.drvrs) {
-                    Object.values(res.drvrs).forEach(d => {
-                        if (d.bu && d.bu > 0) {
-                            diccChoferes[d.bu] = {
-                                nombre: d.n,
-                                tel: d.p || "",
-                                cod: d.c || "---",
-                                rid: res.id // <-- LA CLAVE: Guardamos a qué recurso pertenece el chofer
-                            };
+                        diccZoneIdParams[res.id].push(z.id);
+                        if (contador < 3) {
+                            reporteZonas += `  -> [ID: ${z.id}] ${z.n}\n`;
                         }
+                        contador++;
                     });
+                    if (totalZonas > 3) reporteZonas += `  -> ...y ${totalZonas - 3} más\n`;
                 }
+                reporteZonas += "-------------------------\n";
             });
         }
+        document.getElementById("out-res").innerText = reporteZonas;
 
-        // 2. OBTENER UNIDADES (Base 1 + Posición 1024)
-        const unitReq = await apiCall(f.url, "core/search_items", {
-            spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 1 + 1024, from: 0, to: 0
+        // 3. CONSULTAR API OFICIAL GET_ZONES_BY_UNIT
+        const checkGeo = await api(HOST, "resource/get_zones_by_unit", {
+            spec: { 
+                zoneId: diccZoneIdParams, 
+                units: [ID_MRL501], 
+                time: 0 
+            }
         }, sid);
 
-        let unidades = unitReq.items || [];
-        let uIds = unidades.map(u => u.id);
+        document.getElementById("out-api").innerText = JSON.stringify(checkGeo, null, 4);
 
-        // 3. CONSULTA OFICIAL DE GEOCERCAS
-        let checkGeo = {};
-        if (uIds.length > 0) {
-            checkGeo = await apiCall(f.url, "resource/get_zones_by_unit", {
-                spec: { zoneId: diccZonasReq, units: uIds, time: 0 }
-            }, sid);
-        }
-
-        // 4. ENSAMBLAJE FINAL
-        return unidades.map(u => {
-            // Asignar Chofer usando el diccionario exacto
-            let chofer = diccChoferes[u.id] || { nombre: "Sin asignar", tel: "", cod: "---", rid: null };
-
-            // FILTRO LÁSER DE GEOCERCAS
-            let miZona = "En ruta";
-            // Tomamos el Recurso dueño: Primero intentamos por el chofer, si no hay, por la propiedad 'bact' de la unidad
-            let recursoDueño = chofer.rid ? chofer.rid : u.bact;
-
-            // Buscamos SOLO en las geocercas que le pertenecen a ese recurso específico
-            if (recursoDueño && checkGeo[recursoDueño]) {
-                for (let zId in checkGeo[recursoDueño]) {
-                    if (checkGeo[recursoDueño][zId].includes(u.id)) {
-                        miZona = `<span class="badge-geo"><i class="fa-solid fa-location-dot me-1"></i>${diccZonasNombres[zId]}</span>`;
-                        break; // Ya la encontramos, dejamos de buscar
-                    }
-                }
-            }
-
-            return {
-                nm: u.nm,
-                plat: f.nombre,
-                pos: u.pos,
-                chofer: chofer,
-                zona: miZona
-            };
-        });
-    } catch (e) { return null; }
+    } catch (e) {
+        document.getElementById("out-pos").innerText = "ERROR: " + e;
+        document.getElementById("out-res").innerText = "ERROR: " + e;
+        document.getElementById("out-api").innerText = "ERROR: " + e;
+    }
 }
 
-function dibujarTabla(lista) {
-    const tbody = document.getElementById("tabla-body");
-    let html = "";
-    
-    lista.sort((a, b) => a.nm.localeCompare(b.nm));
-
-    lista.forEach(u => {
-        const vel = u.pos ? u.pos.s : 0;
-        const telLimpio = u.chofer.tel.replace(/\D/g,'');
-        
-        html += `
-            <tr>
-                <td><span class="plat-tag border">${u.plat}</span></td>
-                <td><span class="unit-name">${u.nm}</span></td>
-                <td><code>${u.chofer.cod}</code></td>
-                <td class="fw-bold text-uppercase">${u.chofer.nombre}</td>
-                <td>
-                    ${u.chofer.tel ? 
-                    `<a href="https://wa.me/${telLimpio}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp me-1"></i>${u.chofer.tel}</a>` : 
-                    '<span class="text-muted small">---</span>'}
-                </td>
-                <td>${u.zona}</td>
-                <td class="fw-bold ${vel > 0 ? 'text-success' : 'text-muted'}">${vel} km/h</td>
-            </tr>`;
-    });
-    
-    tbody.innerHTML = html || '<tr><td colspan="7" class="text-center">No se encontraron unidades.</td></tr>';
-}
-
-function apiCall(url, svc, params, sid = null) {
+function api(url, svc, params, sid = null) {
     return new Promise(resolve => {
         const cb = "cb_" + Math.random().toString(36).substring(7);
         window[cb] = d => { delete window[cb]; resolve(d); };
