@@ -2,158 +2,79 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>C4 - CONTROL DE FLOTA MRL</title>
+    <title>CONSOLA DE MANDO C4 - INTEGRADA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #0f172a; font-family: 'Inter', sans-serif; font-size: 0.8rem; color: #f8fafc; }
-        .card-master { background: #1e293b; border: 1px solid #334155; border-radius: 12px; margin-top: 20px; overflow: hidden; }
-        .header-c4 { background: linear-gradient(90deg, #0ea5e9, #2563eb); padding: 1.2rem; display: flex; justify-content: space-between; align-items: center; }
-        .table { color: #f8fafc; margin-bottom: 0; }
-        .table-hover tbody tr:hover { background-color: #334155; }
-        .badge-geo { background: #dcfce7; color: #166534; font-weight: 800; padding: 4px 10px; border-radius: 6px; border: 1px solid #22c55e; }
-        .unit-id { font-weight: 900; color: #38bdf8; font-size: 0.9rem; }
-        .wa-btn { background: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.75rem; border: none; }
-        .wa-btn:hover { background: #16a34a; color: white; }
+        body, html { height: 100%; margin: 0; overflow: hidden; background: #0f172a; }
+        
+        /* Contenedor del Mapa (Superior) */
+        #top-panel {
+            height: 45%; /* Ajusta el tamaño del mapa aquí */
+            width: 100%;
+            border-bottom: 4px solid #334155;
+            background: #1e293b;
+        }
+
+        /* Contenedor de la Bitácora (Inferior) */
+        #bottom-panel {
+            height: 55%;
+            width: 100%;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .header-c4 {
+            background: linear-gradient(90deg, #0ea5e9, #2563eb);
+            padding: 10px 20px;
+            border-radius: 8px 8px 0 0;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        iframe { width: 100%; height: 100%; border: none; }
+        
+        .table-dark { background-color: #1e293b !important; }
+        .badge-geo { background: #dcfce7; color: #166534; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+        .wa-btn { background: #22c55e; color: white; padding: 3px 8px; border-radius: 5px; text-decoration: none; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid py-4">
-    <div class="card card-master shadow-lg">
+<div id="top-panel">
+    <iframe src="https://hosting.wialon.com/login.html"></iframe> 
+</div>
+
+<div id="bottom-panel">
+    <div class="card bg-transparent border-0">
         <div class="header-c4">
-            <h5 class="m-0 text-white"><i class="fa-solid fa-satellite-dish me-2"></i> OPERATIVO C4 | <small>Control Grudicom GPS</small></h5>
-            <button onclick="sincronizar()" class="btn btn-light btn-sm fw-bold shadow-sm">
-                <i class="fa-solid fa-rotate me-1"></i> REFRESCAR FLOTA
-            </button>
+            <h6 class="m-0"><i class="fa-solid fa-table-list me-2"></i> BITÁCORA OPERATIVA MRL / DSG</h6>
+            <button onclick="sincronizarC4()" class="btn btn-light btn-sm fw-bold">ACTUALIZAR DATOS</button>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead style="background: #0f172a; border-bottom: 2px solid #334155;">
+            <table class="table table-dark table-hover align-middle border-secondary">
+                <thead class="small text-uppercase">
                     <tr>
-                        <th class="py-3">UNIDAD</th>
-                        <th>CÓDIGO</th>
-                        <th>OPERADOR ACTUAL</th>
-                        <th>WHATSAPP / TEL</th>
-                        <th>UBICACIÓN REAL (GEOCERCA)</th>
-                        <th>VELOCIDAD</th>
+                        <th>Unidad</th>
+                        <th>Operador</th>
+                        <th>WhatsApp</th>
+                        <th>Geocerca Actual</th>
+                        <th>Estatus</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-body" class="border-0">
-                    <tr><td colspan="6" class="text-center p-5 text-muted">Haga clic en refrescar para iniciar el escaneo profundo...</td></tr>
-                </tbody>
+                <tbody id="tabla-body">
+                    </tbody>
             </table>
         </div>
     </div>
 </div>
 
 <script>
-// USANDO TU TOKEN MASTER
-const TOKEN_MASTER = "c75483c3bfdfac7b23852ca21dae8939311C012BD70E829C09FDF344A903689C2C6A6418";
-const HOST = "https://hst-api.wialon.com";
-
-let globalZonas = {}; 
-let globalOperadores = {};
-
-async function sincronizar() {
-    const tbody = document.getElementById("tabla-body");
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-info"></i><br><br>CONSULTANDO ESTADO DE UNIDADES Y RECURSOS...</td></tr>';
-    
-    globalZonas = {};
-    globalOperadores = {};
-
-    try {
-        const login = await api(HOST, "token/login", { token: TOKEN_MASTER });
-        const sid = login.eid;
-        if (!sid) throw "ERROR DE SESIÓN";
-
-        // 1. ESCANEO DE RECURSOS (Zonas 4096 + Conductores 256)
-        const resReq = await api(HOST, "core/search_items", {
-            spec: { itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 4096 + 256, from: 0, to: 0
-        }, sid);
-
-        let queryZones = {};
-        resReq.items.forEach(res => {
-            queryZones[res.id] = [];
-            if (res.zl) {
-                Object.values(res.zl).forEach(z => {
-                    globalZonas[z.id] = z.n;
-                    queryZones[res.id].push(z.id);
-                });
-            }
-            if (res.drvrs) {
-                Object.values(res.drvrs).forEach(d => {
-                    globalOperadores[d.id] = { n: d.n, tel: d.p || "", cod: d.c || "---", bu: d.bu, rid: res.id };
-                });
-            }
-        });
-
-        // 2. ESCANEO DE UNIDADES (Flags: 1 (base), 4 (conductor actual), 1024 (posición))
-        const unitReq = await api(HOST, "core/search_items", {
-            spec: { itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name" },
-            force: 1, flags: 1 + 4 + 1024, from: 0, to: 0
-        }, sid);
-
-        const idsU = unitReq.items.map(u => u.id);
-
-        // 3. CONSULTA DE GEOCERCAS OFICIAL (get_zones_by_unit)
-        const checkGeo = await api(HOST, "resource/get_zones_by_unit", {
-            spec: { zoneId: queryZones, units: idsU, time: 0 }
-        }, sid);
-
-        // 4. ENSAMBLAJE DE DATOS
-        let html = "";
-        unitReq.items.sort((a,b) => a.nm.localeCompare(b.nm)).forEach(u => {
-            // DETECTAR CONDUCTOR: Prioridad absoluta al ID de asignación actual (u.cd)
-            let op = { n: "Sin asignar", tel: "", cod: "---", rid: null };
-            if (u.cd && globalOperadores[u.cd]) {
-                op = globalOperadores[u.cd];
-            } else {
-                for (let id in globalOperadores) {
-                    if (globalOperadores[id].bu == u.id) { op = globalOperadores[id]; break; }
-                }
-            }
-
-            // DETECTAR UBICACIÓN: Solo permitimos zonas que pertenezcan al Recurso (rid) del conductor
-            let uLoc = "En ruta";
-            if (op.rid && checkGeo[op.rid]) {
-                for (let zId in checkGeo[op.rid]) {
-                    if (checkGeo[op.rid][zId].includes(u.id)) {
-                        uLoc = `<span class="badge-geo"><i class="fa fa-location-dot me-1"></i>${globalZonas[zId]}</span>`;
-                    }
-                }
-            }
-
-            const cleanTel = op.tel.replace(/\D/g,'');
-
-            html += `<tr>
-                <td class="py-3"><span class="unit-id">${u.nm}</span></td>
-                <td><code>${op.cod}</code></td>
-                <td class="fw-bold">${op.n}</td>
-                <td>
-                    ${op.tel ? `<a href="https://wa.me/${cleanTel}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp me-1"></i>${op.tel}</a>` : '---'}
-                </td>
-                <td>${uLoc}</td>
-                <td class="fw-bold ${u.pos && u.pos.s > 0 ? 'text-info' : 'text-muted'}">${u.pos ? u.pos.s : 0} KM/H</td>
-            </tr>`;
-        });
-        tbody.innerHTML = html;
-
-    } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-5 text-danger">ERROR CRÍTICO: ${e}</td></tr>`;
-    }
-}
-
-function api(url, svc, params, sid = null) {
-    return new Promise(resolve => {
-        const cb = "cb_" + Math.random().toString(36).substring(7);
-        window[cb] = d => { delete window[cb]; resolve(d); };
-        const script = document.createElement("script");
-        script.src = `${url}/wialon/ajax.html?svc=${svc}&params=${JSON.stringify(params)}&callback=${cb}${sid ? '&sid=' + sid : ''}`;
-        document.head.appendChild(script);
-    });
-}
+// Aquí pegas la lógica de la API que ya corregimos (la que separa por Recurso)
+// ... (Lógica de token/login y get_zones_by_unit) ...
 </script>
+
 </body>
 </html>
