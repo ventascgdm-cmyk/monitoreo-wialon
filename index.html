@@ -33,19 +33,19 @@
         #dashboard { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
         .header-bar { background: var(--bg-card); padding: 12px 24px; border-bottom: 2px solid var(--border-col); box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0; }
         
-        /* LAYOUT LIMPIO: SOLO EL WRAPPER HACE SCROLL */
         .workspace-container { display: flex; flex-direction: column; flex: 1; width: 100%; overflow: hidden; }
         
-        /* MAPA DINÁMICO REPARADO */
         .map-panel { flex-basis: 0%; height: 0; overflow: hidden; transition: all 0.4s ease; border-bottom: 0px solid var(--accent); flex-shrink: 0;}
         .workspace-container.show-map .map-panel { flex-basis: 40%; height: 40%; border-bottom: 3px solid var(--accent); }
         #map { width: 100%; height: 100%; z-index: 1;}
         
         .table-panel { display: flex; flex-direction: column; flex: 1; padding: 10px; overflow: hidden; }
+        
+        /* CONTENEDOR MAESTRO DE SCROLL */
         .table-wrapper { flex: 1; overflow: auto; border-radius: 6px; padding-bottom: 40px; }
         
-        /* TABLA DE DISEÑO RÍGIDO (NO SE DEFORMA NUNCA) */
-        .table-custom { width: 100%; border-collapse: separate; border-spacing: 0 3px; margin-top: 0; table-layout: fixed; min-width: 1400px;}
+        /* TABLA DE DISEÑO SÚPER RÍGIDO (MAX-CONTENT PARA CRECER SI SE REDIMENSIONA) */
+        .table-custom { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0 3px; margin-top: 0; table-layout: fixed; }
         
         .header-columnas th { 
             background: var(--header-bg); color: #f8fafc; font-size: 0.65rem; font-weight: 800; text-align: center; vertical-align: middle; padding: 6px 4px; text-transform: uppercase; letter-spacing: 0.05em;
@@ -53,12 +53,13 @@
         }
         .header-columnas th.drag-over { border-left: 3px solid #38bdf8; background: #1e293b; }
         
-        /* ICONOS DE ARRASTRE Y REDIMENSIONAMIENTO */
+        /* ICONOS DE ARRASTRE Y REDIMENSIONAMIENTO PERFECTOS */
         .drag-handle { cursor: grab; opacity: 0.5; padding: 2px 5px; } .drag-handle:active { cursor: grabbing; }
-        .resizer { position: absolute; right: -5px; top: 0; width: 10px; height: 100%; cursor: col-resize; z-index: 1; background: transparent; transition: 0.2s; }
-        .resizer:hover, .resizing { background: var(--accent); opacity: 0.8; }
         
-        /* CELDAS CORTADAS A LA MEDIDA */
+        /* EL RESIZER FLOTANTE */
+        .resizer { position: absolute; right: 0; top: 0; width: 6px; height: 100%; cursor: col-resize; z-index: 100; background: transparent; transition: 0.2s; }
+        .resizer:hover, .resizing { background: rgba(59, 130, 246, 0.3); border-right: 2px solid var(--accent); }
+        
         .data-row td { 
             background: transparent !important; padding: 4px 6px; vertical-align: middle; border-top: 1px solid var(--border-col); border-bottom: 1px solid var(--border-col); transition: all 0.2s ease; overflow: hidden;
         }
@@ -67,7 +68,7 @@
         .data-row:hover td { background: rgba(255,255,255,0.6) !important; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.1); transform: translateY(-1px); }
         .dark-mode .data-row:hover td { background: rgba(0,0,0,0.3) !important; }
         
-        /* ALERTAS DE CONEXIÓN Y ZOMBIES */
+        /* ALERTAS Y ZOMBIES */
         .lost-connection-row { outline: 1px dashed #ef4444; outline-offset: -1px; border-radius: 6px;}
         .external-gps-cell { background-color: rgba(14, 165, 233, 0.12) !important; border: 1px dashed #0ea5e9 !important; border-radius: 6px; }
         
@@ -75,13 +76,13 @@
         .stale-row td:first-child { border-left: 1px dashed #ef4444;} .stale-row td:last-child { border-right: 1px dashed #ef4444;}
         .dark-mode .stale-row td { background-color: rgba(153, 27, 27, 0.2) !important; border-color: #b91c1c; }
         
-        /* ENCABEZADOS CLIENTE SEPARADOS Y LIMPIOS */
+        /* ENCABEZADOS CLIENTE */
         .header-cliente td { background: var(--bg-main) !important; color: #0f172a !important; font-size: 1.5rem; font-weight: 900; padding: 25px 10px 5px 10px !important; text-transform: uppercase; border: none !important; border-bottom: 2px solid var(--border-col) !important; letter-spacing: -0.5px;}
         .dark-mode .header-cliente td { color: #f8fafc !important; }
         .header-subcliente td { background: var(--bg-main) !important; color: #475569 !important; font-size: 1.1rem; font-weight: 800; padding: 10px 10px 5px 30px !important; border: none !important;}
         .dark-mode .header-subcliente td { color: #cbd5e1 !important; }
         
-        /* LOGOS A MÁXIMA RESOLUCIÓN */
+        /* LOGOS GIGANTES */
         .client-logo { height: 85px; max-width: 350px; object-fit: contain; vertical-align: middle; margin-right: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); background: white; padding: 6px; }
         .client-logo-sub { height: 40px; max-width: 140px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; background: white; padding: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
@@ -105,7 +106,7 @@
         
         .speed-badge { font-size: 0.75rem; font-weight: 900; border-radius: 6px; padding: 2px 8px; text-align: center; color: white; display: inline-block; margin-bottom: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);}
         
-        /* UBICACIÓN COMPLETA, GRANDE Y CON MICRO-SCROLL INTELIGENTE */
+        /* MICRO-SCROLL PARA UBICACIÓN (EVITA QUE SE DEFORME LA FILA) */
         .addr-container { max-height: 48px; overflow-y: auto; overflow-x: hidden; white-space: normal; word-break: break-word; font-size: 0.85rem; line-height: 1.15; color: #0f172a; font-weight: 900; padding-right: 4px;}
         .dark-mode .addr-container { color: #e2e8f0; }
         .addr-container::-webkit-scrollbar { width: 4px; }
@@ -123,7 +124,7 @@
             .header-bar img { height: 60px !important; margin-bottom: 5px; }
             .btn-action-group { margin-top: 10px; }
             .client-logo { height: 50px; }
-            body { overflow: auto; } /* Móvil permite scroll general por diseño de pantalla */
+            body { overflow: auto !important; }
         }
     </style>
 </head>
@@ -136,7 +137,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Multi-Host v27.0 (Scroll Fijo)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Multi-Host v28.0 (Dyn Resize)</div>
     </div>
 </div>
 
@@ -163,7 +164,7 @@
                     <li><div class="dropdown-item py-2"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" id="toggleDrag" onchange="toggleDragCols(this.checked)"><label class="form-check-label fw-bold cp text-info" for="toggleDrag">Mover Columnas</label></div></div></li>
                     
                     <li><a class="dropdown-item cp py-2" onclick="resetColumnas()"><i class="fa-solid fa-arrows-rotate me-2 text-secondary"></i> Restaurar Tabla Original</a></li>
-                    <li><a class="dropdown-item cp py-2" id="btnAdminMenu" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalAdmin"><i class="fa-solid fa-user-shield me-2 text-danger"></i> Admin Base de Datos</a></li>
+                    <li><a class="dropdown-item cp py-2" id="btnAdminMenu" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalAdmin"><i class="fa-solid fa-user-shield me-2 text-danger"></i> Admin DB</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li class="px-3 py-1 fw-bold text-secondary" style="font-size:0.65rem;">COLUMNAS VISIBLES</li>
                     <div id="column-toggles"></div>
@@ -229,18 +230,18 @@
     let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
     let geoQueue = []; let isGeocoding = false; let motorArrancado = false; let isSyncingFlotas = false;
 
-    // --- PRIORIDADES DE TAMAÑO EN COLUMNAS ---
+    // --- PRIORIDADES ESTRICTAS DE COLUMNAS (SE INYECTARÁN VÍA CSS DINÁMICO) ---
     const columnasDef = {
-        'col-unidad': { titulo: 'UNIDAD', ancho: '110px' },
-        'col-operador': { titulo: 'OPERADOR GPS', ancho: '150px' },
-        'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '150px' },
-        'col-contenedores': { titulo: 'CONTENEDORES', ancho: '110px' },
-        'col-horarios': { titulo: 'HORARIOS', ancho: '100px' }, // Horarios reducido
-        'col-estatus': { titulo: 'ESTATUS', ancho: '120px' },
-        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '400px' }, // Prioridad: Mucho más ancho
-        'col-alertas': { titulo: 'ALERTAS', ancho: '120px' }, // Prioridad: Más ancho
-        'col-historial': { titulo: 'HISTORIAL LOG', ancho: '160px' },
-        'col-accion': { titulo: '<i class="fa-solid fa-gear"></i>', ancho: '50px' }
+        'col-unidad': { titulo: 'UNIDAD', ancho: '110' },
+        'col-operador': { titulo: 'OPERADOR GPS', ancho: '140' },
+        'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '140' },
+        'col-contenedores': { titulo: 'CONTENEDORES', ancho: '100' },
+        'col-horarios': { titulo: 'HORARIOS', ancho: '95' }, // PRIORIDAD REDUCIDA
+        'col-estatus': { titulo: 'ESTATUS', ancho: '110' },
+        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '420' }, // PRIORIDAD MÁXIMA
+        'col-alertas': { titulo: 'ALERTAS', ancho: '70' },
+        'col-historial': { titulo: 'HISTORIAL LOG', ancho: '240' }, // PRIORIDAD AUMENTADA
+        'col-accion': { titulo: '<i class="fa-solid fa-gear"></i>', ancho: '45' }
     };
     
     let colOrder = JSON.parse(localStorage.getItem('tms_colOrder'));
@@ -344,7 +345,20 @@
         localStorage.removeItem('tms_colOrder'); localStorage.removeItem('tms_hiddenCols'); localStorage.removeItem('tms_colWidths'); location.reload();
     }
 
-    // --- LOGICA DE ARRASTRE DE COLUMNAS (Opcional por Switch para evitar conflictos) ---
+    // --- APLICAR TAMAÑOS DE COLUMNA VIA CSS DINÁMICO (PREVIENE DEFORMACIÓN) ---
+    function aplicarAnchosGuardados() {
+        let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
+        let css = '';
+        Object.keys(columnasDef).forEach(c => {
+            let w = savedWidths[c] || columnasDef[c].ancho;
+            css += `.${c} { width: ${w}px !important; min-width: ${w}px !important; max-width: ${w}px !important; }\n`;
+        });
+        let styleEl = document.getElementById('dynamic-col-styles');
+        if(!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'dynamic-col-styles'; document.head.appendChild(styleEl); }
+        styleEl.innerHTML = css;
+    }
+
+    // --- LÓGICA DE ARRASTRE DE COLUMNAS (Opcional por Switch) ---
     let dragColsEnabled = false;
     function toggleDragCols(enabled) { dragColsEnabled = enabled; renderizarBitacora(); }
     
@@ -361,21 +375,24 @@
         renderizarBitacora(); 
     }
 
-    // --- SCRIPT DE REDIMENSIONAMIENTO SEGURO ---
+    // --- SCRIPT DE REDIMENSIONAMIENTO EN VIVO (PERFECTO Y FLUIDO) ---
     let isResizing = false; let currentTh = null; let startX = 0; let startWidth = 0;
     document.addEventListener('mousedown', function(e) {
         if (e.target.classList.contains('resizer')) {
             isResizing = true; currentTh = e.target.parentElement; startX = e.pageX; startWidth = currentTh.offsetWidth;
             e.target.classList.add('resizing');
+            document.body.style.userSelect = 'none'; // Evitar seleccionar texto mientras ajustas
         }
     });
     document.addEventListener('mousemove', function(e) {
         if (isResizing && currentTh) {
             let newWidth = Math.max(60, startWidth + (e.pageX - startX));
             let colClass = Array.from(currentTh.classList).find(c => c.startsWith('col-'));
-            document.querySelectorAll('.' + colClass).forEach(el => {
-                el.style.width = newWidth + 'px'; el.style.minWidth = newWidth + 'px'; el.style.maxWidth = newWidth + 'px';
-            });
+            if(colClass) {
+                let liveStyle = document.getElementById('live-resize-style');
+                if(!liveStyle) { liveStyle = document.createElement('style'); liveStyle.id = 'live-resize-style'; document.head.appendChild(liveStyle); }
+                liveStyle.innerHTML = `.${colClass} { width: ${newWidth}px !important; min-width: ${newWidth}px !important; max-width: ${newWidth}px !important; }`;
+            }
         }
     });
     document.addEventListener('mouseup', function(e) {
@@ -384,23 +401,26 @@
             let colClass = Array.from(currentTh.classList).find(c => c.startsWith('col-'));
             if (colClass) {
                 let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
-                savedWidths[colClass] = currentTh.style.width;
+                savedWidths[colClass] = currentTh.offsetWidth;
                 localStorage.setItem('tms_colWidths', JSON.stringify(savedWidths));
+                aplicarAnchosGuardados();
+                let liveStyle = document.getElementById('live-resize-style');
+                if(liveStyle) liveStyle.innerHTML = '';
             }
             document.querySelectorAll('.resizer').forEach(r => r.classList.remove('resizing'));
             currentTh = null;
+            document.body.style.userSelect = '';
         }
     });
 
     function getHeadersRow() {
         let html = `<tr class="header-columnas shadow-sm">`;
-        let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
         colOrder.forEach((c, i) => {
-            let titulo = columnasDef[c].titulo; let display = hiddenCols[c] ? 'd-none' : ''; let ancho = savedWidths[c] || columnasDef[c].ancho;
+            let titulo = columnasDef[c].titulo; let display = hiddenCols[c] ? 'd-none' : '';
             let dragIcon = dragColsEnabled ? `<i class="fa-solid fa-grip-vertical drag-handle mx-1"></i>` : '';
             let dragAttr = dragColsEnabled ? `draggable="true" ondragstart="dragColStart(event, ${i})" ondragover="dragColOver(event, ${i})" ondrop="dropCol(event, ${i})"` : '';
             
-            html += `<th class="${c} ${display} position-relative" style="width:${ancho}; min-width:${ancho}; max-width:${ancho};" ${dragAttr}>
+            html += `<th class="${c} ${display} position-relative" ${dragAttr}>
                         <div class="d-flex justify-content-center align-items-center h-100 px-1">
                             <span class="text-center">${titulo}</span>
                             ${dragIcon}
@@ -497,16 +517,12 @@
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
 
-    // --- MODAL DE ACCIONES ANTI-PARPADEO ---
     function abrirModalAcciones(vId, uName) {
-        document.getElementById("acc_vId").value = vId;
-        document.getElementById("acc_uName").innerText = uName;
-        new bootstrap.Modal(document.getElementById('modalAcciones')).show();
+        document.getElementById("acc_vId").value = vId; document.getElementById("acc_uName").innerText = uName; new bootstrap.Modal(document.getElementById('modalAcciones')).show();
     }
     
     function ejecutarAccion(tipo) {
-        let vId = document.getElementById("acc_vId").value;
-        let uName = document.getElementById("acc_uName").innerText;
+        let vId = document.getElementById("acc_vId").value; let uName = document.getElementById("acc_uName").innerText;
         try { bootstrap.Modal.getInstance(document.getElementById('modalAcciones')).hide(); } catch(e){}
         setTimeout(() => {
             if(tipo === 'wa') enviarWA(vId);
@@ -516,6 +532,7 @@
     }
 
     window.onload = function () {
+        aplicarAnchosGuardados(); // Inyección de CSS dinámico para tamaños
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
         inicializarMenuColumnas();
         
@@ -643,7 +660,7 @@
                 let isLost = !uData || (uData && !pos && !isExternal);
                 
                 let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0;
-                let isStale = ageSecs > 14400; 
+                let isStale = ageSecs > 14400; // Zombie Check (> 4h)
                 
                 let row = document.getElementById("row_" + vId);
                 if(row) {
@@ -706,9 +723,7 @@
                         let classExt = isExternal ? 'text-info' : 'text-danger';
                         elAddrControl.innerHTML = `<div class="d-flex align-items-center justify-content-center"><span class="${classExt} fw-bold" style="font-size:0.65rem;">${textExt}</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar manual" onclick="editarUbicacionManual('${vId}')"></i></div><div class="addr-container mt-1">${v.ubicacion_manual||'--'}</div>`;
                     } else {
-                        let mapsLink = `https://www.google.com/maps?q=${pos.y},${pos.x}`;
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
-                        
                         let zonaGeo = (uData && uData.zonaOficial) ? uData.zonaOficial : resolverGeocerca(pos.y, pos.x);
                         let addrText = `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`;
                         if(geocodeCache[geoKey]) addrText = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${geocodeCache[geoKey]}`;
@@ -716,16 +731,13 @@
                         let geoHtml = zonaGeo ? `<div class="badge-geo d-inline-block text-truncate mt-1" style="max-width:100%;"><i class="fa-solid fa-draw-polygon me-1"></i>${zonaGeo}</div>` : '';
                         
                         let newHtml = `
-                            <a href="${mapsLink}" target="_blank" class="addr-link text-center" title="Abrir en Maps">
-                                <div class="addr-container addr-span-${geoKey}" id="addr_${vId}">${addrText}</div>
-                            </a>
+                            <div class="addr-container addr-span-${geoKey}" id="addr_${vId}">${addrText}</div>
                             ${geoHtml}
                         `;
                         if(elAddrControl.innerHTML !== newHtml) elAddrControl.innerHTML = newHtml;
                     }
                 }
                 
-                // ACTUALIZACIÓN DE ALERTAS EN VIVO
                 let elAlertas = document.getElementById("alertas_" + vId);
                 if (elAlertas) {
                     elAlertas.innerHTML = v.alerta ? `<span class="text-danger fw-bold" style="font-size:0.85rem;">${v.alerta.txt}</span>` : `<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>`;
@@ -765,13 +777,13 @@
         }).catch(e => console.log("Geo Err")).finally(() => { isGeocoding = false; });
     }
 
-    // BOTONES DE HORARIOS MINIATURA (Ocupan la mitad de altura)
+    // HORARIOS MINIATURA (Ocupan la mitad de altura)
     function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColor) {
         if(!timestampStr) return `<button class="btn btn-sm w-100 bg-white text-${claseColor}" style="font-size:0.6rem; font-weight:800; padding:1px 0; margin-bottom:2px; border: 1px dashed var(--bs-${claseColor});" onclick="registrarLog('${vId}', 'Marcó ${textoVacio}'); db.ref('viajes_activos/${vId}/${dbField}').set(Date.now());">${textoVacio}</button>`;
         let displayDate = formatearFechaElegante(timestampStr);
         return `<div class="position-relative w-100 cp" style="margin-bottom:2px;" title="Clic para editar">
-                    <div class="d-flex align-items-center rounded bg-white shadow-sm border border-${claseColor}" style="overflow: hidden; height:18px;">
-                        <span class="bg-${claseColor} text-white fw-bold px-1 text-center" style="font-size:0.55rem; min-width:16px; line-height:18px;">${textoVacio.charAt(0)}</span>
+                    <div class="d-flex align-items-center rounded shadow-sm border border-${claseColor}" style="overflow: hidden; height:18px; background: rgba(255,255,255,0.5);">
+                        <span class="bg-${claseColor} text-white fw-bold text-center d-flex align-items-center justify-content-center" style="font-size:0.55rem; width:18px; height:100%;">${textoVacio.charAt(0)}</span>
                         <span class="fw-bold text-center w-100 text-${claseColor}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span>
                     </div>
                     <input type="datetime-local" class="position-absolute top-0 start-0 w-100 h-100 cp" style="opacity: 0;" value="${getLocalISO(timestampStr)}" onchange="let d=new Date(this.value).getTime(); if(d){ db.ref('viajes_activos/${vId}/${dbField}').set(d); registrarLog('${vId}', 'Modificó horario de ${textoVacio}'); }">
@@ -817,7 +829,7 @@
                 
                 if(sId !== "N/A" && subName !== "") html += `<tr class="header-subcliente"><td colspan="${colOrder.length}">↳ ${logoHtmlSub} Subcliente: ${subName} ${btnWaSub}</td></tr>`;
                 
-                // ENCABEZADOS DEBAJO DEL CLIENTE/SUBCLIENTE
+                // ENCABEZADOS DEBAJO DE CLIENTE/SUBCLIENTE
                 html += getHeadersRow();
 
                 tree[cId][sId].sort((a, b) => { let estA = String(a.v.estatus || ""); let estB = String(b.v.estatus || ""); return estA.localeCompare(estB); });
@@ -829,15 +841,22 @@
                         let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a'; let rowBg = isExternal ? '' : hexToRgba(colEstatus, 0.12);
 
                         let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
-                        let lastLog = logsArr.length > 0 ? `<div class="text-start text-wrap w-100" style="line-height:1;"><div style="font-size:0.6rem; color:#64748b; font-weight:800; margin-bottom:2px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(logsArr[0].t)}</div><span style="font-size:0.65rem;"><b class="text-primary">${String(logsArr[0].usr)}:</b> ${String(logsArr[0].act)} <span class="text-muted">${String(logsArr[0].det||'')}</span></span></div>` : `<div style="font-size:0.65rem; color:#94a3b8;">Sin eventos</div>`;
+                        
+                        // HISTORIAL ESTILIZADO CON PRIORIDAD VISUAL
+                        let lastLog = logsArr.length > 0 ? 
+                            `<div class="text-start w-100 d-flex flex-column h-100 justify-content-center">
+                                <div style="font-size:0.6rem; color:#64748b; font-weight:800; margin-bottom:2px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(logsArr[0].t)}</div>
+                                <div class="bg-white border rounded shadow-sm p-1" style="border-left: 3px solid var(--accent) !important; font-size:0.65rem; line-height:1.2;">
+                                    <b class="text-primary">${String(logsArr[0].usr)}:</b> <span class="text-dark fw-bold">${String(logsArr[0].act)}</span>
+                                    <div class="text-muted text-truncate mt-1" style="max-width:100%;" title="${String(logsArr[0].det||'')}">${String(logsArr[0].det||'')}</div>
+                                </div>
+                            </div>` : `<div style="font-size:0.65rem; color:#94a3b8;">Sin eventos</div>`;
 
                         let searchData = `${nombreCamion} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${v.operador||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                         let optionsHtml = Object.keys(window.estatusData).map(k=>`<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`).join('');
-                        
-                        let mapClick = (uData && uData.pos && uData.pos.y) ? `centrarUnidadMapa(${uData.pos.y}, ${uData.pos.x})` : `centrarUnidadMapa(null, null)`;
 
                         let tds = {};
-                        tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}"><div class="d-flex align-items-center justify-content-center"><span class="unit-name" id="name_btn_${vId}" onclick="${mapClick}">${nombreCamion}</span></div></td>`;
+                        tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}"><div class="d-flex align-items-center justify-content-center"><span class="unit-name" id="name_btn_${vId}" onclick="centrarUnidadMapa(null, null)">${nombreCamion}</span></div></td>`;
                         tds['col-operador'] = `<td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}"><div id="op_wialon_${vId}"><span class="badge bg-secondary w-100 mt-1" style="font-size:0.6rem;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</span></div></td>`;
                         tds['col-ruta'] = `<td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}"><div class="position-relative ps-2"><div style="position:absolute; left:4px; top:10px; bottom:10px; width:1.5px; background:var(--border-col);"></div><div class="d-flex align-items-center position-relative mb-1"><i class="fa-solid fa-circle text-primary position-absolute" style="left:-6px; font-size:6px;"></i><input class="input-ghost text-start ps-2" value="${v.origen||''}" placeholder="ORIGEN" onblur="db.ref('viajes_activos/${vId}/origen').set(this.value.toUpperCase())"></div><div class="d-flex align-items-center position-relative"><i class="fa-solid fa-location-dot text-danger position-absolute" style="left:-6px; font-size:8px;"></i><input class="input-ghost text-start ps-2" value="${v.destino||''}" placeholder="DESTINO" onblur="db.ref('viajes_activos/${vId}/destino').set(this.value.toUpperCase())"></div></div></td>`;
                         tds['col-contenedores'] = `<td class="col-contenedores align-middle ${hiddenCols['col-contenedores'] ? 'd-none' : ''}"><textarea class="input-ghost text-start" style="resize:none; min-height:40px;" placeholder="CONTENEDORES" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>`;
@@ -845,18 +864,13 @@
                         tds['col-estatus'] = `<td class="col-estatus align-middle ${hiddenCols['col-estatus'] ? 'd-none' : ''}"><select class="form-select status-select shadow-sm" style="color:${colEstatus}; border-color:${colEstatus};" onchange="cambiarEstatus(this, '${vId}')">${optionsHtml}</select></td>`;
                         tds['col-gps'] = `<td class="col-gps align-middle ${hiddenCols['col-gps'] ? 'd-none' : ''}" id="gps_cell_${vId}"><div class="d-flex flex-column align-items-center px-1"><div class="d-flex align-items-center mb-1"><span id="icon_${vId}"><i class="fa-solid fa-spinner fa-spin text-muted me-1 fs-6"></i></span><span id="speed_${vId}"><span class="speed-badge bg-secondary">-- km/h</span></span></div><div class="w-100" id="addr_control_${vId}"><div style="font-size:0.75rem; color:#64748b; font-weight:800;" class="text-center">Sincronizando...</div></div><div id="time_${vId}" style="font-size:0.65rem; color:#64748b; font-weight:600; margin-top:2px;">--</div></div></td>`;
                         tds['col-alertas'] = `<td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}" id="alertas_${vId}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.85rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>'}</td>`;
-                        tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}"><div class="d-flex flex-column justify-content-between h-100">${lastLog}<button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-1 shadow-sm rounded-pill" style="font-size:0.6rem;" onclick="abrirModalLog('${vId}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Historial</button></div></td>`;
+                        tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}"><div class="d-flex flex-column justify-content-between h-100">${lastLog}<button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-1 shadow-sm rounded-pill" style="font-size:0.6rem;" onclick="abrirModalLog('${vId}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Ver Todo</button></div></td>`;
                         
                         tds['col-accion'] = `<td class="col-accion align-middle ${hiddenCols['col-accion'] ? 'd-none' : ''}">
                             <button class="btn btn-light btn-sm shadow-sm border rounded-pill p-1 cp" title="Opciones" onclick="abrirModalAcciones('${vId}', '${nombreCamion}')"><i class="fa-solid fa-ellipsis-vertical mx-2"></i></button>
                         </td>`;
 
-                        let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
-                        let trInner = colOrder.map(c => {
-                            let ancho = savedWidths[c] || columnasDef[c].ancho;
-                            return tds[c].replace('class="', `style="width:${ancho}; min-width:${ancho}; max-width:${ancho};" class="`);
-                        }).join('');
-                        
+                        let trInner = colOrder.map(c => tds[c]).join('');
                         let trClass = isExternal ? 'external-connection-row data-row' : 'needs-gps-update data-row';
                         html += `<tr class="${trClass}" id="row_${vId}" data-search="${searchData}" style="background-color: ${rowBg} !important;">${trInner}</tr>`;
 
