@@ -34,14 +34,12 @@
         .header-bar { background: var(--bg-card); padding: 8px 24px; border-bottom: 2px solid var(--border-col); box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
         
         .workspace-container { display: flex; flex-direction: column; flex: 1; width: 100%; overflow: hidden; }
-        
         .map-panel { flex-basis: 0%; height: 0; overflow: hidden; transition: all 0.4s ease; border-bottom: 0px solid var(--accent); flex-shrink: 0;}
         .workspace-container.show-map .map-panel { flex-basis: 40%; height: 40%; border-bottom: 3px solid var(--accent); }
         #map { width: 100%; height: 100%; z-index: 1;}
         
-        /* WRAPPER ÚNICO DE SCROLL */
-        .table-panel { display: flex; flex-direction: column; flex: 1; padding: 10px; overflow: hidden; }
-        .table-wrapper { flex: 1; overflow-y: auto; overflow-x: auto; border-radius: 6px; padding-bottom: 20px; }
+        .table-panel { display: flex; flex-direction: column; flex: 1; padding: 0 10px 10px 10px; overflow: hidden; }
+        .table-wrapper { flex: 1; overflow-y: auto; overflow-x: auto; border-radius: 6px; padding-bottom: 150px; }
         
         .table-custom { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0 3px; margin-top: 0; table-layout: fixed; }
         
@@ -53,9 +51,7 @@
         .resizer { position: absolute; right: 0; top: 0; width: 6px; height: 100%; cursor: col-resize; z-index: 100; background: transparent; transition: 0.2s; }
         .resizer:hover, .resizing { background: rgba(59, 130, 246, 0.5); border-right: 2px solid var(--accent); }
         
-        .data-row td { 
-            background: transparent !important; padding: 4px 6px; vertical-align: middle; border-top: 1px solid var(--border-col); border-bottom: 1px solid var(--border-col); transition: all 0.2s ease; overflow: hidden;
-        }
+        .data-row td { background: transparent !important; padding: 4px 6px; vertical-align: middle; border-top: 1px solid var(--border-col); border-bottom: 1px solid var(--border-col); transition: all 0.2s ease; overflow: hidden; }
         .data-row td:first-child { border-left: 1px solid var(--border-col); border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
         .data-row td:last-child { border-right: 1px solid var(--border-col); border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
         .data-row:hover td { background: rgba(255,255,255,0.8) !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transform: translateY(-1px); }
@@ -63,15 +59,12 @@
         
         .lost-connection-row { outline: 1px dashed #ef4444; outline-offset: -1px; border-radius: 6px;}
         .external-gps-cell { background-color: rgba(14, 165, 233, 0.12) !important; border: 1px dashed #0ea5e9 !important; border-radius: 6px; }
-        
         .stale-row td { background-color: #fee2e2 !important; border-top: 1px dashed #ef4444; border-bottom: 1px dashed #ef4444;}
         .stale-row td:first-child { border-left: 1px dashed #ef4444;} .stale-row td:last-child { border-right: 1px dashed #ef4444;}
-        .dark-mode .stale-row td { background-color: rgba(153, 27, 27, 0.2) !important; border-color: #b91c1c; }
         
         .header-cliente td { background: var(--bg-main) !important; color: #0f172a !important; padding: 25px 10px 10px 10px !important; border: none !important; border-bottom: 2px solid var(--border-col) !important;}
         .dark-mode .header-cliente td { color: #f8fafc !important; }
         .header-subcliente td { background: var(--bg-main) !important; color: #475569 !important; font-size: 1.1rem; font-weight: 800; padding: 10px 10px 5px 10px !important; border: none !important; text-align: center;}
-        .dark-mode .header-subcliente td { color: #cbd5e1 !important; }
         
         .client-logo { height: 70px; max-width: 300px; object-fit: contain; vertical-align: middle; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); background: white; padding: 4px; }
         .client-logo-sub { height: 35px; max-width: 120px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; background: white; padding: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -80,36 +73,29 @@
         .input-ghost:hover { border-color: var(--border-col); background: rgba(255,255,255,0.8); }
         .input-ghost:focus { border-color: var(--accent); background: var(--bg-card); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
         
-        .status-select { border-radius: 12px; font-weight: 800; cursor: pointer; text-align: center; font-size: 0.65rem; padding: 2px 6px; background: transparent; border: 1.5px solid; outline: none; transition: all 0.2s; -webkit-appearance: none; appearance: none; height: 24px; width: 100%;}
-        .status-select:hover { transform: scale(1.02); background-color: rgba(255,255,255,0.8); }
+        .status-select-btn { border-radius: 12px; font-weight: 800; font-size: 0.65rem; padding: 2px 6px; background: transparent; border: 1.5px solid; width: 100%; display: flex; justify-content: space-between; align-items: center; transition: 0.2s;}
+        .status-select-btn:hover { background-color: rgba(255,255,255,0.8); transform: scale(1.02); }
         
         .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.1rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
-        .dark-mode .unit-name { color: #38bdf8; } .unit-name:hover { color: #0284c7; text-decoration: underline; }
+        .unit-name:hover { color: #0284c7; text-decoration: underline; }
         
-        .wa-btn { background: #22c55e; color: white; padding: 3px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.65rem; transition: 0.3s; display: inline-block;}
-        .wa-btn:hover { background: #16a34a; color: white; transform: scale(1.05); }
-        
-        .badge-geo { background: #f8fafc; color: #15803d; font-weight: 800; padding: 3px 6px; border-radius: 6px; border: 1px dashed #22c55e; font-size: 0.65rem; display: inline-block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
-        
+        .badge-geo { background: #f8fafc; color: #15803d; font-weight: 800; padding: 2px 6px; border-radius: 6px; border: 1px dashed #22c55e; font-size: 0.65rem; display: inline-block; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
         .speed-badge { font-size: 0.75rem; font-weight: 900; border-radius: 6px; padding: 2px 8px; text-align: center; color: white; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.1);}
         
-        /* MICRO-SCROLL PARA UBICACIÓN FIJA */
         .addr-container { max-height: 38px; overflow-y: auto; overflow-x: hidden; white-space: normal; word-break: break-word; font-size: 0.80rem; line-height: 1.1; color: #0f172a; font-weight: 900; padding-right: 4px; text-align: left; margin-top:2px;}
-        .dark-mode .addr-container { color: #e2e8f0; }
         .addr-container::-webkit-scrollbar { width: 3px; }
         .addr-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        
         .addr-link { text-decoration: none; display: block; width: 100%; transition: 0.2s;}
         .addr-link:hover .addr-container { color: #0284c7; text-decoration: underline;}
         
         .cp { cursor: pointer; }
         
-        @media (max-width: 768px) {
-            .header-bar { flex-direction: column; gap: 10px; padding: 10px; }
-            .header-bar img { height: 60px !important; margin-bottom: 5px; }
-            .search-bar-container { width: 100% !important; order: 3; margin-top: 10px;}
-            body { overflow: auto !important; }
-        }
+        /* DISEÑO DE BOTONES DE ACCIÓN (DROPDOWN MODERNO) */
+        .dropdown-menu-custom { border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: none; padding: 8px; min-width: 200px; }
+        .dropdown-item-custom { border-radius: 8px; padding: 8px 12px; font-weight: 700; transition: 0.2s; font-size: 0.75rem; margin-bottom: 4px;}
+        .dropdown-item-custom:hover { background-color: #f1f5f9; transform: translateX(3px); }
+        .dropdown-item-custom.text-danger:hover { background-color: #fef2f2; }
+
     </style>
 </head>
 <body>
@@ -121,7 +107,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Multi-Host v32.0 (Edición Final)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Master v33.0</div>
     </div>
 </div>
 
@@ -138,7 +124,7 @@
         <div class="search-bar-container flex-grow-1 px-4" style="max-width: 350px;">
             <div class="input-group input-group-sm shadow-sm rounded-pill overflow-hidden border border-secondary" style="background: white;">
                 <span class="input-group-text bg-white border-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-                <input type="text" id="buscador" class="form-control border-0 bg-white shadow-none py-2" style="font-size: 0.80rem; font-weight: bold;" placeholder="Buscar unidad, operador..." onkeyup="filtrarTablaInteligente()">
+                <input type="text" id="buscador" class="form-control border-0 bg-white shadow-none py-2" style="font-size: 0.80rem; font-weight: bold;" placeholder="Buscar unidad, operador, ruta..." onkeyup="filtrarTablaInteligente()">
             </div>
         </div>
 
@@ -161,7 +147,7 @@
             </div>
             <button class="btn btn-info fw-bold me-1 text-dark shadow-sm rounded-pill px-3 py-2" onclick="toggleMap()"><i class="fa-solid fa-map me-1"></i> Mapa</button>
             <button class="btn btn-dark fw-bold me-1 shadow-sm rounded-circle" style="width:38px; height:38px; padding:0;" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
-            <button class="btn btn-primary fw-bold me-1 shadow-sm rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-truck-fast me-2"></i> Nuevo Viaje</button>
+            <button class="btn btn-primary fw-bold me-1 shadow-sm rounded-pill px-3 py-2" onclick="prepararNuevoViaje()"><i class="fa-solid fa-plus"></i></button>
             <button class="btn btn-outline-danger fw-bold rounded-pill px-3 py-2" onclick="cerrarSesion()"><i class="fa-solid fa-power-off"></i></button>
         </div>
     </div>
@@ -178,49 +164,29 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalAcciones" tabindex="-1">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-dark text-white border-0 py-3">
-                <h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-gear me-2"></i> OPCIONES: <span id="acc_uName" class="text-info"></span></h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body bg-light rounded-bottom-4 p-4 d-flex flex-column gap-3">
-                <input type="hidden" id="acc_vId">
-                <button class="btn btn-primary fw-bold py-2 shadow-sm" onclick="ejecutarAccion('edit')"><i class="fa-solid fa-pencil me-2 fs-5 align-middle"></i> Editar Viaje</button>
-                <button class="btn btn-danger fw-bold py-2 shadow-sm" onclick="ejecutarAccion('arch')"><i class="fa-solid fa-trash me-2 fs-5 align-middle"></i> Archivar Viaje</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="modal fade" id="modalNuevoViaje" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
             <div class="modal-header bg-primary text-white border-0 py-3">
-                <h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-truck-fast me-2"></i> REGISTRO MÚLTIPLE DE VIAJES</h6>
+                <h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-truck-fast me-2"></i> REGISTRO BATCH DE VIAJES</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body bg-light rounded-bottom-4 p-4">
                 <div class="bg-white p-3 rounded-4 shadow-sm mb-3">
                     <div class="form-check form-switch mb-3 bg-light p-2 rounded border border-info" style="font-size:0.85rem;">
-                        <input class="form-check-input ms-1" type="checkbox" id="nv_externa" style="cursor:pointer;">
-                        <label class="form-check-label fw-bold text-info ms-2" for="nv_externa" style="cursor:pointer;"><i class="fa-solid fa-globe"></i> UNIDADES EXTERNAS (No buscar en Wialon)</label>
+                        <input class="form-check-input ms-1 cp" type="checkbox" id="nv_externa">
+                        <label class="form-check-label fw-bold text-info ms-2 cp" for="nv_externa"><i class="fa-solid fa-globe"></i> MODO UNIDADES EXTERNAS MANUALES</label>
                     </div>
                     <div class="row mb-2">
-                        <div class="col-md-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Cliente:</label><select id="nv_cliente" class="form-select form-select-sm bg-light" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div>
-                        <div class="col-md-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm bg-light"><option value="">N/A</option></select></div>
-                    </div>
-                    <div class="row mb-2">
-                        <div class="col-md-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm bg-light fw-bold" list="listaGeocercas"></div>
-                        <div class="col-md-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Destino(s):</label><textarea id="nv_destino" class="form-control form-control-sm bg-light fw-bold" rows="2" placeholder="Ej. Soriana GDL, Oxxo MTY..."></textarea></div>
+                        <div class="col-md-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Cliente:</label><input type="text" id="nv_cliente" class="form-control form-control-sm bg-light fw-bold text-uppercase" list="list_clientes" placeholder="Escribe el cliente..."></div>
+                        <div class="col-md-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Subcliente:</label><input type="text" id="nv_subcliente" class="form-control form-control-sm bg-light fw-bold text-uppercase" list="list_subclientes" placeholder="Escribe el subcliente..."></div>
                     </div>
                 </div>
                 
                 <div class="bg-white p-3 rounded-4 shadow-sm border border-primary">
-                    <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-list-check me-2"></i> UNIDADES A REGISTRAR</h6>
+                    <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-list-check me-2"></i> AÑADIR UNIDADES AL LOTE</h6>
                     <div id="nv_filas_container"></div>
-                    <button onclick="agregarFilaNV()" class="btn btn-outline-primary btn-sm w-100 fw-bold mb-3 border-dashed"><i class="fa-solid fa-plus me-1"></i> AÑADIR OTRA UNIDAD AL LOTE</button>
+                    <button onclick="agregarFilaNV()" class="btn btn-outline-primary btn-sm w-100 fw-bold mb-3 border-dashed" style="border-style: dashed;"><i class="fa-solid fa-plus me-1"></i> AÑADIR OTRA UNIDAD AL LOTE</button>
                     <button onclick="registrarViajesMultiples()" class="btn btn-primary w-100 fw-bold py-2 rounded-pill shadow fs-6">🚀 INICIAR TODOS LOS VIAJES</button>
                 </div>
             </div>
@@ -228,13 +194,40 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalEditarViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-success text-white border-0 py-2"><h6 class="modal-title fw-bold m-0">EDITAR VIAJE: <span id="edU_name"></span></h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small bg-light rounded-bottom-4 p-3"><div class="bg-white p-3 rounded-4 shadow-sm"><input type="hidden" id="edU_id"><div class="row mb-2"><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Cliente:</label><select id="ed_cliente" class="form-select form-select-sm bg-light" onchange="cargarSubclientesEnSelect('ed_subcliente', this.value)"></select></div><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Subcliente:</label><select id="ed_subcliente" class="form-select form-select-sm bg-light"><option value="">N/A</option></select></div></div><div class="row mb-3"><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Origen:</label><input type="text" id="ed_origen" class="form-control form-control-sm bg-light" list="listaGeocercas"></div><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Destino(s):</label><textarea id="ed_destino" class="form-control form-control-sm bg-light" rows="2"></textarea></div></div><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Operador Manual (Opcional):</label><input type="text" id="ed_operador" class="form-control form-control-sm mb-3 bg-light" list="listaConductores"><button onclick="guardarEdicionViaje()" class="btn btn-success btn-sm w-100 fw-bold py-2 rounded-pill shadow-sm">GUARDAR CAMBIOS</button></div></div></div></div></div>
+<div class="modal fade" id="modalEditarViaje" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-pencil me-2"></i> EDITAR VIAJE: <span id="edU_name" class="text-info"></span></h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light rounded-bottom-4 p-4">
+                <div class="bg-white p-3 rounded-4 shadow-sm">
+                    <input type="hidden" id="edU_id">
+                    <div class="row mb-3">
+                        <div class="col-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Cliente:</label><input type="text" id="ed_cliente" class="form-control form-control-sm bg-light fw-bold text-uppercase" list="list_clientes"></div>
+                        <div class="col-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Subcliente:</label><input type="text" id="ed_subcliente" class="form-control form-control-sm bg-light fw-bold text-uppercase" list="list_subclientes"></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Origen:</label><input type="text" id="ed_origen" class="form-control form-control-sm bg-light" list="listaGeocercas"></div>
+                        <div class="col-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Destino(s):</label><textarea id="ed_destino" class="form-control form-control-sm bg-light" rows="3" placeholder="Múltiples destinos permitidos"></textarea></div>
+                    </div>
+                    <button onclick="guardarEdicionViaje()" class="btn btn-success w-100 fw-bold py-2 rounded-pill shadow-sm">GUARDAR CAMBIOS</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="modal fade" id="modalLog" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-dark text-white border-0 py-2"><h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-list-ul"></i> HISTORIAL: <span id="log_uName"></span></h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 bg-light rounded-bottom-4"><div id="log_container" class="mb-3 bg-white border border-light rounded-4 p-2 shadow-sm" style="height:200px; overflow-y:auto; font-size:0.75rem;"></div><input type="hidden" id="log_uid"><div class="input-group input-group-sm shadow-sm rounded-pill overflow-hidden"><input type="text" id="log_txt" class="form-control border-0 text-uppercase bg-white px-3" placeholder="Nota manual..."><button class="btn btn-primary fw-bold px-3" onclick="guardarLogManual()"><i class="fa-solid fa-paper-plane"></i></button></div></div></div></div></div>
 <div class="modal fade" id="modalStatusTokens" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-warning text-dark border-0 py-2"><h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-satellite-dish"></i> ESTATUS GPS</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><ul class="list-group list-group-flush rounded-bottom-4" id="listaStatusTokens"></ul></div></div></div></div>
 <div class="modal fade" id="modalAdmin" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-danger text-white border-0 py-2"><h6 class="modal-title fw-bold m-0">ADMINISTRACIÓN MAESTRA</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body bg-light rounded-bottom-4 p-3"><div class="row g-2"><div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Tokens GPS</h6><input type="text" id="tk_nom" class="form-control form-control-sm mb-1 bg-light" placeholder="Ej. RACEL"><input type="text" id="tk_url" class="form-control form-control-sm mb-1 bg-light" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-1 bg-light" placeholder="Token Largo"><button class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0" onclick="agregarToken()">Guardar</button><ul class="list-group list-group-sm mt-2" id="listaTokensActivos" style="font-size:0.7rem;"></ul></div></div><div class="col-lg-3 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Operadores Manuales</h6><input class="form-control form-control-sm mb-1 bg-light" list="listaUnidadesTotales" id="op_unidad" placeholder="Unidad" autocomplete="off"><input type="text" id="op_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Nombre Chófer"><button onclick="vincularOperador()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Vincular</button><ul class="list-group list-group-sm mt-2" id="listaOperadoresAdmin" style="font-size:0.7rem;"></ul></div></div><div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Clientes</h6><input type="text" id="cli_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Empresa"><input type="file" id="cli_logo_file" accept="image/*" class="form-control form-control-sm mb-1 bg-light" title="Seleccionar Logo" style="font-size:0.6rem;"><button onclick="crearCliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Añadir</button><input type="file" id="edit_cli_logo_file" accept="image/*" style="display:none;" onchange="if(this.files && this.files[0] && window.currentEditCli){let reader = new FileReader(); reader.onload = e => {db.ref('clientes/' + window.currentEditCli).update({logo: e.target.result}); this.value = '';}; reader.readAsDataURL(this.files[0]);}"><ul class="list-group list-group-sm mt-2" id="listaClientesAdmin" style="max-height: 200px; overflow-y:auto; font-size:0.7rem;"></ul></div></div><div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Subclientes</h6><select id="sub_clientePadre" class="form-select form-select-sm mb-1 bg-light"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Sub-empresa"><button onclick="crearSubcliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Añadir</button><ul class="list-group list-group-sm mt-2" id="listaSubclientesAdmin" style="max-height: 200px; overflow-y:auto; font-size:0.7rem;"></ul></div></div><div class="col-lg-3 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Monitoristas</h6><input type="text" id="usr_id" class="form-control form-control-sm mb-1 bg-light" placeholder="Usuario (login)"><input type="text" id="usr_nom" class="form-control form-control-sm mb-1 bg-light" placeholder="Nombre completo"><input type="text" id="usr_pass" class="form-control form-control-sm mb-1 bg-light" placeholder="Contraseña"><button onclick="crearUsuario()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Crear</button><ul class="list-group list-group-sm mt-2" id="listaUsuariosAdmin" style="font-size:0.7rem;"></ul></div></div></div></div></div></div></div>
 
-<datalist id="listaGeocercas"></datalist><datalist id="listaConductores"></datalist><datalist id="listaUnidadesTotales"></datalist>
+<datalist id="list_clientes"></datalist>
+<datalist id="list_subclientes"></datalist>
+<datalist id="listaGeocercas"></datalist>
+<datalist id="listaConductores"></datalist>
+<datalist id="listaUnidadesTotales"></datalist>
 
 <script type="text/javascript">
     const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
@@ -249,18 +242,18 @@
     let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
     let geoQueue = []; let isGeocoding = false; let motorArrancado = false; let isSyncingFlotas = false;
 
-    // --- COLUMNAS (AHORA TODAS SE PUEDEN MOVER Y REDIMENSIONAR) ---
+    // --- PRIORIDADES ESTRICTAS DE COLUMNAS ---
     const columnasDef = {
-        'col-unidad': { titulo: 'UNIDAD', ancho: '120' },
-        'col-operador': { titulo: 'OPERADOR GPS', ancho: '140' },
-        'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '140' },
+        'col-unidad': { titulo: 'UNIDAD', ancho: '110' },
+        'col-operador': { titulo: 'OPERADOR GPS', ancho: '150' },
+        'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '160' },
         'col-contenedores': { titulo: 'CONTENEDORES', ancho: '110' },
-        'col-horarios': { titulo: 'HORARIOS', ancho: '110' },
+        'col-horarios': { titulo: 'HORARIOS', ancho: '95' }, // Ultra compacto
         'col-estatus': { titulo: 'ESTATUS', ancho: '120' },
-        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '350' },
+        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '420' }, // PANORÁMICO
         'col-alertas': { titulo: 'ALERTAS', ancho: '90' },
-        'col-historial': { titulo: 'HISTORIAL LOG', ancho: '240' },
-        'col-accion': { titulo: '<i class="fa-solid fa-gear"></i>', ancho: '65' }
+        'col-historial': { titulo: 'HISTORIAL LOG', ancho: '240' }, // BLOQUE DE NOTAS AMPLIO
+        'col-accion': { titulo: '<i class="fa-solid fa-bars"></i>', ancho: '65' }
     };
     
     let colOrder = JSON.parse(localStorage.getItem('tms_colOrder'));
@@ -344,7 +337,7 @@
 
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('tms_dark_mode', document.body.classList.contains('dark-mode')); }
     
-    // --- MENÚ ORDENAMIENTO FLECHAS ---
+    // --- MENÚ ORDENAMIENTO (FLECHAS SEGURAS) ---
     function inicializarMenuColumnas() {
         let menuHtml = '';
         colOrder.forEach((k, index) => {
@@ -376,7 +369,7 @@
         localStorage.removeItem('tms_colOrder'); localStorage.removeItem('tms_hiddenCols'); localStorage.removeItem('tms_colWidths'); location.reload();
     }
 
-    // --- RESIZER SEGURO ---
+    // --- RESIZER EN VIVO Y CSS DINÁMICO ---
     function aplicarAnchosGuardados() {
         let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
         let css = '';
@@ -398,7 +391,7 @@
     });
     document.addEventListener('mousemove', function(e) {
         if (isResizing && currentTh) {
-            let newWidth = Math.max(60, startWidth + (e.pageX - startX));
+            let newWidth = Math.max(50, startWidth + (e.pageX - startX));
             let colClass = Array.from(currentTh.classList).find(c => c.startsWith('col-'));
             if(colClass) {
                 let liveStyle = document.getElementById('live-resize-style');
@@ -421,14 +414,12 @@
         }
     });
 
-    function getHeadersRow() {
-        let html = `<tr class="header-columnas shadow-sm">`;
+    function getHeadersRow(cId) {
+        let html = `<tr class="header-columnas shadow-sm client-group-${cId}">`;
         colOrder.forEach((c) => {
             let titulo = columnasDef[c].titulo; let display = hiddenCols[c] ? 'd-none' : ''; 
             html += `<th class="${c} ${display} position-relative">
-                        <div class="d-flex justify-content-center align-items-center h-100 px-1">
-                            <span class="text-center">${titulo}</span>
-                        </div>
+                        <div class="d-flex justify-content-center align-items-center h-100 px-1"><span class="text-center">${titulo}</span></div>
                         <div class="resizer" title="Arrastrar para cambiar tamaño"></div>
                     </th>`;
         });
@@ -468,9 +459,9 @@
         });
     }
 
-    function cambiarEstatus(selectEl, vId) {
-        let val = selectEl.value; let txt = selectEl.options[selectEl.selectedIndex].text; let col = window.estatusData[val].col;
-        selectEl.style.color = col; selectEl.style.borderColor = col;
+    // --- MENÚ ESTATUS MODERNO FLOTANTE ---
+    function cambiarEstatus(val, vId) {
+        let txt = window.estatusData[val].nombre; let col = window.estatusData[val].col;
         let row = document.getElementById("row_" + vId);
         if(row && !row.classList.contains("external-connection-row") && !row.classList.contains("stale-row")) { row.style.setProperty('background-color', hexToRgba(col, 0.12), 'important'); }
         registrarLog(vId, 'Cambió estatus a', txt); db.ref('viajes_activos/'+vId+'/estatus').set(val);
@@ -518,13 +509,12 @@
         txt += `_Reporte C4_`; window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
     }
 
-    // --- CAPTURA DE PANTALLA INTELIGENTE (HTML2CANVAS) ---
+    // --- CAPTURA DE PANTALLA INTELIGENTE 📸 ---
     async function generarCapturaCliente(cId, cliName) {
         let tableWrap = document.getElementById('scrollContainer');
         let allRows = document.querySelectorAll('#units-body tr');
         let hiddenRows = [];
         
-        // Esconder lo que no sea de este cliente
         allRows.forEach(r => {
             if(!r.classList.contains(`client-group-${cId}`)) {
                 hiddenRows.push({el: r, display: r.style.display});
@@ -532,12 +522,11 @@
             }
         });
         
-        // Expandir wrapper para que la foto no salga cortada
         let oldHeight = tableWrap.style.height; let oldMaxHeight = tableWrap.style.maxHeight; let oldOverflow = tableWrap.style.overflow;
         tableWrap.style.height = 'auto'; tableWrap.style.maxHeight = 'none'; tableWrap.style.overflow = 'visible';
         let oldW = document.getElementById("mainTable").style.width; document.getElementById("mainTable").style.width = "max-content";
 
-        await new Promise(r => setTimeout(r, 400)); // Esperar renderizado visual
+        await new Promise(r => setTimeout(r, 400));
         
         try {
             let canvas = await html2canvas(document.getElementById('mainTable'), { scale: 1.5, backgroundColor: '#f8fafc', useCORS: true });
@@ -547,7 +536,6 @@
             link.click();
         } catch(e) { console.error(e); alert("Error al generar captura de pantalla."); } 
         finally {
-            // Restaurar tabla original
             tableWrap.style.height = oldHeight; tableWrap.style.maxHeight = oldMaxHeight; tableWrap.style.overflow = oldOverflow;
             document.getElementById("mainTable").style.width = oldW;
             hiddenRows.forEach(item => item.el.style.display = item.display);
@@ -563,15 +551,8 @@
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
 
-    function abrirModalAcciones(vId, uName) {
-        document.getElementById("acc_vId").value = vId; document.getElementById("acc_uName").innerText = uName; new bootstrap.Modal(document.getElementById('modalAcciones')).show();
-    }
-    
-    function ejecutarAccion(tipo) {
-        let vId = document.getElementById("acc_vId").value; let uName = document.getElementById("acc_uName").innerText;
-        try { bootstrap.Modal.getInstance(document.getElementById('modalAcciones')).hide(); } catch(e){}
-        setTimeout(() => { if(tipo === 'edit') abrirEdicionViaje(vId, uName); else if(tipo === 'arch') finalizarViaje(vId, uName); }, 300);
-    }
+    // --- ACCIONES EN POP-OVER (NO MÁS MODALES ESTORBOSOS) ---
+    function enviarWA_directo(vId) { enviarWA(vId); }
 
     window.onload = function () {
         aplicarAnchosGuardados();
@@ -700,7 +681,7 @@
                 let isLost = !uData || (uData && !pos && !isExternal);
                 
                 let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0;
-                let isStale = ageSecs > 14400; // Zombie > 4h
+                let isStale = ageSecs > 14400; // Zombie Check (> 4h)
                 
                 let row = document.getElementById("row_" + vId);
                 if(row) {
@@ -709,60 +690,75 @@
                     else if (isStale && !isExternal) row.classList.add("stale-row");
                 }
 
-                // GPS Y GEOCERCA (DISEÑO LIPOSUCCIÓN)
-                let elGpsCell = document.getElementById("gps_cell_" + vId);
-                if(elGpsCell) {
+                let elIcon = document.getElementById("icon_" + vId); let elSpeed = document.getElementById("speed_" + vId);
+                if(elIcon && elSpeed) {
                     if (isExternal) {
-                        elGpsCell.innerHTML = `<div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center pb-1"><div class="d-flex align-items-center"><i class="fa-solid fa-globe text-info me-1 fs-6"></i> <span class="speed-badge bg-secondary m-0">-- km/h</span></div><div style="font-size:0.65rem; color:#64748b; font-weight:800;">Externa</div></div><div class="d-flex align-items-center gap-2 text-start"><span class="text-info fw-bold" style="font-size:0.65rem;">GPS EXTERNO</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar" onclick="editarUbicacionManual('${vId}')"></i><div class="addr-container flex-grow-1">${v.ubicacion_manual||'--'}</div></div></div>`;
+                        elIcon.innerHTML = '<i class="fa-solid fa-globe text-info me-1" style="font-size:0.75rem;" title="Plataforma Externa"></i>';
+                        elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
                     } else if (isLost) {
-                        elGpsCell.innerHTML = `<div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center pb-1"><div class="d-flex align-items-center"><i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i> <span class="speed-badge bg-secondary m-0">${speed} km/h</span></div><div style="font-size:0.65rem; color:#ef4444; font-weight:800;">Modo Offline</div></div><div class="d-flex align-items-center gap-2 text-start"><span class="text-danger fw-bold" style="font-size:0.65rem;">SIN SEÑAL</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar" onclick="editarUbicacionManual('${vId}')"></i><div class="addr-container flex-grow-1">${v.ubicacion_manual||'--'}</div></div></div>`;
+                        elIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1" style="font-size:0.75rem;"></i>';
+                        elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
                     } else {
                         let speedBg = "#64748b"; if(speed > 0 && speed < 100) speedBg = "#10b981"; if(speed >= 100) speedBg = "#ef4444"; 
                         if(isStale) speedBg = "#ef4444"; 
-                        let icon = speed > 0 ? `<i class="fa-solid fa-truck-fast text-success me-1 fs-6"></i>` : `<i class="fa-solid fa-truck text-secondary me-1 fs-6"></i>`;
+                        elIcon.innerHTML = speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1" style="font-size:0.8rem;"></i>' : '<i class="fa-solid fa-truck text-secondary me-1" style="font-size:0.8rem;"></i>';
+                        elSpeed.innerHTML = `<span class="speed-badge" style="background-color:${speedBg};">${speed} km/h</span>`;
+                    }
+                }
+
+                let elTime = document.getElementById("time_" + vId);
+                if(elTime) {
+                    if (isExternal) elTime.innerHTML = '<span class="text-info fw-bold">Plataforma Externa</span>';
+                    else if (isLost) elTime.innerHTML = '<span class="text-danger fw-bold">Modo Offline</span>';
+                    else {
                         let timeColor = isStale ? 'text-danger' : 'text-primary';
-                        
+                        elTime.innerHTML = `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="${timeColor} ms-1" style="font-weight:900;">(${timeAgo(pos.t)})</span>`;
+                    }
+                }
+
+                let btnName = document.getElementById("name_btn_" + vId);
+                if (btnName && pos && pos.y && pos.x) {
+                    btnName.setAttribute("onclick", `centrarUnidadMapa(${pos.y}, ${pos.x})`);
+                } else if (btnName) {
+                    btnName.setAttribute("onclick", `centrarUnidadMapa(null, null)`);
+                }
+
+                let wialonDriverObj = uData ? uData.choferObj : null;
+                let elOpWialon = document.getElementById("op_wialon_" + vId);
+                if (elOpWialon) {
+                    if (wialonDriverObj && wialonDriverObj.nombre !== "Sin asignar") {
+                        let telRaw = wialonDriverObj.tel || ""; let cleanTel = String(telRaw).replace(/\D/g,'');
+                        // NUMERO COPIABLE CON ICONO WA (A LINEA)
+                        let waBtn = cleanTel ? `<div class="d-flex align-items-center justify-content-center mt-1"><a href="https://wa.me/${cleanTel}" target="_blank" class="text-success fs-5 me-1 cp" title="Abrir WhatsApp"><i class="fab fa-whatsapp"></i></a><span class="fw-bold" style="font-size:0.70rem; color:#334155; user-select:all;">${telRaw}</span></div>` : '';
+                        elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${wialonDriverObj.nombre}</div>${waBtn}`;
+                    } else if (v.operador) {
+                        elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${v.operador}</div><div style="font-size:0.6rem; color:#64748b;">(Manual)</div>`;
+                    } else { 
+                        elOpWialon.innerHTML = '<span class="badge bg-secondary w-100 mt-1" style="font-size:0.65rem;">Sin asignar</span>'; 
+                    }
+                }
+
+                let elAddrControl = document.getElementById("addr_control_" + vId);
+                if(elAddrControl) {
+                    if (isLost || isExternal) {
+                        let textExt = isExternal ? '<i class="fa-solid fa-globe"></i> EXTERNO' : '<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL';
+                        let classExt = isExternal ? 'text-info' : 'text-danger';
+                        elAddrControl.innerHTML = `<div class="d-flex align-items-center justify-content-center"><span class="${classExt} fw-bold" style="font-size:0.65rem;">${textExt}</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar manual" onclick="editarUbicacionManual('${vId}')"></i></div><div class="addr-container mt-1">${v.ubicacion_manual||'--'}</div>`;
+                    } else {
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
                         let zonaGeo = (uData && uData.zonaOficial) ? uData.zonaOficial : resolverGeocerca(pos.y, pos.x);
                         let addrText = `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`;
                         if(geocodeCache[geoKey]) addrText = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${geocodeCache[geoKey]}`;
                         
-                        let geoHtml = zonaGeo ? `<span class="badge-geo text-truncate" style="max-width:130px;" title="${zonaGeo}"><i class="fa-solid fa-draw-polygon me-1"></i>${zonaGeo}</span>` : '';
-                        let timeHover = formatTimeFriendly(pos.t);
+                        let geoHtml = zonaGeo ? `<div class="badge-geo d-inline-block text-truncate mt-1" style="max-width:100%;"><i class="fa-solid fa-draw-polygon me-1"></i>${zonaGeo}</div>` : '';
                         
-                        elGpsCell.innerHTML = `
-                            <div class="d-flex flex-column px-1 w-100">
-                                <div class="d-flex justify-content-between align-items-center pb-1">
-                                    <div class="d-flex align-items-center gap-2">
-                                        ${icon} <span class="speed-badge m-0" style="background-color:${speedBg}; padding:1px 6px;">${speed} km/h</span>
-                                        ${geoHtml}
-                                    </div>
-                                    <div style="font-size:0.75rem; font-weight:900; cursor:help;" title="${timeHover}">
-                                        <span class="${timeColor}">(${timeAgo(pos.t)})</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center w-100">
-                                    <a href="https://www.google.com/maps?q=$${pos.y},${pos.x}" target="_blank" class="addr-link text-start flex-grow-1" title="Abrir en Maps">
-                                        <div class="addr-container addr-span-${geoKey}" id="addr_${vId}">${addrText}</div>
-                                    </a>
-                                </div>
-                            </div>
+                        let newHtml = `
+                            <a href="https://www.google.com/maps?q=$${pos.y},${pos.x}" target="_blank" class="addr-link text-center" title="Abrir en Maps">
+                                <div class="addr-container addr-span-${geoKey}" id="addr_${vId}">${addrText}</div>
+                            </a>
+                            ${geoHtml}
                         `;
-                    }
-                }
-
-                // OPERADOR: ICONO WA CLICKEABLE Y TEXTO COPIABLE
-                let elOpWialon = document.getElementById("op_wialon_" + vId);
-                if (elOpWialon) {
-                    let wialonDriverObj = uData ? uData.choferObj : null;
-                    if (wialonDriverObj && wialonDriverObj.nombre !== "Sin asignar") {
-                        let telRaw = wialonDriverObj.tel || ""; let cleanTel = String(telRaw).replace(/\D/g,'');
-                        let waBtn = cleanTel ? `<div class="d-flex align-items-center mt-1 bg-white border rounded px-2 shadow-sm" style="width:fit-content; margin:0 auto;"><a href="https://wa.me/${cleanTel}" target="_blank" class="text-success fs-5 me-2" title="Abrir WhatsApp"><i class="fab fa-whatsapp"></i></a><span class="fw-bold user-select-all" style="font-size:0.75rem; color:#334155;">${telRaw}</span></div>` : '';
-                        elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${wialonDriverObj.nombre}</div>${waBtn}`;
-                    } else if (v.operador) {
-                        elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${v.operador}</div><div style="font-size:0.6rem; color:#64748b;">(Asignado Manual)</div>`;
-                    } else { 
-                        elOpWialon.innerHTML = '<span class="badge bg-secondary w-100 mt-1" style="font-size:0.65rem;">Sin asignar</span>'; 
+                        if(elAddrControl.innerHTML !== newHtml) elAddrControl.innerHTML = newHtml;
                     }
                 }
                 
@@ -795,7 +791,6 @@
         if(isGeocoding || geoQueue.length === 0) return; isGeocoding = true; let item = geoQueue.shift();
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=16`).then(r => r.json()).then(d => {
             let a = d.display_name || "Sin dirección"; geocodeCache[item.key] = a; localStorage.setItem('tms_geoCache', JSON.stringify(geocodeCache));
-            let elId = document.getElementById("addr_" + item.vId); if(elId) elId.innerHTML = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${a}`;
             document.querySelectorAll(`.addr-span-${item.key}`).forEach(span => span.innerHTML = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${a}`);
             if(item.dest && a.toUpperCase().includes(String(item.dest).toUpperCase())) {
                 let v = viajesActivos[item.vId]; if(v && !v.t_arribo) { db.ref('viajes_activos/'+item.vId+'/t_arribo').set(Date.now()); registrarLog(item.vId, 'Arribo Automático (Calle)'); }
@@ -803,17 +798,20 @@
         }).catch(e => console.log("Geo Err")).finally(() => { isGeocoding = false; });
     }
 
-    // --- HORARIOS SECUENCIALES ---
+    // --- HORARIOS: LÓGICA SECUENCIAL PERFECTA ---
     function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColor) {
-        if(!timestampStr) return `<button class="btn btn-sm w-100 bg-white text-${claseColor} shadow-sm" style="font-size:0.55rem; font-weight:800; padding:2px 0; margin-bottom:2px; border: 1px dashed var(--bs-${claseColor});" onclick="registrarLog('${vId}', 'Marcó ${textoVacio}'); db.ref('viajes_activos/${vId}/${dbField}').set(Date.now());">${textoVacio}</button>`;
-        let displayDate = formatearFechaElegante(timestampStr);
-        return `<div class="position-relative w-100 cp" style="margin-bottom:2px;" title="Clic para editar">
-                    <div class="d-flex align-items-center rounded shadow-sm border border-${claseColor}" style="overflow: hidden; height:18px; background: rgba(255,255,255,0.5);">
-                        <span class="bg-${claseColor} text-white fw-bold text-center d-flex align-items-center justify-content-center" style="font-size:0.55rem; width:18px; height:100%;">${textoVacio.charAt(0)}</span>
-                        <span class="fw-bold text-center w-100 text-${claseColor}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span>
-                    </div>
-                    <input type="datetime-local" class="position-absolute top-0 start-0 w-100 h-100 cp" style="opacity: 0;" value="${getLocalISO(timestampStr)}" onchange="let d=new Date(this.value).getTime(); if(d){ db.ref('viajes_activos/${vId}/${dbField}').set(d); registrarLog('${vId}', 'Modificó horario de ${textoVacio}'); }">
-                </div>`;
+        if(!timestampStr) {
+            return `<button class="btn btn-sm w-100 bg-white text-${claseColor} shadow-sm" style="font-size:0.6rem; font-weight:800; padding:2px 0; margin-bottom:2px; border: 1px dashed var(--bs-${claseColor});" onclick="registrarLog('${vId}', 'Marcó ${textoVacio}'); db.ref('viajes_activos/${vId}/${dbField}').set(Date.now());">${textoVacio}</button>`;
+        } else {
+            let displayDate = formatearFechaElegante(timestampStr);
+            return `<div class="position-relative w-100 cp" style="margin-bottom:2px;" title="Clic para editar">
+                        <div class="d-flex align-items-center rounded shadow-sm border border-${claseColor}" style="overflow: hidden; height:18px; background: rgba(255,255,255,0.5);">
+                            <span class="bg-${claseColor} text-white fw-bold text-center d-flex align-items-center justify-content-center" style="font-size:0.55rem; width:18px; height:100%;">${textoVacio.charAt(0)}</span>
+                            <span class="fw-bold text-center w-100 text-${claseColor}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span>
+                        </div>
+                        <input type="datetime-local" class="position-absolute top-0 start-0 w-100 h-100 cp" style="opacity: 0;" value="${getLocalISO(timestampStr)}" onclick="this.showPicker()" onchange="let d=new Date(this.value).getTime(); if(d){ db.ref('viajes_activos/${vId}/${dbField}').set(d); registrarLog('${vId}', 'Modificó horario de ${textoVacio}'); }">
+                    </div>`;
+        }
     }
 
     function renderizarBitacora() {
@@ -837,7 +835,7 @@
             for(let sId in tree[cId]) { if(tree[cId][sId].length > 0) { hasClientUnits = true; break; } }
             if(!hasClientUnits) continue;
 
-            // ENCABEZADO CORPORATIVO
+            // ENCABEZADO CORPORATIVO CON LOGO DE GRUDICOM
             let logoHtml = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo ms-3" title="${cliName}">` : `<span class="align-middle ms-3 fs-5">📦 ${cliName}</span>`;
             
             let clientTitleHtml = `
@@ -875,9 +873,10 @@
                         let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a'; let rowBg = isExternal ? '' : hexToRgba(colEstatus, 0.12);
 
                         let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
+                        
                         let lastLog = logsArr.length > 0 ? 
                             `<div class="text-start w-100 d-flex flex-column h-100 justify-content-center">
-                                <div style="font-size:0.6rem; color:#64748b; font-weight:800; margin-bottom:2px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(logsArr[0].t)}</div>
+                                <div style="font-size:0.6rem; color:#64748b; font-weight:800; margin-bottom:2px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(logsArr[0].t)} <i class="fa-solid fa-magnifying-glass-plus ms-1 text-primary cp" title="Ver Historial Completo" onclick="abrirModalLog('${vId}', '${nombreCamion}')"></i></div>
                                 <div class="bg-white border rounded shadow-sm p-1" style="border-left: 3px solid var(--accent) !important; font-size:0.65rem; line-height:1.2;">
                                     <b class="text-primary">${String(logsArr[0].usr)}:</b> <span class="text-dark fw-bold">${String(logsArr[0].act)}</span>
                                     <div class="text-muted text-truncate mt-1" style="max-width:100%;" title="${String(logsArr[0].det||'')}">${String(logsArr[0].det||'')}</div>
@@ -885,11 +884,22 @@
                             </div>` : `<div style="font-size:0.65rem; color:#94a3b8;">Sin eventos</div>`;
 
                         let searchData = `${nombreCamion} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${v.operador||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
-                        let optionsHtml = Object.keys(window.estatusData).map(k=>`<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`).join('');
+                        
+                        // MENÚ ESTATUS BOOTSTRAP (SIN PARPADEOS)
+                        let curEst = window.estatusData[v.estatus] || window.estatusData["s1"];
+                        let optionsHtml = `
+                        <div class="dropdown w-100">
+                            <button class="btn btn-sm w-100 fw-bold dropdown-toggle shadow-sm" style="background:white; color:${curEst.col}; border:1.5px solid ${curEst.col}; font-size:0.65rem; border-radius:12px; padding:2px 6px;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                ${curEst.nombre}
+                            </button>
+                            <ul class="dropdown-menu shadow-lg border-0 rounded-3" style="font-size:0.75rem;">
+                                ${Object.keys(window.estatusData).map(k=>`<li><a class="dropdown-item fw-bold cp py-2" style="color:${window.estatusData[k].col};" onclick="cambiarEstatus('${k}', '${vId}')">${window.estatusData[k].nombre}</a></li>`).join('')}
+                            </ul>
+                        </div>`;
 
                         let mapClick = `clickMapaUnidad('${vId}')`;
 
-                        // SECUENCIA LÓGICA DE HORARIOS
+                        // LÓGICA DE HORARIOS: SALIDA -> ARRIBO -> FINALIZADO
                         let btnSalida = construirBotonHorario(vId, v.t_salida, 't_salida', 'SALIDA', 'success');
                         let btnArribo = v.t_salida ? construirBotonHorario(vId, v.t_arribo, 't_arribo', 'ARRIBO', 'primary') : '';
                         let btnFin = v.t_arribo ? construirBotonHorario(vId, v.t_fin, 't_fin', 'FINALIZADO', 'dark') : '';
@@ -900,16 +910,23 @@
                         tds['col-ruta'] = `<td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}"><div class="position-relative ps-2"><div style="position:absolute; left:4px; top:10px; bottom:10px; width:1.5px; background:var(--border-col);"></div><div class="d-flex align-items-center position-relative mb-1"><i class="fa-solid fa-circle text-primary position-absolute" style="left:-6px; font-size:6px;"></i><input class="input-ghost text-start ps-2" value="${v.origen||''}" placeholder="ORIGEN" onblur="db.ref('viajes_activos/${vId}/origen').set(this.value.toUpperCase())"></div><div class="d-flex align-items-center position-relative"><i class="fa-solid fa-location-dot text-danger position-absolute" style="left:-6px; font-size:8px;"></i><input class="input-ghost text-start ps-2" value="${v.destino||''}" placeholder="DESTINO" onblur="db.ref('viajes_activos/${vId}/destino').set(this.value.toUpperCase())"></div></div></td>`;
                         tds['col-contenedores'] = `<td class="col-contenedores align-middle ${hiddenCols['col-contenedores'] ? 'd-none' : ''}"><textarea class="input-ghost text-start" style="resize:none; min-height:40px;" placeholder="CONTENEDORES" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>`;
                         tds['col-horarios'] = `<td class="col-horarios align-middle ${hiddenCols['col-horarios'] ? 'd-none' : ''}"><div class="d-flex flex-column justify-content-center h-100 px-1">${btnSalida}${btnArribo}${btnFin}</div></td>`;
-                        tds['col-estatus'] = `<td class="col-estatus align-middle ${hiddenCols['col-estatus'] ? 'd-none' : ''}"><select class="form-select status-select shadow-sm" style="color:${colEstatus}; border-color:${colEstatus};" onchange="cambiarEstatus(this, '${vId}')">${optionsHtml}</select></td>`;
+                        tds['col-estatus'] = `<td class="col-estatus align-middle ${hiddenCols['col-estatus'] ? 'd-none' : ''}">${optionsHtml}</td>`;
                         tds['col-gps'] = `<td class="col-gps align-middle ${hiddenCols['col-gps'] ? 'd-none' : ''}" id="gps_cell_${vId}"><div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center border-bottom border-light pb-1 mb-1"><div class="d-flex align-items-center"><span id="icon_${vId}"><i class="fa-solid fa-spinner fa-spin text-muted me-1 fs-6"></i></span><span id="speed_${vId}"><span class="speed-badge bg-secondary m-0">-- km/h</span></span></div><div id="time_${vId}" style="font-size:0.65rem; color:#64748b; font-weight:800;">--</div></div><div class="w-100 text-center" id="addr_control_${vId}"><div style="font-size:0.75rem; color:#64748b; font-weight:800;">Sincronizando...</div></div></div></td>`;
                         tds['col-alertas'] = `<td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}" id="alertas_${vId}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.85rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>'}</td>`;
-                        tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}"><div class="d-flex flex-column justify-content-between h-100">${lastLog}<button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-1 shadow-sm rounded-pill" style="font-size:0.6rem;" onclick="abrirModalLog('${vId}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Ver Todo</button></div></td>`;
+                        tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}">${lastLog}</td>`;
                         
-                        // COLUMNA DE ACCIÓN MEJORADA CON BOTÓN WHATSAPP INDIVIDUAL DIRECTO
+                        // MENÚ DE ACCIÓN EN 3 PUNTITOS (BOTÓN WA SEPARADO)
                         tds['col-accion'] = `<td class="col-accion align-middle ${hiddenCols['col-accion'] ? 'd-none' : ''}">
                             <div class="d-flex flex-column gap-1 align-items-center justify-content-center h-100">
-                                <button class="btn btn-success btn-sm shadow-sm rounded-circle p-1" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center;" title="WhatsApp Unidad" onclick="enviarWA('${vId}')"><i class="fa-brands fa-whatsapp"></i></button>
-                                <button class="btn btn-light btn-sm shadow-sm border rounded-pill p-1 cp w-100" title="Más Opciones" onclick="abrirModalAcciones('${vId}', '${nombreCamion}')"><i class="fa-solid fa-ellipsis-vertical mx-2"></i></button>
+                                <div class="dropdown position-static">
+                                    <button class="btn btn-light btn-sm shadow-sm border rounded-pill p-1 cp w-100" data-bs-toggle="dropdown" data-bs-boundary="window" title="Más Opciones"><i class="fa-solid fa-ellipsis-vertical mx-2"></i></button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 dropdown-menu-custom">
+                                        <li><a class="dropdown-item dropdown-item-custom text-success cp" onclick="enviarWA_directo('${vId}')"><i class="fa-brands fa-whatsapp me-2 fs-5 align-middle"></i> Enviar WhatsApp</a></li>
+                                        <li><a class="dropdown-item dropdown-item-custom text-primary cp" onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')"><i class="fa-solid fa-pencil me-2 fs-5 align-middle"></i> Editar Viaje</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item dropdown-item-custom text-danger cp" onclick="finalizarViaje('${vId}', '${nombreCamion}')"><i class="fa-solid fa-trash me-2 fs-5 align-middle"></i> Archivar Viaje</a></li>
+                                    </ul>
+                                </div>
                             </div>
                         </td>`;
 
@@ -966,7 +983,6 @@
         let allRows = document.querySelectorAll('#units-body tr');
         let hiddenRows = [];
         
-        // Esconder lo que NO sea de este cliente
         allRows.forEach(r => {
             if(!r.classList.contains(`client-group-${cId}`)) {
                 hiddenRows.push({el: r, display: r.style.display});
@@ -974,12 +990,11 @@
             }
         });
         
-        // Expandir tabla para que nada salga cortado en la foto
         let oldHeight = tableWrap.style.height; let oldMaxHeight = tableWrap.style.maxHeight; let oldOverflow = tableWrap.style.overflow;
         tableWrap.style.height = 'auto'; tableWrap.style.maxHeight = 'none'; tableWrap.style.overflow = 'visible';
         let oldW = document.getElementById("mainTable").style.width; document.getElementById("mainTable").style.width = "max-content";
 
-        await new Promise(r => setTimeout(r, 400)); // Esperar renderizado
+        await new Promise(r => setTimeout(r, 400));
         
         try {
             let canvas = await html2canvas(document.getElementById('mainTable'), { scale: 1.5, backgroundColor: '#f8fafc', useCORS: true });
@@ -989,7 +1004,6 @@
             link.click();
         } catch(e) { console.error(e); alert("Error al generar captura de pantalla."); } 
         finally {
-            // Restaurar a la normalidad
             tableWrap.style.height = oldHeight; tableWrap.style.maxHeight = oldMaxHeight; tableWrap.style.overflow = oldOverflow;
             document.getElementById("mainTable").style.width = oldW;
             hiddenRows.forEach(item => item.el.style.display = item.display);
@@ -1008,47 +1022,84 @@
         registrarLog(uId, "Agregó Nota", txt); try { bootstrap.Modal.getInstance(document.getElementById('modalLog')).hide(); } catch(e){}
     }
 
-    // --- NUEVO SISTEMA BATCH PARA VIAJES MÚLTIPLES ---
+    // --- NUEVO SISTEMA BATCH (MÚLTIPLES UNIDADES) ---
     function prepararNuevoViaje() { 
-        let s = document.getElementById("nv_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); cargarSubclientesEnSelect('nv_subcliente', s.value); 
+        let s = document.getElementById("nv_cliente"); 
+        
+        let listCli = document.getElementById("list_clientes");
+        if(!listCli) { listCli = document.createElement('datalist'); listCli.id="list_clientes"; document.body.appendChild(listCli); }
+        listCli.innerHTML = Object.keys(dataClientes).map(k => `<option value="${dataClientes[k].nombre}">`).join('');
+
+        let listSub = document.getElementById("list_subclientes");
+        if(!listSub) { listSub = document.createElement('datalist'); listSub.id="list_subclientes"; document.body.appendChild(listSub); }
+        let subHtml = ""; Object.values(dataClientes).forEach(c => { if(c.subclientes) Object.values(c.subclientes).forEach(s => subHtml += `<option value="${s.nombre}">`); });
+        listSub.innerHTML = subHtml;
+
+        document.getElementById("nv_cliente").value = ""; document.getElementById("nv_subcliente").value = "";
         document.getElementById("nv_filas_container").innerHTML = "";
-        agregarFilaNV(); // Agrega la primera por defecto
+        agregarFilaNV(); 
     }
 
     function agregarFilaNV() {
+        let isExterna = document.getElementById("nv_externa").checked;
         let div = document.createElement("div");
-        div.className = "row mb-2 nv-fila";
+        div.className = "bg-white border rounded p-2 mb-2 nv-fila position-relative shadow-sm";
         div.innerHTML = `
-            <div class="col-5"><input type="text" class="form-control form-control-sm border-primary fw-bold bg-white nv-unidad" list="listaUnidadesTotales" placeholder="Unidad GPS" oninput="autofillOp(this)"></div>
-            <div class="col-5"><input type="text" class="form-control form-control-sm bg-white nv-operador" list="listaConductores" placeholder="Operador"></div>
-            <div class="col-2"><button class="btn btn-sm btn-outline-danger w-100 shadow-sm" onclick="this.parentElement.parentElement.remove()" title="Quitar unidad"><i class="fa-solid fa-trash"></i></button></div>
+            <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 px-2 py-0 rounded" onclick="this.parentElement.remove()" title="Quitar Unidad"><i class="fa-solid fa-xmark"></i></button>
+            <div class="row gx-2 mt-1">
+                <div class="col-4"><label style="font-size:0.65rem;" class="fw-bold text-muted mb-1">UNIDAD GPS</label><input type="text" class="form-control form-control-sm border-primary fw-bold text-uppercase nv-unidad" list="listaUnidadesTotales" placeholder="Buscar unidad..." oninput="autofillOp(this)"></div>
+                <div class="col-4"><label style="font-size:0.65rem;" class="fw-bold text-muted mb-1">ORIGEN</label><input type="text" class="form-control form-control-sm text-uppercase nv-origen" list="listaGeocercas" placeholder="Escribir o elegir..."></div>
+                <div class="col-4"><label style="font-size:0.65rem;" class="fw-bold text-muted mb-1">DESTINO(S)</label><input type="text" class="form-control form-control-sm text-uppercase nv-destino" list="listaGeocercas" placeholder="Ej. Laredo, MTY, GDL..."></div>
+            </div>
+            <div class="row gx-2 mt-2 nv-operador-row" style="display:${isExterna ? 'flex' : 'none'};">
+                <div class="col-12"><input type="text" class="form-control form-control-sm text-uppercase nv-operador" list="listaConductores" placeholder="Nombre de Operador (Requerido para manuales)"></div>
+            </div>
         `;
         document.getElementById("nv_filas_container").appendChild(div);
     }
 
+    document.getElementById('nv_externa').addEventListener('change', function() {
+        document.querySelectorAll('.nv-operador-row').forEach(el => el.style.display = this.checked ? 'flex' : 'none');
+    });
+
     function autofillOp(inputEl) {
-        let uN = inputEl.value.toUpperCase(); let opInput = inputEl.parentElement.nextElementSibling.querySelector('.nv-operador');
+        let uN = inputEl.value.toUpperCase(); let opInput = inputEl.parentElement.parentElement.nextElementSibling.querySelector('.nv-operador');
         if(opInput && (ramDrivers[uN] || dbOperadores[uN])) { opInput.value = ramDrivers[uN] || dbOperadores[uN]; }
     }
 
+    function getClienteIdByName(name) { let found = Object.keys(dataClientes).find(k => String(dataClientes[k].nombre).toUpperCase() === String(name).toUpperCase()); return found || name; }
+    function getSubclienteIdByName(cliId, subName) { if(dataClientes[cliId] && dataClientes[cliId].subclientes) { let found = Object.keys(dataClientes[cliId].subclientes).find(k => String(dataClientes[cliId].subclientes[k].nombre).toUpperCase() === String(subName).toUpperCase()); return found || subName; } return subName; }
+
     function registrarViajesMultiples() {
-        let cliente = document.getElementById("nv_cliente").value; let subcliente = document.getElementById("nv_subcliente").value;
-        let origen = document.getElementById("nv_origen").value.toUpperCase(); let destino = document.getElementById("nv_destino").value.toUpperCase();
+        let cliName = document.getElementById("nv_cliente").value.trim().toUpperCase();
+        let subName = document.getElementById("nv_subcliente").value.trim().toUpperCase();
+        if(!cliName) return alert("Debes poner el nombre del Cliente.");
+
+        let cId = getClienteIdByName(cliName);
+        let sId = getSubclienteIdByName(cId, subName);
+
+        // Crear On the Fly
+        if(cId === cliName) { let ref = db.ref('clientes').push({nombre: cliName, logo: ""}); cId = ref.key; }
+        if(sId === subName && subName !== "") { let ref = db.ref('clientes/'+cId+'/subclientes').push({nombre: subName}); sId = ref.key; }
+        if(subName === "") sId = "N/A";
+
         let isExterna = document.getElementById("nv_externa").checked;
-        
         let filas = document.querySelectorAll(".nv-fila");
         if(filas.length === 0) return alert("Añade al menos una unidad al lote.");
         
         let batchPromises = [];
         filas.forEach(fila => {
-            let uInput = fila.querySelector(".nv-unidad").value.trim().toUpperCase(); let opInput = fila.querySelector(".nv-operador").value.trim().toUpperCase();
+            let uInput = fila.querySelector(".nv-unidad").value.trim().toUpperCase(); 
+            let opInput = fila.querySelector(".nv-operador").value.trim().toUpperCase();
+            let origen = fila.querySelector(".nv-origen").value.trim().toUpperCase();
+            let destino = fila.querySelector(".nv-destino").value.trim().toUpperCase();
             if(!uInput) return;
             
             let wId = "EXTERNO";
             if (!isExterna) { let nNorm = uInput.replace(/[\s\-]/g, ""); for(let k in unidadesGlobales){ if(String(unidadesGlobales[k].name).replace(/[\s\-]/g, "") === nNorm) { wId = k; uInput = unidadesGlobales[k].name; break; } } }
             
             let refPush = db.ref('viajes_activos').push();
-            let p = refPush.set({ id: refPush.key, wialonId: wId, cliente: cliente, subcliente: subcliente, origen: origen, destino: destino, estatus: "s1", operador: opInput, unidadFallback: uInput, unidadN: uInput }).then(() => {
+            let p = refPush.set({ id: refPush.key, wialonId: wId, cliente: cId, subcliente: sId, origen: origen, destino: destino, estatus: "s1", operador: opInput, unidadFallback: uInput, unidadN: uInput }).then(() => {
                 registrarLog(refPush.key, "REGISTRÓ VIAJE", isExterna ? "Unidad Externa" : "Unidad GPS");
             });
             batchPromises.push(p);
@@ -1069,9 +1120,33 @@
         } 
     }
     
-    function cargarSubclientesEnSelect(e, c) { let s = document.getElementById(e); s.innerHTML = '<option value="">N/A</option>'; if(c && dataClientes[c].subclientes) Object.keys(dataClientes[c].subclientes).forEach(k => s.innerHTML += `<option value="${k}">${dataClientes[c].subclientes[k].nombre}</option>`); }
-    function abrirEdicionViaje(uId, uName) { let v = viajesActivos[uId]; if(!v) return; document.getElementById("edU_id").value = uId; document.getElementById("edU_name").innerText = uName; document.getElementById("ed_operador").value = v.operador || ""; document.getElementById("ed_origen").value = v.origen || ""; document.getElementById("ed_destino").value = v.destino || ""; let s = document.getElementById("ed_cliente"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); s.value = v.cliente || ""; cargarSubclientesEnSelect('ed_subcliente', s.value); document.getElementById("ed_subcliente").value = v.subcliente || ""; new bootstrap.Modal(document.getElementById('modalEditarViaje')).show(); }
-    function guardarEdicionViaje() { let uId = document.getElementById("edU_id").value; registrarLog(uId, "Editó Datos", "Rutas/Cliente"); db.ref('viajes_activos/' + uId).update({ cliente: document.getElementById("ed_cliente").value, subcliente: document.getElementById("ed_subcliente").value, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { try{bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide();}catch(e){} }); }
+    function abrirEdicionViaje(uId, uName) { 
+        let v = viajesActivos[uId]; if(!v) return; 
+        document.getElementById("edU_id").value = uId; document.getElementById("edU_name").innerText = uName; 
+        document.getElementById("ed_operador").value = v.operador || ""; document.getElementById("ed_origen").value = v.origen || ""; document.getElementById("ed_destino").value = v.destino || ""; 
+        
+        let cName = (v.cliente && v.cliente !== "Sin_Cliente" && dataClientes[v.cliente]) ? dataClientes[v.cliente].nombre : "";
+        let sName = (v.subcliente && v.subcliente !== "N/A" && dataClientes[v.cliente] && dataClientes[v.cliente].subclientes && dataClientes[v.cliente].subclientes[v.subcliente]) ? dataClientes[v.cliente].subclientes[v.subcliente].nombre : "";
+        
+        document.getElementById("ed_cliente").value = cName; document.getElementById("ed_subcliente").value = sName; 
+        new bootstrap.Modal(document.getElementById('modalEditarViaje')).show(); 
+    }
+
+    function guardarEdicionViaje() { 
+        let uId = document.getElementById("edU_id").value; 
+        
+        let cliName = document.getElementById("ed_cliente").value.trim().toUpperCase();
+        let subName = document.getElementById("ed_subcliente").value.trim().toUpperCase();
+        let cId = getClienteIdByName(cliName); let sId = getSubclienteIdByName(cId, subName);
+
+        if(cId === cliName && cliName !== "") { let ref = db.ref('clientes').push({nombre: cliName, logo: ""}); cId = ref.key; }
+        if(sId === subName && subName !== "") { let ref = db.ref('clientes/'+cId+'/subclientes').push({nombre: subName}); sId = ref.key; }
+        if(cliName === "") cId = "Sin_Cliente"; if(subName === "") sId = "N/A";
+
+        registrarLog(uId, "Editó Datos", "Rutas/Cliente"); 
+        db.ref('viajes_activos/' + uId).update({ cliente: cId, subcliente: sId, origen: document.getElementById("ed_origen").value.toUpperCase(), destino: document.getElementById("ed_destino").value.toUpperCase(), operador: document.getElementById("ed_operador").value.toUpperCase() }).then(() => { try{bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide();}catch(e){} }); 
+    }
+    
     function cerrarSesion() { localStorage.clear(); location.reload(); }
 
     function vincularOperador() { let u = document.getElementById("op_unidad").value.toUpperCase(); let n = document.getElementById("op_nombre").value.toUpperCase(); if(u && n) { db.ref(`operadores/${u}`).set(n); document.getElementById("op_unidad").value = ""; document.getElementById("op_nombre").value = ""; } }
