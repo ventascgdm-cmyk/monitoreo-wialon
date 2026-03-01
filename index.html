@@ -62,12 +62,22 @@
         .stale-row td { background-color: #fee2e2 !important; border-top: 1px dashed #ef4444; border-bottom: 1px dashed #ef4444;}
         .stale-row td:first-child { border-left: 1px dashed #ef4444;} .stale-row td:last-child { border-right: 1px dashed #ef4444;}
         
-        .header-cliente td { background: var(--bg-main) !important; color: #0f172a !important; padding: 25px 10px 10px 10px !important; border: none !important; border-bottom: 2px solid var(--border-col) !important;}
-        .dark-mode .header-cliente td { color: #f8fafc !important; }
-        .header-subcliente td { background: var(--bg-main) !important; color: #475569 !important; font-size: 1.1rem; font-weight: 800; padding: 10px 10px 5px 10px !important; border: none !important; text-align: center;}
+        /* ENCABEZADO CLIENTE - MODO CINE / CORPORATIVO */
+        .header-cliente td { 
+            background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%) !important; 
+            color: #f8fafc !important; 
+            padding: 10px 15px !important; 
+            border: none !important; 
+            border-bottom: 3px solid var(--accent) !important;
+            border-radius: 8px 8px 0 0;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.05);
+        }
+        .header-subcliente td { background: #e2e8f0 !important; color: #334155 !important; font-size: 0.95rem; font-weight: 800; padding: 6px 10px !important; border: none !important; text-align: center; text-transform: uppercase; letter-spacing: 0.5px;}
+        .dark-mode .header-subcliente td { background: #1e293b !important; color: #cbd5e1 !important; }
         
-        .client-logo { height: 70px; max-width: 300px; object-fit: contain; vertical-align: middle; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); background: white; padding: 4px; }
-        .client-logo-sub { height: 35px; max-width: 120px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; background: white; padding: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        /* LOGOS EN BANNER OSCURO */
+        .client-logo { height: 60px; max-width: 250px; object-fit: contain; vertical-align: middle; border-radius: 6px; background: white; padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .client-logo-sub { height: 30px; max-width: 100px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; background: white; padding: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
         .input-ghost { border: 1px solid transparent; background: transparent; border-radius: 4px; padding: 2px 4px; width: 100%; font-size: 0.7rem; font-weight: 700; color: inherit; text-transform: uppercase; text-align: center; transition: all 0.2s; outline: none; }
         .input-ghost:hover { border-color: var(--border-col); background: rgba(255,255,255,0.8); }
@@ -79,6 +89,9 @@
         .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.1rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
         .unit-name:hover { color: #0284c7; text-decoration: underline; }
         
+        .wa-btn { background: #22c55e; color: white; padding: 3px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.65rem; transition: 0.3s; display: inline-block;}
+        .wa-btn:hover { background: #16a34a; color: white; transform: scale(1.05); }
+        
         .badge-geo { background: #f8fafc; color: #15803d; font-weight: 800; padding: 2px 6px; border-radius: 6px; border: 1px dashed #22c55e; font-size: 0.65rem; display: inline-block; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
         .speed-badge { font-size: 0.75rem; font-weight: 900; border-radius: 6px; padding: 2px 8px; text-align: center; color: white; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.1);}
         
@@ -89,13 +102,12 @@
         .addr-link:hover .addr-container { color: #0284c7; text-decoration: underline;}
         
         .cp { cursor: pointer; }
-        
-        /* DISEÑO DE BOTONES DE ACCIÓN (DROPDOWN MODERNO) */
         .dropdown-menu-custom { border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: none; padding: 8px; min-width: 200px; }
         .dropdown-item-custom { border-radius: 8px; padding: 8px 12px; font-weight: 700; transition: 0.2s; font-size: 0.75rem; margin-bottom: 4px;}
         .dropdown-item-custom:hover { background-color: #f1f5f9; transform: translateX(3px); }
-        .dropdown-item-custom.text-danger:hover { background-color: #fef2f2; }
 
+        /* PREVIEW IMAGE PARA CAPTURA */
+        #imgPreviewCaptura { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
@@ -107,7 +119,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Master v33.0</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Master v34.0 (Screenshot Xtreme)</div>
     </div>
 </div>
 
@@ -124,7 +136,7 @@
         <div class="search-bar-container flex-grow-1 px-4" style="max-width: 350px;">
             <div class="input-group input-group-sm shadow-sm rounded-pill overflow-hidden border border-secondary" style="background: white;">
                 <span class="input-group-text bg-white border-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-                <input type="text" id="buscador" class="form-control border-0 bg-white shadow-none py-2" style="font-size: 0.80rem; font-weight: bold;" placeholder="Buscar unidad, operador, ruta..." onkeyup="filtrarTablaInteligente()">
+                <input type="text" id="buscador" class="form-control border-0 bg-white shadow-none py-2" style="font-size: 0.80rem; font-weight: bold;" placeholder="Buscar unidad, operador..." onkeyup="filtrarTablaInteligente()">
             </div>
         </div>
 
@@ -147,7 +159,7 @@
             </div>
             <button class="btn btn-info fw-bold me-1 text-dark shadow-sm rounded-pill px-3 py-2" onclick="toggleMap()"><i class="fa-solid fa-map me-1"></i> Mapa</button>
             <button class="btn btn-dark fw-bold me-1 shadow-sm rounded-circle" style="width:38px; height:38px; padding:0;" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
-            <button class="btn btn-primary fw-bold me-1 shadow-sm rounded-pill px-3 py-2" onclick="prepararNuevoViaje()"><i class="fa-solid fa-plus"></i></button>
+            <button class="btn btn-primary fw-bold me-1 shadow-sm rounded-pill px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-plus"></i></button>
             <button class="btn btn-outline-danger fw-bold rounded-pill px-3 py-2" onclick="cerrarSesion()"><i class="fa-solid fa-power-off"></i></button>
         </div>
     </div>
@@ -159,6 +171,44 @@
                 <table class="table-custom text-center" id="mainTable">
                     <tbody id="units-body"></tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAcciones" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-gear me-2"></i> OPCIONES: <span id="acc_uName" class="text-info"></span></h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light rounded-bottom-4 p-4 d-flex flex-column gap-3">
+                <input type="hidden" id="acc_vId">
+                <button class="btn btn-success fw-bold py-2 shadow-sm" onclick="ejecutarAccion('wa')"><i class="fa-brands fa-whatsapp me-2 fs-5 align-middle"></i> Enviar WhatsApp</button>
+                <button class="btn btn-primary fw-bold py-2 shadow-sm" onclick="ejecutarAccion('edit')"><i class="fa-solid fa-pencil me-2 fs-5 align-middle"></i> Editar Viaje</button>
+                <button class="btn btn-danger fw-bold py-2 shadow-sm" onclick="ejecutarAccion('arch')"><i class="fa-solid fa-trash me-2 fs-5 align-middle"></i> Archivar Viaje</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPreviewCaptura" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-camera-retro me-2"></i> CAPTURA GENERADA CON ÉXITO</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light p-3 text-center">
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; margin-bottom: 15px;">
+                    <img id="imgPreviewCaptura" src="" alt="Vista Previa">
+                </div>
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <button class="btn btn-primary fw-bold shadow-sm px-4" onclick="descargarCaptura()"><i class="fa-solid fa-download me-2"></i> Descargar</button>
+                    <button class="btn btn-dark fw-bold shadow-sm px-4" onclick="copiarCaptura()"><i class="fa-solid fa-copy me-2"></i> Copiar Imagen (Para WhatsApp Web)</button>
+                    <button class="btn btn-success fw-bold shadow-sm px-4" onclick="compartirCaptura()"><i class="fa-solid fa-share-nodes me-2"></i> Compartir (Móvil)</button>
+                </div>
             </div>
         </div>
     </div>
@@ -179,7 +229,7 @@
                     </div>
                     <div class="row mb-2">
                         <div class="col-md-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Cliente:</label><input type="text" id="nv_cliente" class="form-control form-control-sm bg-light fw-bold text-uppercase" list="list_clientes" placeholder="Escribe el cliente..."></div>
-                        <div class="col-md-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Subcliente:</label><input type="text" id="nv_subcliente" class="form-control form-control-sm bg-light fw-bold text-uppercase" list="list_subclientes" placeholder="Escribe el subcliente..."></div>
+                        <div class="col-md-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Subcliente (Opcional):</label><input type="text" id="nv_subcliente" class="form-control form-control-sm bg-light fw-bold text-uppercase" list="list_subclientes" placeholder="Escribe el subcliente..."></div>
                     </div>
                 </div>
                 
@@ -209,9 +259,10 @@
                         <div class="col-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Subcliente:</label><input type="text" id="ed_subcliente" class="form-control form-control-sm bg-light fw-bold text-uppercase" list="list_subclientes"></div>
                     </div>
                     <div class="row mb-3">
-                        <div class="col-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Origen:</label><input type="text" id="ed_origen" class="form-control form-control-sm bg-light" list="listaGeocercas"></div>
-                        <div class="col-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Destino(s):</label><textarea id="ed_destino" class="form-control form-control-sm bg-light" rows="3" placeholder="Múltiples destinos permitidos"></textarea></div>
+                        <div class="col-12 mb-2"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Origen:</label><input type="text" id="ed_origen" class="form-control form-control-sm bg-light text-uppercase" list="listaGeocercas"></div>
+                        <div class="col-12"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Destino(s):</label><textarea id="ed_destino" class="form-control form-control-sm bg-light text-uppercase" rows="3" placeholder="Múltiples destinos permitidos"></textarea></div>
                     </div>
+                    <label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Operador Manual (Opcional):</label><input type="text" id="ed_operador" class="form-control form-control-sm mb-3 bg-light text-uppercase" list="listaConductores">
                     <button onclick="guardarEdicionViaje()" class="btn btn-success w-100 fw-bold py-2 rounded-pill shadow-sm">GUARDAR CAMBIOS</button>
                 </div>
             </div>
@@ -223,11 +274,7 @@
 <div class="modal fade" id="modalStatusTokens" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-warning text-dark border-0 py-2"><h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-satellite-dish"></i> ESTATUS GPS</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><ul class="list-group list-group-flush rounded-bottom-4" id="listaStatusTokens"></ul></div></div></div></div>
 <div class="modal fade" id="modalAdmin" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-danger text-white border-0 py-2"><h6 class="modal-title fw-bold m-0">ADMINISTRACIÓN MAESTRA</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body bg-light rounded-bottom-4 p-3"><div class="row g-2"><div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Tokens GPS</h6><input type="text" id="tk_nom" class="form-control form-control-sm mb-1 bg-light" placeholder="Ej. RACEL"><input type="text" id="tk_url" class="form-control form-control-sm mb-1 bg-light" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-1 bg-light" placeholder="Token Largo"><button class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0" onclick="agregarToken()">Guardar</button><ul class="list-group list-group-sm mt-2" id="listaTokensActivos" style="font-size:0.7rem;"></ul></div></div><div class="col-lg-3 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Operadores Manuales</h6><input class="form-control form-control-sm mb-1 bg-light" list="listaUnidadesTotales" id="op_unidad" placeholder="Unidad" autocomplete="off"><input type="text" id="op_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Nombre Chófer"><button onclick="vincularOperador()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Vincular</button><ul class="list-group list-group-sm mt-2" id="listaOperadoresAdmin" style="font-size:0.7rem;"></ul></div></div><div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Clientes</h6><input type="text" id="cli_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Empresa"><input type="file" id="cli_logo_file" accept="image/*" class="form-control form-control-sm mb-1 bg-light" title="Seleccionar Logo" style="font-size:0.6rem;"><button onclick="crearCliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Añadir</button><input type="file" id="edit_cli_logo_file" accept="image/*" style="display:none;" onchange="if(this.files && this.files[0] && window.currentEditCli){let reader = new FileReader(); reader.onload = e => {db.ref('clientes/' + window.currentEditCli).update({logo: e.target.result}); this.value = '';}; reader.readAsDataURL(this.files[0]);}"><ul class="list-group list-group-sm mt-2" id="listaClientesAdmin" style="max-height: 200px; overflow-y:auto; font-size:0.7rem;"></ul></div></div><div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Subclientes</h6><select id="sub_clientePadre" class="form-select form-select-sm mb-1 bg-light"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Sub-empresa"><button onclick="crearSubcliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Añadir</button><ul class="list-group list-group-sm mt-2" id="listaSubclientesAdmin" style="max-height: 200px; overflow-y:auto; font-size:0.7rem;"></ul></div></div><div class="col-lg-3 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Monitoristas</h6><input type="text" id="usr_id" class="form-control form-control-sm mb-1 bg-light" placeholder="Usuario (login)"><input type="text" id="usr_nom" class="form-control form-control-sm mb-1 bg-light" placeholder="Nombre completo"><input type="text" id="usr_pass" class="form-control form-control-sm mb-1 bg-light" placeholder="Contraseña"><button onclick="crearUsuario()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Crear</button><ul class="list-group list-group-sm mt-2" id="listaUsuariosAdmin" style="font-size:0.7rem;"></ul></div></div></div></div></div></div></div>
 
-<datalist id="list_clientes"></datalist>
-<datalist id="list_subclientes"></datalist>
-<datalist id="listaGeocercas"></datalist>
-<datalist id="listaConductores"></datalist>
-<datalist id="listaUnidadesTotales"></datalist>
+<datalist id="list_clientes"></datalist><datalist id="list_subclientes"></datalist><datalist id="listaGeocercas"></datalist><datalist id="listaConductores"></datalist><datalist id="listaUnidadesTotales"></datalist>
 
 <script type="text/javascript">
     const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
@@ -241,18 +288,19 @@
 
     let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
     let geoQueue = []; let isGeocoding = false; let motorArrancado = false; let isSyncingFlotas = false;
+    let currentCaptureBlob = null; // Guardar foto temporal
 
-    // --- PRIORIDADES ESTRICTAS DE COLUMNAS ---
+    // --- PRIORIDADES ESTRICTAS ---
     const columnasDef = {
         'col-unidad': { titulo: 'UNIDAD', ancho: '110' },
         'col-operador': { titulo: 'OPERADOR GPS', ancho: '150' },
         'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '160' },
         'col-contenedores': { titulo: 'CONTENEDORES', ancho: '110' },
-        'col-horarios': { titulo: 'HORARIOS', ancho: '95' }, // Ultra compacto
+        'col-horarios': { titulo: 'HORARIOS', ancho: '95' },
         'col-estatus': { titulo: 'ESTATUS', ancho: '120' },
-        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '420' }, // PANORÁMICO
+        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '420' },
         'col-alertas': { titulo: 'ALERTAS', ancho: '90' },
-        'col-historial': { titulo: 'HISTORIAL LOG', ancho: '240' }, // BLOQUE DE NOTAS AMPLIO
+        'col-historial': { titulo: 'HISTORIAL LOG', ancho: '240' },
         'col-accion': { titulo: '<i class="fa-solid fa-bars"></i>', ancho: '65' }
     };
     
@@ -369,7 +417,7 @@
         localStorage.removeItem('tms_colOrder'); localStorage.removeItem('tms_hiddenCols'); localStorage.removeItem('tms_colWidths'); location.reload();
     }
 
-    // --- RESIZER EN VIVO Y CSS DINÁMICO ---
+    // --- RESIZER EN VIVO ---
     function aplicarAnchosGuardados() {
         let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
         let css = '';
@@ -459,7 +507,6 @@
         });
     }
 
-    // --- MENÚ ESTATUS MODERNO FLOTANTE ---
     function cambiarEstatus(val, vId) {
         let txt = window.estatusData[val].nombre; let col = window.estatusData[val].col;
         let row = document.getElementById("row_" + vId);
@@ -509,12 +556,13 @@
         txt += `_Reporte C4_`; window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
     }
 
-    // --- CAPTURA DE PANTALLA INTELIGENTE 📸 ---
+    // --- CAPTURA DE PANTALLA INTELIGENTE (VERSIÓN DEFINITIVA) ---
     async function generarCapturaCliente(cId, cliName) {
         let tableWrap = document.getElementById('scrollContainer');
         let allRows = document.querySelectorAll('#units-body tr');
         let hiddenRows = [];
         
+        // Aislar Cliente
         allRows.forEach(r => {
             if(!r.classList.contains(`client-group-${cId}`)) {
                 hiddenRows.push({el: r, display: r.style.display});
@@ -522,6 +570,7 @@
             }
         });
         
+        // Estirar para foto
         let oldHeight = tableWrap.style.height; let oldMaxHeight = tableWrap.style.maxHeight; let oldOverflow = tableWrap.style.overflow;
         tableWrap.style.height = 'auto'; tableWrap.style.maxHeight = 'none'; tableWrap.style.overflow = 'visible';
         let oldW = document.getElementById("mainTable").style.width; document.getElementById("mainTable").style.width = "max-content";
@@ -529,17 +578,47 @@
         await new Promise(r => setTimeout(r, 400));
         
         try {
-            let canvas = await html2canvas(document.getElementById('mainTable'), { scale: 1.5, backgroundColor: '#f8fafc', useCORS: true });
-            let link = document.createElement('a');
-            link.download = `Estatus_${cliName.replace(/[^a-z0-9]/gi, '_')}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            let canvas = await html2canvas(document.getElementById('mainTable'), { scale: 2, backgroundColor: '#0f172a', useCORS: true });
+            
+            canvas.toBlob(function(blob) {
+                currentCaptureBlob = blob;
+                document.getElementById('imgPreviewCaptura').src = URL.createObjectURL(blob);
+                new bootstrap.Modal(document.getElementById('modalPreviewCaptura')).show();
+            }, 'image/png');
+            
         } catch(e) { console.error(e); alert("Error al generar captura de pantalla."); } 
         finally {
             tableWrap.style.height = oldHeight; tableWrap.style.maxHeight = oldMaxHeight; tableWrap.style.overflow = oldOverflow;
             document.getElementById("mainTable").style.width = oldW;
             hiddenRows.forEach(item => item.el.style.display = item.display);
         }
+    }
+
+    function descargarCaptura() {
+        if(!currentCaptureBlob) return;
+        let link = document.createElement('a');
+        link.download = `Estatus_Bitacora.png`;
+        link.href = URL.createObjectURL(currentCaptureBlob);
+        link.click();
+    }
+
+    async function copiarCaptura() {
+        if(!currentCaptureBlob) return;
+        try {
+            const item = new ClipboardItem({ "image/png": currentCaptureBlob });
+            await navigator.clipboard.write([item]);
+            alert("¡Imagen copiada! Ya puedes pegarla en WhatsApp Web (Ctrl+V).");
+        } catch (err) { alert("Tu navegador no permite copiar directo. Usa el botón Descargar."); }
+    }
+
+    async function compartirCaptura() {
+        if(!currentCaptureBlob) return;
+        if (navigator.share) {
+            try {
+                const file = new File([currentCaptureBlob], "Estatus.png", { type: "image/png" });
+                await navigator.share({ title: 'Estatus Bitácora', files: [file] });
+            } catch (err) { console.log("Share cancelado"); }
+        } else { alert("Tu navegador no soporta compartir directo."); }
     }
 
     function editarUbicacionManual(vId) {
@@ -551,8 +630,15 @@
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
 
-    // --- ACCIONES EN POP-OVER (NO MÁS MODALES ESTORBOSOS) ---
-    function enviarWA_directo(vId) { enviarWA(vId); }
+    function abrirModalAcciones(vId, uName) {
+        document.getElementById("acc_vId").value = vId; document.getElementById("acc_uName").innerText = uName; new bootstrap.Modal(document.getElementById('modalAcciones')).show();
+    }
+    
+    function ejecutarAccion(tipo) {
+        let vId = document.getElementById("acc_vId").value; let uName = document.getElementById("acc_uName").innerText;
+        try { bootstrap.Modal.getInstance(document.getElementById('modalAcciones')).hide(); } catch(e){}
+        setTimeout(() => { if(tipo === 'edit') abrirEdicionViaje(vId, uName); else if(tipo === 'arch') finalizarViaje(vId, uName); else if(tipo === 'wa') enviarWA(vId); }, 300);
+    }
 
     window.onload = function () {
         aplicarAnchosGuardados();
@@ -681,7 +767,7 @@
                 let isLost = !uData || (uData && !pos && !isExternal);
                 
                 let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0;
-                let isStale = ageSecs > 14400; // Zombie Check (> 4h)
+                let isStale = ageSecs > 14400; // Zombie > 4h
                 
                 let row = document.getElementById("row_" + vId);
                 if(row) {
@@ -690,75 +776,57 @@
                     else if (isStale && !isExternal) row.classList.add("stale-row");
                 }
 
-                let elIcon = document.getElementById("icon_" + vId); let elSpeed = document.getElementById("speed_" + vId);
-                if(elIcon && elSpeed) {
+                let elGpsCell = document.getElementById("gps_cell_" + vId);
+                if(elGpsCell) {
                     if (isExternal) {
-                        elIcon.innerHTML = '<i class="fa-solid fa-globe text-info me-1" style="font-size:0.75rem;" title="Plataforma Externa"></i>';
-                        elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
+                        elGpsCell.innerHTML = `<div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center pb-1"><div class="d-flex align-items-center"><i class="fa-solid fa-globe text-info me-1 fs-6"></i> <span class="speed-badge bg-secondary m-0">-- km/h</span></div><div style="font-size:0.65rem; color:#64748b; font-weight:800;">Externa</div></div><div class="d-flex align-items-center gap-2 text-start"><span class="text-info fw-bold" style="font-size:0.65rem;">GPS EXTERNO</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar" onclick="editarUbicacionManual('${vId}')"></i><div class="addr-container flex-grow-1">${v.ubicacion_manual||'--'}</div></div></div>`;
                     } else if (isLost) {
-                        elIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1" style="font-size:0.75rem;"></i>';
-                        elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
+                        elGpsCell.innerHTML = `<div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center pb-1"><div class="d-flex align-items-center"><i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i> <span class="speed-badge bg-secondary m-0">${speed} km/h</span></div><div style="font-size:0.65rem; color:#ef4444; font-weight:800;">Modo Offline</div></div><div class="d-flex align-items-center gap-2 text-start"><span class="text-danger fw-bold" style="font-size:0.65rem;">SIN SEÑAL</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar" onclick="editarUbicacionManual('${vId}')"></i><div class="addr-container flex-grow-1">${v.ubicacion_manual||'--'}</div></div></div>`;
                     } else {
                         let speedBg = "#64748b"; if(speed > 0 && speed < 100) speedBg = "#10b981"; if(speed >= 100) speedBg = "#ef4444"; 
                         if(isStale) speedBg = "#ef4444"; 
-                        elIcon.innerHTML = speed > 0 ? '<i class="fa-solid fa-truck-fast text-success me-1" style="font-size:0.8rem;"></i>' : '<i class="fa-solid fa-truck text-secondary me-1" style="font-size:0.8rem;"></i>';
-                        elSpeed.innerHTML = `<span class="speed-badge" style="background-color:${speedBg};">${speed} km/h</span>`;
-                    }
-                }
-
-                let elTime = document.getElementById("time_" + vId);
-                if(elTime) {
-                    if (isExternal) elTime.innerHTML = '<span class="text-info fw-bold">Plataforma Externa</span>';
-                    else if (isLost) elTime.innerHTML = '<span class="text-danger fw-bold">Modo Offline</span>';
-                    else {
+                        let icon = speed > 0 ? `<i class="fa-solid fa-truck-fast text-success me-1 fs-6"></i>` : `<i class="fa-solid fa-truck text-secondary me-1 fs-6"></i>`;
                         let timeColor = isStale ? 'text-danger' : 'text-primary';
-                        elTime.innerHTML = `<i class="fa-regular fa-clock"></i> ${formatTimeFriendly(pos.t)} <span class="${timeColor} ms-1" style="font-weight:900;">(${timeAgo(pos.t)})</span>`;
-                    }
-                }
-
-                let btnName = document.getElementById("name_btn_" + vId);
-                if (btnName && pos && pos.y && pos.x) {
-                    btnName.setAttribute("onclick", `centrarUnidadMapa(${pos.y}, ${pos.x})`);
-                } else if (btnName) {
-                    btnName.setAttribute("onclick", `centrarUnidadMapa(null, null)`);
-                }
-
-                let wialonDriverObj = uData ? uData.choferObj : null;
-                let elOpWialon = document.getElementById("op_wialon_" + vId);
-                if (elOpWialon) {
-                    if (wialonDriverObj && wialonDriverObj.nombre !== "Sin asignar") {
-                        let telRaw = wialonDriverObj.tel || ""; let cleanTel = String(telRaw).replace(/\D/g,'');
-                        // NUMERO COPIABLE CON ICONO WA (A LINEA)
-                        let waBtn = cleanTel ? `<div class="d-flex align-items-center justify-content-center mt-1"><a href="https://wa.me/${cleanTel}" target="_blank" class="text-success fs-5 me-1 cp" title="Abrir WhatsApp"><i class="fab fa-whatsapp"></i></a><span class="fw-bold" style="font-size:0.70rem; color:#334155; user-select:all;">${telRaw}</span></div>` : '';
-                        elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${wialonDriverObj.nombre}</div>${waBtn}`;
-                    } else if (v.operador) {
-                        elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${v.operador}</div><div style="font-size:0.6rem; color:#64748b;">(Manual)</div>`;
-                    } else { 
-                        elOpWialon.innerHTML = '<span class="badge bg-secondary w-100 mt-1" style="font-size:0.65rem;">Sin asignar</span>'; 
-                    }
-                }
-
-                let elAddrControl = document.getElementById("addr_control_" + vId);
-                if(elAddrControl) {
-                    if (isLost || isExternal) {
-                        let textExt = isExternal ? '<i class="fa-solid fa-globe"></i> EXTERNO' : '<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL';
-                        let classExt = isExternal ? 'text-info' : 'text-danger';
-                        elAddrControl.innerHTML = `<div class="d-flex align-items-center justify-content-center"><span class="${classExt} fw-bold" style="font-size:0.65rem;">${textExt}</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar manual" onclick="editarUbicacionManual('${vId}')"></i></div><div class="addr-container mt-1">${v.ubicacion_manual||'--'}</div>`;
-                    } else {
+                        
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
                         let zonaGeo = (uData && uData.zonaOficial) ? uData.zonaOficial : resolverGeocerca(pos.y, pos.x);
                         let addrText = `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`;
                         if(geocodeCache[geoKey]) addrText = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${geocodeCache[geoKey]}`;
                         
-                        let geoHtml = zonaGeo ? `<div class="badge-geo d-inline-block text-truncate mt-1" style="max-width:100%;"><i class="fa-solid fa-draw-polygon me-1"></i>${zonaGeo}</div>` : '';
+                        let geoHtml = zonaGeo ? `<span class="badge-geo text-truncate" style="max-width:130px;" title="${zonaGeo}"><i class="fa-solid fa-draw-polygon me-1"></i>${zonaGeo}</span>` : '';
+                        let timeHover = formatTimeFriendly(pos.t);
                         
-                        let newHtml = `
-                            <a href="https://www.google.com/maps?q=$${pos.y},${pos.x}" target="_blank" class="addr-link text-center" title="Abrir en Maps">
-                                <div class="addr-container addr-span-${geoKey}" id="addr_${vId}">${addrText}</div>
-                            </a>
-                            ${geoHtml}
+                        elGpsCell.innerHTML = `
+                            <div class="d-flex flex-column px-1 w-100">
+                                <div class="d-flex justify-content-between align-items-center pb-1">
+                                    <div class="d-flex align-items-center gap-2">
+                                        ${icon} <span class="speed-badge m-0" style="background-color:${speedBg}; padding:1px 6px;">${speed} km/h</span>
+                                        ${geoHtml}
+                                    </div>
+                                    <div style="font-size:0.75rem; font-weight:900; cursor:help;" title="${timeHover}">
+                                        <span class="${timeColor}">(${timeAgo(pos.t)})</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center w-100">
+                                    <a href="https://www.google.com/maps?q=$${pos.y},${pos.x}" target="_blank" class="addr-link text-start flex-grow-1" title="Abrir en Maps">
+                                        <div class="addr-container addr-span-${geoKey}" id="addr_${vId}">${addrText}</div>
+                                    </a>
+                                </div>
+                            </div>
                         `;
-                        if(elAddrControl.innerHTML !== newHtml) elAddrControl.innerHTML = newHtml;
+                    }
+                }
+
+                let elOpWialon = document.getElementById("op_wialon_" + vId);
+                if (elOpWialon) {
+                    let wialonDriverObj = uData ? uData.choferObj : null;
+                    if (wialonDriverObj && wialonDriverObj.nombre !== "Sin asignar") {
+                        let telRaw = wialonDriverObj.tel || ""; let cleanTel = String(telRaw).replace(/\D/g,'');
+                        elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${wialonDriverObj.nombre}</div><div class="fw-bold text-muted user-select-all mt-1" style="font-size:0.7rem;">${telRaw}</div>`;
+                    } else if (v.operador) {
+                        elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${v.operador}</div><div style="font-size:0.6rem; color:#64748b;">(Manual)</div>`;
+                    } else { 
+                        elOpWialon.innerHTML = '<span class="badge bg-secondary w-100 mt-1" style="font-size:0.65rem;">Sin asignar</span>'; 
                     }
                 }
                 
@@ -798,22 +866,6 @@
         }).catch(e => console.log("Geo Err")).finally(() => { isGeocoding = false; });
     }
 
-    // --- HORARIOS: LÓGICA SECUENCIAL PERFECTA ---
-    function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColor) {
-        if(!timestampStr) {
-            return `<button class="btn btn-sm w-100 bg-white text-${claseColor} shadow-sm" style="font-size:0.6rem; font-weight:800; padding:2px 0; margin-bottom:2px; border: 1px dashed var(--bs-${claseColor});" onclick="registrarLog('${vId}', 'Marcó ${textoVacio}'); db.ref('viajes_activos/${vId}/${dbField}').set(Date.now());">${textoVacio}</button>`;
-        } else {
-            let displayDate = formatearFechaElegante(timestampStr);
-            return `<div class="position-relative w-100 cp" style="margin-bottom:2px;" title="Clic para editar">
-                        <div class="d-flex align-items-center rounded shadow-sm border border-${claseColor}" style="overflow: hidden; height:18px; background: rgba(255,255,255,0.5);">
-                            <span class="bg-${claseColor} text-white fw-bold text-center d-flex align-items-center justify-content-center" style="font-size:0.55rem; width:18px; height:100%;">${textoVacio.charAt(0)}</span>
-                            <span class="fw-bold text-center w-100 text-${claseColor}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span>
-                        </div>
-                        <input type="datetime-local" class="position-absolute top-0 start-0 w-100 h-100 cp" style="opacity: 0;" value="${getLocalISO(timestampStr)}" onclick="this.showPicker()" onchange="let d=new Date(this.value).getTime(); if(d){ db.ref('viajes_activos/${vId}/${dbField}').set(d); registrarLog('${vId}', 'Modificó horario de ${textoVacio}'); }">
-                    </div>`;
-        }
-    }
-
     function renderizarBitacora() {
         if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA") return;
         const tbody = document.getElementById('units-body'); let html = "";
@@ -835,33 +887,20 @@
             for(let sId in tree[cId]) { if(tree[cId][sId].length > 0) { hasClientUnits = true; break; } }
             if(!hasClientUnits) continue;
 
-            // ENCABEZADO CORPORATIVO CON LOGO DE GRUDICOM
             let logoHtml = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo ms-3" title="${cliName}">` : `<span class="align-middle ms-3 fs-5">📦 ${cliName}</span>`;
+            let clientTitleHtml = `<div class="d-flex align-items-center justify-content-center w-100"><img src="TIGPS HD2.png" style="height:45px; margin-right:15px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));"><div class="d-flex flex-column text-end border-end pe-3 border-light" style="border-opacity:0.3; margin-right: 15px;"><span style="font-size:0.65rem; color:#94a3b8; font-weight:900; letter-spacing:1px; line-height:1;">BITÁCORA DE VIAJES</span><span style="font-size:0.85rem; color:#f8fafc; font-weight:900; line-height:1.2; margin-top:2px;">GRUDICOM TI & GPS</span></div>${logoHtml}</div>`;
             
-            let clientTitleHtml = `
-                <div class="d-flex align-items-center justify-content-center">
-                    <img src="TIGPS HD2.png" style="height:36px; margin-right:12px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));">
-                    <div class="d-flex flex-column text-start border-end pe-3 border-secondary" style="border-opacity:0.3;">
-                        <span style="font-size:0.6rem; color:#64748b; font-weight:900; letter-spacing:1px; line-height:1;">BITÁCORA DE VIAJES</span>
-                        <span style="font-size:0.75rem; color:#0f172a; font-weight:900; line-height:1.2; margin-top:2px;">GRUDICOM TI & GPS</span>
-                    </div>
-                    ${logoHtml}
-                </div>
-            `;
-            
-            let btnWaCli = cId !== "Sin_Cliente" ? `<button class="btn btn-dark btn-sm py-1 px-3 mt-1 ms-2 float-end shadow-sm rounded-pill fw-bold" onclick="generarCapturaCliente('${cId}', '${cliName}')"><i class="fa-solid fa-camera"></i> Captura Estatus</button> <button class="btn btn-primary btn-sm py-1 px-3 mt-1 float-end shadow-sm rounded-pill fw-bold" onclick="generarReporteGrupal('${cId}', 'N/A', '${cliName}')"><i class="fa-brands fa-whatsapp"></i> Reporte WhatsApp</button>` : '';
+            let btnWaCli = cId !== "Sin_Cliente" ? `<button class="btn btn-light btn-sm py-1 px-3 mt-1 ms-2 float-end shadow-sm rounded-pill fw-bold text-dark" onclick="generarCapturaCliente('${cId}', '${cliName}')"><i class="fa-solid fa-camera"></i> Opciones de Captura</button> <button class="btn btn-success btn-sm py-1 px-3 mt-1 float-end shadow-sm rounded-pill fw-bold" onclick="generarReporteGrupal('${cId}', 'N/A', '${cliName}')"><i class="fa-brands fa-whatsapp"></i> Reporte WhatsApp</button>` : '';
             
             html += `<tr class="header-cliente shadow-sm client-group-${cId}" data-client="${cId}"><td colspan="${colOrder.length}"><div class="d-flex justify-content-between align-items-center position-relative w-100">${clientTitleHtml}<div class="position-absolute end-0 pe-2 d-flex">${btnWaCli}</div></div></td></tr>`;
 
             for(let sId in tree[cId]) {
                 if(tree[cId][sId].length === 0) continue;
                 let subName = ""; if (sId !== "N/A" && dataClientes[cId] && dataClientes[cId].subclientes && dataClientes[cId].subclientes[sId]) subName = dataClientes[cId].subclientes[sId].nombre || "";
-                
                 let logoHtmlSub = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo-sub" title="${cliName}">` : '';
                 let btnWaSub = sId !== "N/A" ? `<button class="btn btn-outline-primary bg-white btn-sm py-0 px-2 float-end shadow-sm rounded-pill" style="font-size:0.65rem;" onclick="generarReporteGrupal('${cId}', '${sId}', '${cliName} -> ${subName}')"><i class="fa-brands fa-whatsapp"></i> Reporte Subcliente</button>` : '';
                 
                 if(sId !== "N/A" && subName !== "") html += `<tr class="header-subcliente client-group-${cId}"><td colspan="${colOrder.length}"><div class="d-flex justify-content-center align-items-center position-relative w-100"><div class="d-flex align-items-center">↳ ${logoHtmlSub} Subcliente: ${subName}</div><div class="position-absolute end-0 pe-2">${btnWaSub}</div></div></td></tr>`;
-                
                 html += getHeadersRow(cId);
 
                 tree[cId][sId].sort((a, b) => { let estA = String(a.v.estatus || ""); let estB = String(b.v.estatus || ""); return estA.localeCompare(estB); });
@@ -869,14 +908,13 @@
                 tree[cId][sId].forEach(({vId, v}) => {
                     try {
                         let nombreCamion = String(v.unidadN || v.unidadFallback || "Desconocida").trim().toUpperCase();
-                        let uData = encontrarUnidad(v, vId); let isExternal = v.wialonId === "EXTERNO"; 
+                        let isExternal = v.wialonId === "EXTERNO"; 
                         let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a'; let rowBg = isExternal ? '' : hexToRgba(colEstatus, 0.12);
 
                         let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
-                        
                         let lastLog = logsArr.length > 0 ? 
                             `<div class="text-start w-100 d-flex flex-column h-100 justify-content-center">
-                                <div style="font-size:0.6rem; color:#64748b; font-weight:800; margin-bottom:2px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(logsArr[0].t)} <i class="fa-solid fa-magnifying-glass-plus ms-1 text-primary cp" title="Ver Historial Completo" onclick="abrirModalLog('${vId}', '${nombreCamion}')"></i></div>
+                                <div style="font-size:0.6rem; color:#64748b; font-weight:800; margin-bottom:2px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(logsArr[0].t)} <i class="fa-solid fa-magnifying-glass-plus ms-1 text-primary cp" title="Ver Historial" onclick="abrirModalLog('${vId}', '${nombreCamion}')"></i></div>
                                 <div class="bg-white border rounded shadow-sm p-1" style="border-left: 3px solid var(--accent) !important; font-size:0.65rem; line-height:1.2;">
                                     <b class="text-primary">${String(logsArr[0].usr)}:</b> <span class="text-dark fw-bold">${String(logsArr[0].act)}</span>
                                     <div class="text-muted text-truncate mt-1" style="max-width:100%;" title="${String(logsArr[0].det||'')}">${String(logsArr[0].det||'')}</div>
@@ -885,27 +923,23 @@
 
                         let searchData = `${nombreCamion} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${v.operador||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                         
-                        // MENÚ ESTATUS BOOTSTRAP (SIN PARPADEOS)
                         let curEst = window.estatusData[v.estatus] || window.estatusData["s1"];
                         let optionsHtml = `
                         <div class="dropdown w-100">
                             <button class="btn btn-sm w-100 fw-bold dropdown-toggle shadow-sm" style="background:white; color:${curEst.col}; border:1.5px solid ${curEst.col}; font-size:0.65rem; border-radius:12px; padding:2px 6px;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 ${curEst.nombre}
                             </button>
-                            <ul class="dropdown-menu shadow-lg border-0 rounded-3" style="font-size:0.75rem;">
-                                ${Object.keys(window.estatusData).map(k=>`<li><a class="dropdown-item fw-bold cp py-2" style="color:${window.estatusData[k].col};" onclick="cambiarEstatus('${k}', '${vId}')">${window.estatusData[k].nombre}</a></li>`).join('')}
+                            <ul class="dropdown-menu shadow-lg border-0 rounded-3" style="font-size:0.75rem; max-height:200px; overflow-y:auto;">
+                                ${Object.keys(window.estatusData).map(k=>`<li><a class="dropdown-item fw-bold cp py-1" style="color:${window.estatusData[k].col};" onclick="cambiarEstatus('${k}', '${vId}')">${window.estatusData[k].nombre}</a></li>`).join('')}
                             </ul>
                         </div>`;
 
-                        let mapClick = `clickMapaUnidad('${vId}')`;
-
-                        // LÓGICA DE HORARIOS: SALIDA -> ARRIBO -> FINALIZADO
                         let btnSalida = construirBotonHorario(vId, v.t_salida, 't_salida', 'SALIDA', 'success');
                         let btnArribo = v.t_salida ? construirBotonHorario(vId, v.t_arribo, 't_arribo', 'ARRIBO', 'primary') : '';
                         let btnFin = v.t_arribo ? construirBotonHorario(vId, v.t_fin, 't_fin', 'FINALIZADO', 'dark') : '';
 
                         let tds = {};
-                        tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}"><div class="d-flex align-items-center justify-content-center"><span class="unit-name" id="name_btn_${vId}" onclick="${mapClick}">${nombreCamion}</span></div></td>`;
+                        tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}"><div class="d-flex align-items-center justify-content-center"><span class="unit-name" id="name_btn_${vId}" onclick="clickMapaUnidad('${vId}')">${nombreCamion}</span></div></td>`;
                         tds['col-operador'] = `<td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}"><div id="op_wialon_${vId}"><span class="badge bg-secondary w-100 mt-1" style="font-size:0.6rem;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</span></div></td>`;
                         tds['col-ruta'] = `<td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}"><div class="position-relative ps-2"><div style="position:absolute; left:4px; top:10px; bottom:10px; width:1.5px; background:var(--border-col);"></div><div class="d-flex align-items-center position-relative mb-1"><i class="fa-solid fa-circle text-primary position-absolute" style="left:-6px; font-size:6px;"></i><input class="input-ghost text-start ps-2" value="${v.origen||''}" placeholder="ORIGEN" onblur="db.ref('viajes_activos/${vId}/origen').set(this.value.toUpperCase())"></div><div class="d-flex align-items-center position-relative"><i class="fa-solid fa-location-dot text-danger position-absolute" style="left:-6px; font-size:8px;"></i><input class="input-ghost text-start ps-2" value="${v.destino||''}" placeholder="DESTINO" onblur="db.ref('viajes_activos/${vId}/destino').set(this.value.toUpperCase())"></div></div></td>`;
                         tds['col-contenedores'] = `<td class="col-contenedores align-middle ${hiddenCols['col-contenedores'] ? 'd-none' : ''}"><textarea class="input-ghost text-start" style="resize:none; min-height:40px;" placeholder="CONTENEDORES" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>`;
@@ -915,13 +949,11 @@
                         tds['col-alertas'] = `<td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}" id="alertas_${vId}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.85rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>'}</td>`;
                         tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}">${lastLog}</td>`;
                         
-                        // MENÚ DE ACCIÓN EN 3 PUNTITOS (BOTÓN WA SEPARADO)
                         tds['col-accion'] = `<td class="col-accion align-middle ${hiddenCols['col-accion'] ? 'd-none' : ''}">
-                            <div class="d-flex flex-column gap-1 align-items-center justify-content-center h-100">
+                            <div class="d-flex align-items-center justify-content-center gap-1 h-100">
                                 <div class="dropdown position-static">
                                     <button class="btn btn-light btn-sm shadow-sm border rounded-pill p-1 cp w-100" data-bs-toggle="dropdown" data-bs-boundary="window" title="Más Opciones"><i class="fa-solid fa-ellipsis-vertical mx-2"></i></button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 dropdown-menu-custom">
-                                        <li><a class="dropdown-item dropdown-item-custom text-success cp" onclick="enviarWA_directo('${vId}')"><i class="fa-brands fa-whatsapp me-2 fs-5 align-middle"></i> Enviar WhatsApp</a></li>
                                         <li><a class="dropdown-item dropdown-item-custom text-primary cp" onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')"><i class="fa-solid fa-pencil me-2 fs-5 align-middle"></i> Editar Viaje</a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item dropdown-item-custom text-danger cp" onclick="finalizarViaje('${vId}', '${nombreCamion}')"><i class="fa-solid fa-trash me-2 fs-5 align-middle"></i> Archivar Viaje</a></li>
@@ -948,19 +980,6 @@
         if (motorArrancado) inyectarGPSenTabla();
     }
 
-    function getHeadersRow(cId) {
-        let html = `<tr class="header-columnas shadow-sm client-group-${cId}">`;
-        let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
-        colOrder.forEach((c) => {
-            let titulo = columnasDef[c].titulo; let display = hiddenCols[c] ? 'd-none' : ''; let ancho = savedWidths[c] || columnasDef[c].ancho;
-            html += `<th class="${c} ${display} position-relative" style="width:${ancho}px; min-width:${ancho}px; max-width:${ancho}px;">
-                        <div class="d-flex justify-content-center align-items-center h-100 px-1"><span class="text-center">${titulo}</span></div>
-                        <div class="resizer" title="Arrastrar para cambiar tamaño"></div>
-                    </th>`;
-        });
-        return html + `</tr>`;
-    }
-
     function filtrarTablaInteligente() {
         let t = document.getElementById("buscador").value.toLowerCase(); let rows = Array.from(document.querySelectorAll("#units-body tr"));
         rows.forEach(r => { if(r.classList.contains("data-row")) r.style.display = (r.getAttribute("data-search") || "").includes(t) ? "" : "none"; });
@@ -977,55 +996,8 @@
         }
     }
 
-    // --- CREADOR DE CAPTURAS DE PANTALLA INTELIGENTE (NO CORTA TABLAS LARGAS) ---
-    async function generarCapturaCliente(cId, cliName) {
-        let tableWrap = document.getElementById('scrollContainer');
-        let allRows = document.querySelectorAll('#units-body tr');
-        let hiddenRows = [];
-        
-        allRows.forEach(r => {
-            if(!r.classList.contains(`client-group-${cId}`)) {
-                hiddenRows.push({el: r, display: r.style.display});
-                r.style.display = 'none';
-            }
-        });
-        
-        let oldHeight = tableWrap.style.height; let oldMaxHeight = tableWrap.style.maxHeight; let oldOverflow = tableWrap.style.overflow;
-        tableWrap.style.height = 'auto'; tableWrap.style.maxHeight = 'none'; tableWrap.style.overflow = 'visible';
-        let oldW = document.getElementById("mainTable").style.width; document.getElementById("mainTable").style.width = "max-content";
-
-        await new Promise(r => setTimeout(r, 400));
-        
-        try {
-            let canvas = await html2canvas(document.getElementById('mainTable'), { scale: 1.5, backgroundColor: '#f8fafc', useCORS: true });
-            let link = document.createElement('a');
-            link.download = `Estatus_${cliName.replace(/[^a-z0-9]/gi, '_')}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        } catch(e) { console.error(e); alert("Error al generar captura de pantalla."); } 
-        finally {
-            tableWrap.style.height = oldHeight; tableWrap.style.maxHeight = oldMaxHeight; tableWrap.style.overflow = oldOverflow;
-            document.getElementById("mainTable").style.width = oldW;
-            hiddenRows.forEach(item => item.el.style.display = item.display);
-        }
-    }
-
-    function abrirModalLog(uId, uName) {
-        document.getElementById("log_uid").value = uId; document.getElementById("log_uName").innerText = uName; document.getElementById("log_txt").value = "";
-        let logsObj = viajesActivos[uId]?.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
-        let html = logsArr.map(l => `<div class="mb-2 border-bottom pb-1"><div style="font-size:0.65rem; color:#6c757d; font-weight:bold; margin-bottom:1px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(l.t)}</div><b class="text-dark">${l.usr}:</b> <span class="text-primary">${l.act}</span> <span class="text-muted">${l.det||''}</span></div>`).join('');
-        document.getElementById("log_container").innerHTML = html || '<div class="text-muted text-center p-2 mt-3">Sin eventos.</div>'; new bootstrap.Modal(document.getElementById('modalLog')).show();
-    }
-    
-    function guardarLogManual() {
-        let uId = document.getElementById("log_uid").value, txt = document.getElementById("log_txt").value.toUpperCase(); if(!txt) return;
-        registrarLog(uId, "Agregó Nota", txt); try { bootstrap.Modal.getInstance(document.getElementById('modalLog')).hide(); } catch(e){}
-    }
-
-    // --- NUEVO SISTEMA BATCH (MÚLTIPLES UNIDADES) ---
+    // --- SISTEMA BATCH FLUIDO ---
     function prepararNuevoViaje() { 
-        let s = document.getElementById("nv_cliente"); 
-        
         let listCli = document.getElementById("list_clientes");
         if(!listCli) { listCli = document.createElement('datalist'); listCli.id="list_clientes"; document.body.appendChild(listCli); }
         listCli.innerHTML = Object.keys(dataClientes).map(k => `<option value="${dataClientes[k].nombre}">`).join('');
@@ -1038,6 +1010,7 @@
         document.getElementById("nv_cliente").value = ""; document.getElementById("nv_subcliente").value = "";
         document.getElementById("nv_filas_container").innerHTML = "";
         agregarFilaNV(); 
+        new bootstrap.Modal(document.getElementById('modalNuevoViaje')).show();
     }
 
     function agregarFilaNV() {
@@ -1075,11 +1048,9 @@
         let subName = document.getElementById("nv_subcliente").value.trim().toUpperCase();
         if(!cliName) return alert("Debes poner el nombre del Cliente.");
 
-        let cId = getClienteIdByName(cliName);
-        let sId = getSubclienteIdByName(cId, subName);
+        let cId = getClienteIdByName(cliName); let sId = getSubclienteIdByName(cId, subName);
 
-        // Crear On the Fly
-        if(cId === cliName) { let ref = db.ref('clientes').push({nombre: cliName, logo: ""}); cId = ref.key; }
+        if(cId === cliName && cliName !== "") { let ref = db.ref('clientes').push({nombre: cliName, logo: ""}); cId = ref.key; }
         if(sId === subName && subName !== "") { let ref = db.ref('clientes/'+cId+'/subclientes').push({nombre: subName}); sId = ref.key; }
         if(subName === "") sId = "N/A";
 
@@ -1106,15 +1077,14 @@
         });
         
         Promise.all(batchPromises).then(() => {
-            try{ bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); document.body.classList.remove('modal-open'); document.querySelectorAll('.modal-backdrop').forEach(el=>el.remove()); }catch(e){}
+            try{ bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); }catch(e){}
         });
     }
 
-    // CIERRE Y AUDITORÍA AUTOMÁTICA
     function finalizarViaje(id, n) { 
         if(confirm(`¿Archivar viaje de la unidad ${n}?`)) { 
             let v = viajesActivos[id];
-            if(v && !v.t_fin) { db.ref('viajes_activos/'+id+'/t_fin').set(Date.now()); registrarLog(id, "Marcó FINALIZADO", "Automático al archivar"); }
+            if(v && !v.t_fin) { db.ref('viajes_activos/'+id+'/t_fin').set(Date.now()); registrarLog(id, "Marcó FINALIZADO", "Automático"); }
             registrarLog(id, "FINALIZÓ VIAJE", "Se archiva registro"); 
             setTimeout(()=>db.ref('viajes_activos/'+id).remove(), 1000); 
         } 
@@ -1134,7 +1104,6 @@
 
     function guardarEdicionViaje() { 
         let uId = document.getElementById("edU_id").value; 
-        
         let cliName = document.getElementById("ed_cliente").value.trim().toUpperCase();
         let subName = document.getElementById("ed_subcliente").value.trim().toUpperCase();
         let cId = getClienteIdByName(cliName); let sId = getSubclienteIdByName(cId, subName);
