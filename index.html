@@ -24,24 +24,27 @@
         :root { --bg-main: #f8fafc; --bg-card: #ffffff; --text-main: #334155; --header-bg: #0f172a; --border-col: #e2e8f0; --accent: #3b82f6;}
         body.dark-mode { --bg-main: #0f172a; --bg-card: #1e293b; --text-main: #e2e8f0; --header-bg: #020617; --border-col: #334155; --accent: #60a5fa;}
         
-        /* BLOQUEO MAESTRO DE SCROLL EN BODY */
-        body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 0.75rem; transition: background 0.3s; margin: 0; padding: 0; height: 100vh; overflow: hidden !important; }
+        /* ESTRUCTURA FLEXBOX: BLOQUEO TOTAL DE DOBLE SCROLL */
+        body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 0.75rem; transition: background 0.3s; margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
         .login-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
         .login-card { background: var(--bg-card); color: var(--text-main); width: 380px; border-radius: 16px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);}
-        .header-bar { background: var(--bg-card); padding: 8px 16px; border-bottom: 1px solid var(--border-col); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         
-        /* LAYOUT LIMPIO CON UNA SOLA BARRA DE DESPLAZAMIENTO */
-        .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 71px); width: 100%; overflow: hidden; }
+        /* ENCABEZADO IMPONENTE */
+        .header-bar { background: var(--bg-card); padding: 12px 24px; border-bottom: 2px solid var(--border-col); box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0; }
+        
+        /* LAYOUT LIMPIO */
+        #dashboard { display: flex; flex-direction: column; height: 100%; width: 100%; }
+        .workspace-container { display: flex; flex-direction: column; flex-grow: 1; width: 100%; overflow: hidden; }
         .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--border-col); position: relative; flex-shrink: 0;}
-        .workspace-container.show-map .map-panel { height: 40%; border-bottom: 2px solid var(--accent); }
+        .workspace-container.show-map .map-panel { height: 40%; border-bottom: 3px solid var(--accent); }
         
-        .table-panel { display: flex; flex-direction: column; flex: 1; padding: 10px; overflow: hidden; }
-        .table-wrapper { flex: 1; overflow: auto; border-radius: 6px; padding-bottom: 40px; }
+        .table-panel { display: flex; flex-direction: column; flex-grow: 1; padding: 10px; overflow: hidden; }
+        .table-wrapper { flex-grow: 1; overflow: auto; border-radius: 6px; padding-bottom: 40px; }
         
         #map { width: 100%; height: 100%; z-index: 1;}
         
-        /* TABLA DE DISEÑO RÍGIDO (NO SE DEFORMA) */
+        /* TABLA DE DISEÑO RÍGIDO */
         .table-custom { width: 100%; border-collapse: separate; border-spacing: 0 3px; margin-top: 0; table-layout: fixed; min-width: 1400px;}
         
         .header-columnas th { 
@@ -50,9 +53,9 @@
         }
         .header-columnas th.drag-over { border-left: 3px solid #38bdf8; background: #1e293b; }
         
-        /* ICONOS DE ARRASTRE Y REDIMENSIONAMIENTO */
+        /* ICONOS DE ARRASTRE Y REDIMENSIONAMIENTO MEJORADOS */
         .drag-handle { cursor: grab; opacity: 0.5; padding: 2px 5px; } .drag-handle:active { cursor: grabbing; }
-        .resizer { position: absolute; right: 0; top: 0; width: 6px; height: 100%; cursor: col-resize; z-index: 1; background: transparent; transition: 0.2s; }
+        .resizer { position: absolute; right: -5px; top: 0; width: 10px; height: 100%; cursor: col-resize; z-index: 1; background: transparent; transition: 0.2s; }
         .resizer:hover, .resizing { background: var(--accent); opacity: 0.8; }
         
         /* CELDAS CORTADAS A LA MEDIDA */
@@ -72,15 +75,15 @@
         .stale-row td:first-child { border-left: 1px dashed #ef4444;} .stale-row td:last-child { border-right: 1px dashed #ef4444;}
         .dark-mode .stale-row td { background-color: rgba(153, 27, 27, 0.2) !important; border-color: #b91c1c; }
         
-        /* ENCABEZADOS JERÁRQUICOS */
+        /* ENCABEZADOS CLIENTE SEPARADOS Y LIMPIOS */
         .header-cliente td { background: var(--bg-main) !important; color: #0f172a !important; font-size: 1.5rem; font-weight: 900; padding: 25px 10px 5px 10px !important; text-transform: uppercase; border: none !important; border-bottom: 2px solid var(--border-col) !important; letter-spacing: -0.5px;}
         .dark-mode .header-cliente td { color: #f8fafc !important; }
-        .header-subcliente td { background: var(--bg-main) !important; color: #475569 !important; font-size: 1rem; font-weight: 800; padding: 10px 10px 5px 30px !important; border: none !important;}
+        .header-subcliente td { background: var(--bg-main) !important; color: #475569 !important; font-size: 1.1rem; font-weight: 800; padding: 10px 10px 5px 30px !important; border: none !important;}
         .dark-mode .header-subcliente td { color: #cbd5e1 !important; }
         
         /* LOGOS A MÁXIMA RESOLUCIÓN */
         .client-logo { height: 85px; max-width: 350px; object-fit: contain; vertical-align: middle; margin-right: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); background: white; padding: 6px; }
-        .client-logo-sub { height: 35px; max-width: 120px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; background: white; padding: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .client-logo-sub { height: 40px; max-width: 140px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; background: white; padding: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
         .input-ghost { border: 1px solid transparent; background: transparent; border-radius: 4px; padding: 2px 4px; width: 100%; font-size: 0.7rem; font-weight: 700; color: inherit; text-transform: uppercase; text-align: center; transition: all 0.2s; outline: none; }
         .input-ghost:hover { border-color: var(--border-col); background: rgba(255,255,255,0.8); }
@@ -91,7 +94,7 @@
         .status-select { border-radius: 12px; font-weight: 800; cursor: pointer; text-align: center; font-size: 0.65rem; padding: 2px 6px; background: transparent; border: 1.5px solid; outline: none; transition: all 0.2s; -webkit-appearance: none; appearance: none; height: 24px; width: 100%;}
         .status-select:hover { transform: scale(1.02); background-color: rgba(255,255,255,0.8); }
         
-        .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.05rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
+        .unit-name { cursor: pointer; color: #0ea5e9; font-weight: 900; font-size: 1.1rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
         .dark-mode .unit-name { color: #38bdf8; } .unit-name:hover { color: #0284c7; text-decoration: underline; }
         
         .wa-btn { background: #22c55e; color: white; padding: 3px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.65rem; transition: 0.3s; display: inline-block;}
@@ -101,9 +104,10 @@
         
         .speed-badge { font-size: 0.75rem; font-weight: 900; border-radius: 6px; padding: 2px 8px; text-align: center; color: white; display: inline-block; margin-bottom: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);}
         
-        /* CONTENEDOR DE DIRECCIÓN ANTI-DEFORMACIÓN */
+        /* UBICACIÓN COMPLETA SIN DEFORMAR LA TABLA */
         .addr-container { height: 42px; overflow-y: auto; overflow-x: hidden; white-space: normal; word-break: break-word; font-size: 0.70rem; line-height: 1.1; color: #0f172a; font-weight: 800; display: flex; align-items: center; justify-content: center; padding-right: 4px;}
         .dark-mode .addr-container { color: #e2e8f0; }
+        /* Scrollbar invisible pero funcional */
         .addr-container::-webkit-scrollbar { width: 3px; }
         .addr-container::-webkit-scrollbar-track { background: transparent; }
         .addr-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -113,11 +117,10 @@
         .addr-link:hover .addr-container { color: #0284c7; }
         
         .cp { cursor: pointer; }
-        .btn-modern { border-radius: 6px; font-weight: 700; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); padding-top: 2px !important; padding-bottom: 2px !important; margin-bottom: 2px !important;}
         
         @media (max-width: 768px) {
             .header-bar { flex-direction: column; gap: 10px; text-align: center; padding: 15px; }
-            .header-bar img { height: 40px !important; margin-bottom: 5px; }
+            .header-bar img { height: 60px !important; margin-bottom: 5px; }
             .client-logo { height: 50px; }
         }
     </style>
@@ -131,40 +134,43 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Multi-Host v25.0 (Resizer & Scroll Fixed)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Multi-Host v26.0 (Master Edition)</div>
     </div>
 </div>
 
 <div id="dashboard" style="display:none;">
     <div class="header-bar d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center">
-            <img src="TIGPS HD2.png" alt="Logo" style="height: 55px;" class="me-3">
+            <img src="TIGPS HD2.png" alt="Logo" style="height: 100px;" class="me-4">
             <div>
-                <h5 class="fw-bold m-0 text-primary" style="letter-spacing:-0.5px;">C4 - BITÁCORA GRUDICOM</h5>
-                <div class="text-muted fw-bold" id="lblUsuarioActivo" style="font-size: 11px;">Monitor: </div>
+                <h3 class="fw-bold m-0 text-primary" style="letter-spacing:-0.5px; font-size: 2rem;">GRUDICOM TI & GPS <span class="text-secondary opacity-50">| C4</span></h3>
+                <div class="text-muted fw-bold mt-1" id="lblUsuarioActivo" style="font-size: 0.85rem;"><i class="fa-solid fa-user-shield me-1"></i> Monitor: </div>
             </div>
         </div>
         <div class="btn-action-group">
             <div class="dropdown d-inline-block me-2">
-                <button class="btn btn-light btn-sm fw-bold dropdown-toggle border shadow-sm rounded-pill px-3 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                    <i class="fa-solid fa-gear text-primary"></i> Panel de Control
+                <button class="btn btn-light fw-bold dropdown-toggle border shadow-sm rounded-pill px-4 py-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                    <i class="fa-solid fa-gear text-primary me-1"></i> Panel de Control
                 </button>
-                <ul class="dropdown-menu shadow-lg border-0 rounded-4 p-2" style="font-size: 0.8rem; width: 220px;" id="colTogglerMenu">
+                <ul class="dropdown-menu shadow-lg border-0 rounded-4 p-2" style="font-size: 0.8rem; width: 250px;" id="colTogglerMenu">
                     <li><div class="px-3 py-2 fw-bold text-center text-dark bg-light rounded mb-2" id="menuSyncIndicator"><i class="fa-solid fa-satellite-dish text-primary"></i> Sincronizando...</div></li>
                     <li><hr class="dropdown-divider"></li>
                     <li class="px-3 py-1 fw-bold text-secondary" style="font-size:0.65rem;">SISTEMA</li>
-                    <li><a class="dropdown-item cp py-1" data-bs-toggle="modal" data-bs-target="#modalStatusTokens"><i class="fa-solid fa-key me-2 text-warning"></i> Tokens Wialon</a></li>
-                    <li><a class="dropdown-item cp py-1" onclick="resetColumnas()"><i class="fa-solid fa-arrows-rotate me-2 text-info"></i> Restaurar Columnas</a></li>
-                    <li><a class="dropdown-item cp py-1" id="btnAdminMenu" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalAdmin"><i class="fa-solid fa-user-shield me-2 text-danger"></i> Admin DB</a></li>
+                    <li><a class="dropdown-item cp py-2" data-bs-toggle="modal" data-bs-target="#modalStatusTokens"><i class="fa-solid fa-key me-2 text-warning"></i> Tokens Wialon</a></li>
+                    
+                    <li><div class="dropdown-item py-2"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" id="toggleDrag" onchange="toggleDragCols(this.checked)"><label class="form-check-label fw-bold cp text-info" for="toggleDrag">Mover Columnas</label></div></div></li>
+                    
+                    <li><a class="dropdown-item cp py-2" onclick="resetColumnas()"><i class="fa-solid fa-arrows-rotate me-2 text-secondary"></i> Restaurar Tabla Original</a></li>
+                    <li><a class="dropdown-item cp py-2" id="btnAdminMenu" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalAdmin"><i class="fa-solid fa-user-shield me-2 text-danger"></i> Admin Base de Datos</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li class="px-3 py-1 fw-bold text-secondary" style="font-size:0.65rem;">COLUMNAS VISIBLES</li>
                     <div id="column-toggles"></div>
                 </ul>
             </div>
-            <button class="btn btn-info btn-sm fw-bold me-1 text-dark shadow-sm rounded-pill px-3 py-1" onclick="toggleMap()"><i class="fa-solid fa-map"></i> Mapa</button>
-            <button class="btn btn-dark btn-sm fw-bold me-1 shadow-sm rounded-circle" style="width:28px; height:28px; padding:0;" onclick="toggleDarkMode()"><i class="fa-solid fa-moon" style="font-size:10px;"></i></button>
-            <button class="btn btn-primary btn-sm fw-bold me-1 shadow-sm rounded-pill px-3 py-1" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-truck-fast me-1"></i> Añadir</button>
-            <button class="btn btn-outline-danger btn-sm fw-bold rounded-pill px-3 py-1" onclick="cerrarSesion()"><i class="fa-solid fa-power-off"></i></button>
+            <button class="btn btn-info fw-bold me-1 text-dark shadow-sm rounded-pill px-3 py-2" onclick="toggleMap()"><i class="fa-solid fa-map me-1"></i> Mapa</button>
+            <button class="btn btn-dark fw-bold me-1 shadow-sm rounded-circle" style="width:38px; height:38px; padding:0;" onclick="toggleDarkMode()"><i class="fa-solid fa-moon"></i></button>
+            <button class="btn btn-primary fw-bold me-1 shadow-sm rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalNuevoViaje" onclick="prepararNuevoViaje()"><i class="fa-solid fa-truck-fast me-2"></i> Nuevo Viaje</button>
+            <button class="btn btn-outline-danger fw-bold rounded-pill px-3 py-2" onclick="cerrarSesion()"><i class="fa-solid fa-power-off"></i></button>
         </div>
     </div>
 
@@ -172,12 +178,29 @@
         <div class="map-panel"><div id="map"></div></div>
         <div class="table-panel">
             <div class="row align-items-center mb-2 flex-shrink-0">
-                <div class="col-md-5"><input type="text" id="buscador" class="form-control form-control-sm border-0 shadow-sm rounded-pill px-3 py-1" placeholder="🔍 Buscar unidad, operador, ruta o estatus..." onkeyup="filtrarTablaInteligente()"></div>
+                <div class="col-md-5"><input type="text" id="buscador" class="form-control border-secondary shadow-sm rounded-pill px-4 py-2" placeholder="🔍 Buscar unidad, operador, cliente o ruta..." onkeyup="filtrarTablaInteligente()"></div>
             </div>
             <div class="table-wrapper" id="scrollContainer">
                 <table class="table-custom text-center" id="mainTable">
                     <tbody id="units-body"></tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAcciones" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-gear me-2"></i> OPCIONES: <span id="acc_uName" class="text-info"></span></h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light rounded-bottom-4 p-4 d-flex flex-column gap-3">
+                <input type="hidden" id="acc_vId">
+                <button class="btn btn-success fw-bold py-2 shadow-sm" onclick="ejecutarAccion('wa')"><i class="fa-brands fa-whatsapp me-2 fs-5 align-middle"></i> Enviar WhatsApp</button>
+                <button class="btn btn-primary fw-bold py-2 shadow-sm" onclick="ejecutarAccion('edit')"><i class="fa-solid fa-pencil me-2 fs-5 align-middle"></i> Editar Viaje</button>
+                <button class="btn btn-danger fw-bold py-2 shadow-sm" onclick="ejecutarAccion('arch')"><i class="fa-solid fa-trash me-2 fs-5 align-middle"></i> Archivar Viaje</button>
             </div>
         </div>
     </div>
@@ -206,15 +229,15 @@
 
     // --- MOTOR DE COLUMNAS DRAG & RESIZE ---
     const columnasDef = {
-        'col-unidad': { titulo: 'UNIDAD', ancho: '110px' },
+        'col-unidad': { titulo: 'UNIDAD', ancho: '120px' },
         'col-operador': { titulo: 'OPERADOR GPS', ancho: '150px' },
-        'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '150px' },
-        'col-contenedores': { titulo: 'CONTENEDORES', ancho: '110px' },
-        'col-horarios': { titulo: 'HORARIOS', ancho: '115px' },
-        'col-estatus': { titulo: 'ESTATUS', ancho: '120px' },
-        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '350px' },
-        'col-alertas': { titulo: 'ALERTAS', ancho: '70px' },
-        'col-historial': { titulo: 'HISTORIAL', ancho: '160px' },
+        'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '160px' },
+        'col-contenedores': { titulo: 'CONTENEDORES', ancho: '120px' },
+        'col-horarios': { titulo: 'HORARIOS', ancho: '120px' },
+        'col-estatus': { titulo: 'ESTATUS', ancho: '130px' },
+        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '350px' }, // COLUMNA EXTRA GRANDE
+        'col-alertas': { titulo: 'ALERTAS', ancho: '80px' },
+        'col-historial': { titulo: 'HISTORIAL LOG', ancho: '180px' },
         'col-accion': { titulo: '<i class="fa-solid fa-gear"></i>', ancho: '50px' }
     };
     
@@ -289,7 +312,6 @@
         return (new Date(unixMillis - tzoffset)).toISOString().slice(0, 16);
     }
     
-    // CÁLCULO DE DÍAS Y HORAS PARA CAMIONES ZOMBIE
     function timeAgo(unixSecs) {
         if(!unixSecs) return "N/A"; let diff = Math.floor(Date.now()/1000) - unixSecs;
         if(diff < 60) return `${diff}s`; if(diff < 3600) return `${Math.floor(diff/60)}m`;
@@ -320,11 +342,15 @@
         localStorage.removeItem('tms_colOrder'); localStorage.removeItem('tms_hiddenCols'); localStorage.removeItem('tms_colWidths'); location.reload();
     }
 
-    // EVENTOS DRAG AND DROP
+    // --- LOGICA DE ARRASTRE DE COLUMNAS (Opcional por Switch) ---
+    let dragColsEnabled = false;
+    function toggleDragCols(enabled) { dragColsEnabled = enabled; renderizarBitacora(); } // Reconstruye los headers
+    
     let draggedColIndex = null;
     function dragColStart(e, idx) { draggedColIndex = idx; e.dataTransfer.effectAllowed = 'move'; }
-    function dragColOver(e, idx) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; document.querySelectorAll('.header-columnas th').forEach(th => th.classList.remove('drag-over')); e.currentTarget.classList.add('drag-over');}
+    function dragColOver(e, idx) { if(!dragColsEnabled) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; document.querySelectorAll('.header-columnas th').forEach(th => th.classList.remove('drag-over')); e.currentTarget.classList.add('drag-over');}
     function dropCol(e, targetIdx) {
+        if(!dragColsEnabled) return;
         e.preventDefault(); e.currentTarget.classList.remove('drag-over');
         if(draggedColIndex === null || draggedColIndex === targetIdx) return;
         let item = colOrder.splice(draggedColIndex, 1)[0];
@@ -333,7 +359,7 @@
         renderizarBitacora(); 
     }
 
-    // SCRIPT MODERNO DE RESIZE PARA COLUMNAS
+    // --- SCRIPT DE REDIMENSIONAMIENTO (Siempre activo) ---
     let isResizing = false; let currentTh = null; let startX = 0; let startWidth = 0;
     document.addEventListener('mousedown', function(e) {
         if (e.target.classList.contains('resizer')) {
@@ -343,7 +369,7 @@
     });
     document.addEventListener('mousemove', function(e) {
         if (isResizing && currentTh) {
-            let newWidth = Math.max(50, startWidth + (e.pageX - startX));
+            let newWidth = Math.max(60, startWidth + (e.pageX - startX));
             let colClass = Array.from(currentTh.classList).find(c => c.startsWith('col-'));
             document.querySelectorAll('.' + colClass).forEach(el => {
                 el.style.width = newWidth + 'px'; el.style.minWidth = newWidth + 'px'; el.style.maxWidth = newWidth + 'px';
@@ -364,18 +390,20 @@
         }
     });
 
-    // GENERADOR ÚNICO DE ENCABEZADOS
     function getHeadersRow() {
         let html = `<tr class="header-columnas shadow-sm">`;
         let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
         colOrder.forEach((c, i) => {
             let titulo = columnasDef[c].titulo; let display = hiddenCols[c] ? 'd-none' : ''; let ancho = savedWidths[c] || columnasDef[c].ancho;
-            html += `<th class="${c} ${display} position-relative" style="width:${ancho}; min-width:${ancho}; max-width:${ancho};" draggable="true" ondragstart="dragColStart(event, ${i})" ondragover="dragColOver(event, ${i})" ondrop="dropCol(event, ${i})">
-                        <div class="d-flex justify-content-between align-items-center h-100 px-1">
-                            <span class="w-100 text-center">${titulo}</span>
-                            <i class="fa-solid fa-grip-vertical drag-handle mx-1"></i>
+            let dragIcon = dragColsEnabled ? `<i class="fa-solid fa-grip-vertical drag-handle mx-1"></i>` : '';
+            let dragAttr = dragColsEnabled ? `draggable="true" ondragstart="dragColStart(event, ${i})" ondragover="dragColOver(event, ${i})" ondrop="dropCol(event, ${i})"` : '';
+            
+            html += `<th class="${c} ${display} position-relative" style="width:${ancho}; min-width:${ancho}; max-width:${ancho};" ${dragAttr}>
+                        <div class="d-flex justify-content-center align-items-center h-100 px-1">
+                            <span class="text-center">${titulo}</span>
+                            ${dragIcon}
                         </div>
-                        <div class="resizer"></div>
+                        <div class="resizer" title="Arrastrar para cambiar tamaño"></div>
                     </th>`;
         });
         return html + `</tr>`;
@@ -462,6 +490,24 @@
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
 
+    // MODAL DE ACCIONES PARA REEMPLAZAR EL DROPDOWN (CERO PARPADEOS)
+    function abrirModalAcciones(vId, uName) {
+        document.getElementById("acc_vId").value = vId;
+        document.getElementById("acc_uName").innerText = uName;
+        new bootstrap.Modal(document.getElementById('modalAcciones')).show();
+    }
+    
+    function ejecutarAccion(tipo) {
+        let vId = document.getElementById("acc_vId").value;
+        let uName = document.getElementById("acc_uName").innerText;
+        try { bootstrap.Modal.getInstance(document.getElementById('modalAcciones')).hide(); } catch(e){}
+        setTimeout(() => {
+            if(tipo === 'wa') enviarWA(vId);
+            else if(tipo === 'edit') abrirEdicionViaje(vId, uName);
+            else if(tipo === 'arch') finalizarViaje(vId, uName);
+        }, 300);
+    }
+
     window.onload = function () {
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
         inicializarMenuColumnas();
@@ -484,7 +530,7 @@
             if(user && user.pass === p) {
                 currentUser = user; localStorage.setItem("tms_user", u); localStorage.setItem("tms_pass", p);
                 document.getElementById("loginOverlay").style.display = "none"; document.getElementById("dashboard").style.display = "block";
-                document.getElementById("lblUsuarioActivo").innerText = "Monitor: " + currentUser.nom;
+                document.getElementById("lblUsuarioActivo").innerHTML = "<i class='fa-solid fa-user-shield me-1'></i> Monitor: " + currentUser.nom;
                 if(currentUser.rol === "admin") document.getElementById("btnAdminMenu").style.display = "block";
                 if(!motorArrancado) arranqueMotor();
             } else { document.getElementById("status").innerText = "Credenciales Incorrectas"; document.getElementById("status").className = "mt-3 small fw-bold text-danger"; }
@@ -589,9 +635,8 @@
                 let pos = uData ? uData.pos : null; let speed = pos ? pos.s : 0; 
                 let isLost = !uData || (uData && !pos && !isExternal);
                 
-                // CÁLCULO CAMIÓN ZOMBIE (> 4 HRS)
                 let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0;
-                let isStale = ageSecs > 14400; 
+                let isStale = ageSecs > 14400; // 4 hrs 
                 
                 let row = document.getElementById("row_" + vId);
                 if(row) {
@@ -603,7 +648,7 @@
                 let elIcon = document.getElementById("icon_" + vId); let elSpeed = document.getElementById("speed_" + vId);
                 if(elIcon && elSpeed) {
                     if (isExternal) {
-                        elIcon.innerHTML = '<i class="fa-solid fa-globe text-info me-1" style="font-size:0.75rem;" title="Externa"></i>';
+                        elIcon.innerHTML = '<i class="fa-solid fa-globe text-info me-1" style="font-size:0.75rem;" title="Plataforma Externa"></i>';
                         elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
                     } else if (isLost) {
                         elIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1" style="font-size:0.75rem;"></i>';
@@ -626,6 +671,14 @@
                     }
                 }
 
+                // INYECCIÓN DE CLIC AL MAPA (Corregido)
+                let btnName = document.getElementById("name_btn_" + vId);
+                if (btnName && pos && pos.y && pos.x) {
+                    btnName.setAttribute("onclick", `centrarUnidadMapa(${pos.y}, ${pos.x})`);
+                } else if (btnName) {
+                    btnName.setAttribute("onclick", `centrarUnidadMapa(null, null)`);
+                }
+
                 let wialonDriverObj = uData ? uData.choferObj : null;
                 let elOpWialon = document.getElementById("op_wialon_" + vId);
                 if (elOpWialon) {
@@ -640,13 +693,12 @@
                     }
                 }
 
-                // DIRECCIÓN COMPLETAMENTE VISIBLE PERO EN CONTENEDOR FIJO
                 let elAddrControl = document.getElementById("addr_control_" + vId);
                 if(elAddrControl) {
                     if (isLost || isExternal) {
                         let textExt = isExternal ? '<i class="fa-solid fa-globe"></i> EXTERNO' : '<i class="fa-solid fa-satellite-dish"></i> SIN SEÑAL';
                         let classExt = isExternal ? 'text-info' : 'text-danger';
-                        elAddrControl.innerHTML = `<div class="d-flex align-items-center justify-content-center"><span class="${classExt} fw-bold" style="font-size:0.65rem;">${textExt}</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar manual" onclick="editarUbicacionManual('${vId}')"></i></div><div style="font-size:0.7rem; color:#0f172a; font-weight:800; line-height:1;" class="text-wrap mt-1">${v.ubicacion_manual||'--'}</div>`;
+                        elAddrControl.innerHTML = `<div class="d-flex align-items-center justify-content-center"><span class="${classExt} fw-bold" style="font-size:0.65rem;">${textExt}</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar manual" onclick="editarUbicacionManual('${vId}')"></i></div><div class="addr-container mt-1">${v.ubicacion_manual||'--'}</div>`;
                     } else {
                         let mapsLink = `https://www.google.com/maps?q=${pos.y},${pos.x}`;
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
@@ -729,7 +781,6 @@
         for(let cId in tree) {
             let cliName = "SIN CLIENTE"; if (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].nombre) cliName = dataClientes[cId].nombre;
             
-            // CHEQUEO PARA SABER SI EL CLIENTE TIENE AL MENOS 1 VIAJE EN SUS SUBCLIENTES
             let hasClientUnits = false;
             for(let sId in tree[cId]) { if(tree[cId][sId].length > 0) { hasClientUnits = true; break; } }
             if(!hasClientUnits) continue;
@@ -747,12 +798,12 @@
                 if(tree[cId][sId].length === 0) continue;
                 let subName = ""; if (sId !== "N/A" && dataClientes[cId] && dataClientes[cId].subclientes && dataClientes[cId].subclientes[sId]) subName = dataClientes[cId].subclientes[sId].nombre || "";
                 
+                // INYECCIÓN DE LOGO MINIATURA AL LADO DEL SUBCLIENTE
                 let logoHtmlSub = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo-sub" title="${cliName}">` : '';
                 let btnWaSub = sId !== "N/A" ? `<button class="btn btn-outline-primary bg-white btn-sm py-0 px-2 mt-0 float-end shadow-sm rounded-pill" style="font-size:0.65rem;" onclick="generarReporteGrupal('${cId}', '${sId}', '${cliName} -> ${subName}')"><i class="fa-brands fa-whatsapp"></i> Reporte Subcliente</button>` : '';
                 
                 if(sId !== "N/A" && subName !== "") html += `<tr class="header-subcliente"><td colspan="${colOrder.length}">↳ ${logoHtmlSub} Subcliente: ${subName} ${btnWaSub}</td></tr>`;
                 
-                // INSERTAMOS LOS ENCABEZADOS JUSTO AQUÍ, DEBAJO DEL TITULO (Sin empalmes)
                 html += getHeadersRow();
 
                 tree[cId][sId].sort((a, b) => { let estA = String(a.v.estatus || ""); let estB = String(b.v.estatus || ""); return estA.localeCompare(estB); });
@@ -768,9 +819,11 @@
 
                         let searchData = `${nombreCamion} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${v.operador||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                         let optionsHtml = Object.keys(window.estatusData).map(k=>`<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`).join('');
+                        
+                        let mapClick = (uData && uData.pos && uData.pos.y) ? `centrarUnidadMapa(${uData.pos.y}, ${uData.pos.x})` : `centrarUnidadMapa(null, null)`;
 
                         let tds = {};
-                        tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}"><div class="d-flex align-items-center justify-content-center"><span class="unit-name" id="name_btn_${vId}" onclick="centrarUnidadMapa(null, null)">${nombreCamion}</span></div></td>`;
+                        tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}"><div class="d-flex align-items-center justify-content-center"><span class="unit-name" id="name_btn_${vId}" onclick="${mapClick}">${nombreCamion}</span></div></td>`;
                         tds['col-operador'] = `<td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}"><div id="op_wialon_${vId}"><span class="badge bg-secondary w-100 mt-1" style="font-size:0.6rem;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</span></div></td>`;
                         tds['col-ruta'] = `<td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}"><div class="position-relative ps-2"><div style="position:absolute; left:4px; top:10px; bottom:10px; width:1.5px; background:var(--border-col);"></div><div class="d-flex align-items-center position-relative mb-1"><i class="fa-solid fa-circle text-primary position-absolute" style="left:-6px; font-size:6px;"></i><input class="input-ghost text-start ps-2" value="${v.origen||''}" placeholder="ORIGEN" onblur="db.ref('viajes_activos/${vId}/origen').set(this.value.toUpperCase())"></div><div class="d-flex align-items-center position-relative"><i class="fa-solid fa-location-dot text-danger position-absolute" style="left:-6px; font-size:8px;"></i><input class="input-ghost text-start ps-2" value="${v.destino||''}" placeholder="DESTINO" onblur="db.ref('viajes_activos/${vId}/destino').set(this.value.toUpperCase())"></div></div></td>`;
                         tds['col-contenedores'] = `<td class="col-contenedores align-middle ${hiddenCols['col-contenedores'] ? 'd-none' : ''}"><textarea class="input-ghost text-start" style="resize:none; min-height:40px;" placeholder="CONTENEDORES" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>`;
@@ -780,19 +833,17 @@
                         tds['col-alertas'] = `<td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.7rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.7rem;">OK</span>'}</td>`;
                         tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}"><div class="d-flex flex-column justify-content-between h-100">${lastLog}<button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-1 shadow-sm rounded-pill" style="font-size:0.6rem;" onclick="abrirModalLog('${vId}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Historial</button></div></td>`;
                         
+                        // EL BOTÓN ABRE EL MODAL CENTRAL (NO PARPADEA NUNCA MÁS)
                         tds['col-accion'] = `<td class="col-accion align-middle ${hiddenCols['col-accion'] ? 'd-none' : ''}">
-                            <div class="dropdown position-static">
-                                <button class="btn btn-light btn-sm shadow-sm border rounded-pill dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false" title="Opciones"><i class="fa-solid fa-ellipsis-vertical mx-2"></i></button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3">
-                                    <li><a class="dropdown-item text-success fw-bold cp py-2" onclick="enviarWA('${vId}')"><i class="fa-brands fa-whatsapp me-2 fs-5 align-middle"></i> Enviar WhatsApp</a></li>
-                                    <li><a class="dropdown-item text-primary fw-bold cp py-2" onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')"><i class="fa-solid fa-pencil me-2 fs-5 align-middle"></i> Editar Viaje</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger fw-bold cp py-2" onclick="finalizarViaje('${vId}', '${nombreCamion}')"><i class="fa-solid fa-trash me-2 fs-5 align-middle"></i> Archivar Viaje</a></li>
-                                </ul>
-                            </div>
+                            <button class="btn btn-light btn-sm shadow-sm border rounded-pill p-1 cp" title="Opciones" onclick="abrirModalAcciones('${vId}', '${nombreCamion}')"><i class="fa-solid fa-ellipsis-vertical mx-2"></i></button>
                         </td>`;
 
-                        let trInner = colOrder.map(c => tds[c]).join('');
+                        let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
+                        let trInner = colOrder.map(c => {
+                            let ancho = savedWidths[c] || columnasDef[c].ancho;
+                            return tds[c].replace('class="', `style="width:${ancho}; min-width:${ancho}; max-width:${ancho};" class="`);
+                        }).join('');
+                        
                         let trClass = isExternal ? 'external-connection-row data-row' : 'needs-gps-update data-row';
                         html += `<tr class="${trClass}" id="row_${vId}" data-search="${searchData}" style="background-color: ${rowBg} !important;">${trInner}</tr>`;
 
@@ -809,16 +860,13 @@
         let t = document.getElementById("buscador").value.toLowerCase(); let rows = Array.from(document.querySelectorAll("#units-body tr"));
         rows.forEach(r => { if(r.classList.contains("data-row")) r.style.display = (r.getAttribute("data-search") || "").includes(t) ? "" : "none"; });
         
-        let currentSubclientVisible = false; let currentClientVisible = false;
-        // Lectura de Abajo hacia Arriba para un filtro perfecto
+        let visSub = 0, visCli = 0;
         for (let i = rows.length - 1; i >= 0; i--) {
             let r = rows[i];
-            if (r.classList.contains("data-row")) { 
-                if (r.style.display !== "none") { currentSubclientVisible = true; currentClientVisible = true; } 
-            } 
-            else if (r.classList.contains("header-columnas")) { r.style.display = currentSubclientVisible ? "" : "none"; }
-            else if (r.classList.contains("header-subcliente")) { r.style.display = currentSubclientVisible ? "" : "none"; currentSubclientVisible = false; } 
-            else if (r.classList.contains("header-cliente")) { r.style.display = currentClientVisible ? "" : "none"; currentClientVisible = false; currentSubclientVisible = false; }
+            if (r.classList.contains("data-row")) { if (r.style.display !== "none") { visSub++; visCli++; } } 
+            else if (r.classList.contains("header-columnas")) { r.style.display = visSub > 0 ? "" : "none"; }
+            else if (r.classList.contains("header-subcliente")) { r.style.display = visSub > 0 ? "" : "none"; visSub = 0; } 
+            else if (r.classList.contains("header-cliente")) { r.style.display = visCli > 0 ? "" : "none"; visCli = 0; visSub = 0; }
         }
     }
 
