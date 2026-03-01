@@ -24,40 +24,47 @@
         :root { --bg-main: #f8fafc; --bg-card: #ffffff; --text-main: #334155; --header-bg: #0f172a; --border-col: #e2e8f0; --accent: #3b82f6;}
         body.dark-mode { --bg-main: #0f172a; --bg-card: #1e293b; --text-main: #e2e8f0; --header-bg: #020617; --border-col: #334155; --accent: #60a5fa;}
         
-        body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 0.75rem; transition: background 0.3s; margin: 0; overflow-x: hidden; height: 100vh;}
+        /* BLOQUEO MAESTRO DE SCROLL EN BODY */
+        body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 0.75rem; transition: background 0.3s; margin: 0; padding: 0; height: 100vh; overflow: hidden !important; }
         
-        /* LOGIN & HEADER */
         .login-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
         .login-card { background: var(--bg-card); color: var(--text-main); width: 380px; border-radius: 16px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);}
         .header-bar { background: var(--bg-card); padding: 8px 16px; border-bottom: 1px solid var(--border-col); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         
-        /* WORKSPACE & LAYOUT LIMPIO (SIN DOBLE SCROLL) */
-        .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 70px); width: 100%; overflow: hidden; }
-        .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--border-col); position: relative;}
+        /* LAYOUT LIMPIO CON UNA SOLA BARRA DE DESPLAZAMIENTO */
+        .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 71px); width: 100%; overflow: hidden; }
+        .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--border-col); position: relative; flex-shrink: 0;}
         .workspace-container.show-map .map-panel { height: 40%; border-bottom: 2px solid var(--accent); }
-        .table-panel { display: flex; flex-direction: column; flex: 1; width: 100%; padding: 10px; overflow: hidden; }
-        .table-wrapper { flex: 1; overflow: auto; background: transparent; border-radius: 6px; }
+        
+        .table-panel { display: flex; flex-direction: column; flex: 1; padding: 10px; overflow: hidden; }
+        .table-wrapper { flex: 1; overflow: auto; border-radius: 6px; padding-bottom: 40px; }
+        
         #map { width: 100%; height: 100%; z-index: 1;}
         
-        /* TABLA ESTRICTA (No cambia de tamaño al actualizar) */
-        .table-custom { width: 100%; border-collapse: separate; border-spacing: 0 3px; margin-top: 0; table-layout: fixed; min-width: 1480px;}
+        /* TABLA DE DISEÑO RÍGIDO (NO SE DEFORMA) */
+        .table-custom { width: 100%; border-collapse: separate; border-spacing: 0 3px; margin-top: 0; table-layout: fixed; min-width: 1400px;}
         
         .header-columnas th { 
             background: var(--header-bg); color: #f8fafc; font-size: 0.65rem; font-weight: 800; text-align: center; vertical-align: middle; padding: 6px 4px; text-transform: uppercase; letter-spacing: 0.05em;
-            position: sticky; top: 0; z-index: 10; border-bottom: 3px solid var(--accent);
-            overflow: hidden; white-space: nowrap; user-select: none;
+            position: sticky; top: 0; z-index: 10; border-bottom: 3px solid var(--accent); white-space: nowrap; user-select: none;
         }
         .header-columnas th.drag-over { border-left: 3px solid #38bdf8; background: #1e293b; }
-        .drag-handle { cursor: grab; opacity: 0.5; padding: 2px 5px; } .drag-handle:active { cursor: grabbing; }
         
+        /* ICONOS DE ARRASTRE Y REDIMENSIONAMIENTO */
+        .drag-handle { cursor: grab; opacity: 0.5; padding: 2px 5px; } .drag-handle:active { cursor: grabbing; }
+        .resizer { position: absolute; right: 0; top: 0; width: 6px; height: 100%; cursor: col-resize; z-index: 1; background: transparent; transition: 0.2s; }
+        .resizer:hover, .resizing { background: var(--accent); opacity: 0.8; }
+        
+        /* CELDAS CORTADAS A LA MEDIDA */
         .data-row td { 
-            background: transparent !important; padding: 4px 6px; vertical-align: middle; border-top: 1px solid var(--border-col); border-bottom: 1px solid var(--border-col); transition: all 0.2s ease; overflow: hidden; text-overflow: ellipsis;
+            background: transparent !important; padding: 4px 6px; vertical-align: middle; border-top: 1px solid var(--border-col); border-bottom: 1px solid var(--border-col); transition: all 0.2s ease; overflow: hidden;
         }
         .data-row td:first-child { border-left: 1px solid var(--border-col); border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
         .data-row td:last-child { border-right: 1px solid var(--border-col); border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
         .data-row:hover td { background: rgba(255,255,255,0.6) !important; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.1); transform: translateY(-1px); }
         .dark-mode .data-row:hover td { background: rgba(0,0,0,0.3) !important; }
         
+        /* ALERTAS DE CONEXIÓN Y ZOMBIES */
         .lost-connection-row { outline: 1px dashed #ef4444; outline-offset: -1px; border-radius: 6px;}
         .external-gps-cell { background-color: rgba(14, 165, 233, 0.12) !important; border: 1px dashed #0ea5e9 !important; border-radius: 6px; }
         
@@ -65,15 +72,15 @@
         .stale-row td:first-child { border-left: 1px dashed #ef4444;} .stale-row td:last-child { border-right: 1px dashed #ef4444;}
         .dark-mode .stale-row td { background-color: rgba(153, 27, 27, 0.2) !important; border-color: #b91c1c; }
         
-        /* ENCABEZADOS CLIENTE GRANDES Y SEPARADOS */
+        /* ENCABEZADOS JERÁRQUICOS */
         .header-cliente td { background: var(--bg-main) !important; color: #0f172a !important; font-size: 1.5rem; font-weight: 900; padding: 25px 10px 5px 10px !important; text-transform: uppercase; border: none !important; border-bottom: 2px solid var(--border-col) !important; letter-spacing: -0.5px;}
         .dark-mode .header-cliente td { color: #f8fafc !important; }
         .header-subcliente td { background: var(--bg-main) !important; color: #475569 !important; font-size: 1rem; font-weight: 800; padding: 10px 10px 5px 30px !important; border: none !important;}
         .dark-mode .header-subcliente td { color: #cbd5e1 !important; }
         
-        /* LOGOS */
+        /* LOGOS A MÁXIMA RESOLUCIÓN */
         .client-logo { height: 85px; max-width: 350px; object-fit: contain; vertical-align: middle; margin-right: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); background: white; padding: 6px; }
-        .client-logo-sub { height: 30px; max-width: 100px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; background: white; padding: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .client-logo-sub { height: 35px; max-width: 120px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; background: white; padding: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
         .input-ghost { border: 1px solid transparent; background: transparent; border-radius: 4px; padding: 2px 4px; width: 100%; font-size: 0.7rem; font-weight: 700; color: inherit; text-transform: uppercase; text-align: center; transition: all 0.2s; outline: none; }
         .input-ghost:hover { border-color: var(--border-col); background: rgba(255,255,255,0.8); }
@@ -89,22 +96,28 @@
         
         .wa-btn { background: #22c55e; color: white; padding: 3px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.65rem; transition: 0.3s; display: inline-block;}
         .wa-btn:hover { background: #16a34a; color: white; transform: scale(1.05); }
-        .badge-geo { background: #f8fafc; color: #15803d; font-weight: 700; padding: 2px 6px; border-radius: 4px; border: 1px dashed #22c55e; font-size: 0.6rem;}
+        .badge-geo { background: #f8fafc; color: #15803d; font-weight: 700; padding: 2px 6px; border-radius: 4px; border: 1px dashed #22c55e; font-size: 0.65rem;}
         .dark-mode .badge-geo { background: #064e3b; color: #4ade80; border-color: #22c55e; }
         
         .speed-badge { font-size: 0.75rem; font-weight: 900; border-radius: 6px; padding: 2px 8px; text-align: center; color: white; display: inline-block; margin-bottom: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);}
         
-        .addr-link { font-size: 0.75rem; line-height: 1.2; color: #0f172a; text-decoration: none; display: block; width: 100%; font-weight: 800; transition: 0.2s;}
-        .dark-mode .addr-link { color: #e2e8f0; } .addr-link:hover { text-decoration: underline; color: #0284c7; }
+        /* CONTENEDOR DE DIRECCIÓN ANTI-DEFORMACIÓN */
+        .addr-container { height: 42px; overflow-y: auto; overflow-x: hidden; white-space: normal; word-break: break-word; font-size: 0.70rem; line-height: 1.1; color: #0f172a; font-weight: 800; display: flex; align-items: center; justify-content: center; padding-right: 4px;}
+        .dark-mode .addr-container { color: #e2e8f0; }
+        .addr-container::-webkit-scrollbar { width: 3px; }
+        .addr-container::-webkit-scrollbar-track { background: transparent; }
+        .addr-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark-mode .addr-container::-webkit-scrollbar-thumb { background: #475569; }
+        
+        .addr-link { text-decoration: none; display: block; width: 100%; transition: 0.2s;}
+        .addr-link:hover .addr-container { color: #0284c7; }
         
         .cp { cursor: pointer; }
         .btn-modern { border-radius: 6px; font-weight: 700; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); padding-top: 2px !important; padding-bottom: 2px !important; margin-bottom: 2px !important;}
         
-        /* MÓVIL */
         @media (max-width: 768px) {
             .header-bar { flex-direction: column; gap: 10px; text-align: center; padding: 15px; }
             .header-bar img { height: 40px !important; margin-bottom: 5px; }
-            .btn-action-group { margin-top: 10px; }
             .client-logo { height: 50px; }
         }
     </style>
@@ -118,7 +131,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Multi-Host v24.0 (Sin Empalmes)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Multi-Host v25.0 (Resizer & Scroll Fixed)</div>
     </div>
 </div>
 
@@ -141,7 +154,7 @@
                     <li><hr class="dropdown-divider"></li>
                     <li class="px-3 py-1 fw-bold text-secondary" style="font-size:0.65rem;">SISTEMA</li>
                     <li><a class="dropdown-item cp py-1" data-bs-toggle="modal" data-bs-target="#modalStatusTokens"><i class="fa-solid fa-key me-2 text-warning"></i> Tokens Wialon</a></li>
-                    <li><a class="dropdown-item cp py-1" onclick="resetColumnas()"><i class="fa-solid fa-arrows-rotate me-2 text-info"></i> Resetear Tabla</a></li>
+                    <li><a class="dropdown-item cp py-1" onclick="resetColumnas()"><i class="fa-solid fa-arrows-rotate me-2 text-info"></i> Restaurar Columnas</a></li>
                     <li><a class="dropdown-item cp py-1" id="btnAdminMenu" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalAdmin"><i class="fa-solid fa-user-shield me-2 text-danger"></i> Admin DB</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li class="px-3 py-1 fw-bold text-secondary" style="font-size:0.65rem;">COLUMNAS VISIBLES</li>
@@ -163,7 +176,6 @@
             </div>
             <div class="table-wrapper" id="scrollContainer">
                 <table class="table-custom text-center" id="mainTable">
-                    <thead id="units-head"></thead>
                     <tbody id="units-body"></tbody>
                 </table>
             </div>
@@ -192,19 +204,20 @@
     let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
     let geoQueue = []; let isGeocoding = false; let motorArrancado = false; let isSyncingFlotas = false;
 
-    // --- MOTOR DE COLUMNAS ESTRICTAS Y ARRASTRABLES ---
+    // --- MOTOR DE COLUMNAS DRAG & RESIZE ---
     const columnasDef = {
-        'col-unidad': { titulo: 'UNIDAD', ancho: '120px' },
-        'col-operador': { titulo: 'OPERADOR GPS', ancho: '160px' },
-        'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '160px' },
-        'col-contenedores': { titulo: 'CONTENEDORES', ancho: '120px' },
-        'col-horarios': { titulo: 'HORARIOS', ancho: '120px' },
-        'col-estatus': { titulo: 'ESTATUS', ancho: '130px' },
-        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '350px' }, // ANCHURA MAXIMIZADA PARA GPS
-        'col-alertas': { titulo: 'ALERTAS', ancho: '80px' },
-        'col-historial': { titulo: 'HISTORIAL', ancho: '180px' },
+        'col-unidad': { titulo: 'UNIDAD', ancho: '110px' },
+        'col-operador': { titulo: 'OPERADOR GPS', ancho: '150px' },
+        'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '150px' },
+        'col-contenedores': { titulo: 'CONTENEDORES', ancho: '110px' },
+        'col-horarios': { titulo: 'HORARIOS', ancho: '115px' },
+        'col-estatus': { titulo: 'ESTATUS', ancho: '120px' },
+        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '350px' },
+        'col-alertas': { titulo: 'ALERTAS', ancho: '70px' },
+        'col-historial': { titulo: 'HISTORIAL', ancho: '160px' },
         'col-accion': { titulo: '<i class="fa-solid fa-gear"></i>', ancho: '50px' }
     };
+    
     let colOrder = JSON.parse(localStorage.getItem('tms_colOrder'));
     if (!colOrder || colOrder.length !== Object.keys(columnasDef).length) colOrder = Object.keys(columnasDef);
 
@@ -253,12 +266,8 @@
         if(!geocercasNativas || geocercasNativas.length === 0) return null;
         for(let z of geocercasNativas) {
             if(!z.p) continue;
-            if(z.t === 3) { 
-                let r = z.p[0].r || 50; 
-                if(getDistanceMeters(lat, lon, z.p[0].y, z.p[0].x) <= r) return z.n; 
-            } else { 
-                if(isInsidePolygon([lon, lat], z.p)) return z.n; 
-            }
+            if(z.t === 3) { let r = z.p[0].r || 50; if(getDistanceMeters(lat, lon, z.p[0].y, z.p[0].x) <= r) return z.n; } 
+            else { if(isInsidePolygon([lon, lat], z.p)) return z.n; }
         }
         return null;
     }
@@ -308,10 +317,10 @@
     }
     
     function resetColumnas() {
-        localStorage.removeItem('tms_colOrder'); localStorage.removeItem('tms_hiddenCols'); location.reload();
+        localStorage.removeItem('tms_colOrder'); localStorage.removeItem('tms_hiddenCols'); localStorage.removeItem('tms_colWidths'); location.reload();
     }
 
-    // DRAG AND DROP
+    // EVENTOS DRAG AND DROP
     let draggedColIndex = null;
     function dragColStart(e, idx) { draggedColIndex = idx; e.dataTransfer.effectAllowed = 'move'; }
     function dragColOver(e, idx) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; document.querySelectorAll('.header-columnas th').forEach(th => th.classList.remove('drag-over')); e.currentTarget.classList.add('drag-over');}
@@ -321,24 +330,55 @@
         let item = colOrder.splice(draggedColIndex, 1)[0];
         colOrder.splice(targetIdx, 0, item);
         localStorage.setItem('tms_colOrder', JSON.stringify(colOrder));
-        renderHeaders(); renderizarBitacora(); 
+        renderizarBitacora(); 
     }
 
-    function renderHeaders() {
+    // SCRIPT MODERNO DE RESIZE PARA COLUMNAS
+    let isResizing = false; let currentTh = null; let startX = 0; let startWidth = 0;
+    document.addEventListener('mousedown', function(e) {
+        if (e.target.classList.contains('resizer')) {
+            isResizing = true; currentTh = e.target.parentElement; startX = e.pageX; startWidth = currentTh.offsetWidth;
+            e.target.classList.add('resizing');
+        }
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (isResizing && currentTh) {
+            let newWidth = Math.max(50, startWidth + (e.pageX - startX));
+            let colClass = Array.from(currentTh.classList).find(c => c.startsWith('col-'));
+            document.querySelectorAll('.' + colClass).forEach(el => {
+                el.style.width = newWidth + 'px'; el.style.minWidth = newWidth + 'px'; el.style.maxWidth = newWidth + 'px';
+            });
+        }
+    });
+    document.addEventListener('mouseup', function(e) {
+        if (isResizing) {
+            isResizing = false;
+            let colClass = Array.from(currentTh.classList).find(c => c.startsWith('col-'));
+            if (colClass) {
+                let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
+                savedWidths[colClass] = currentTh.style.width;
+                localStorage.setItem('tms_colWidths', JSON.stringify(savedWidths));
+            }
+            document.querySelectorAll('.resizer').forEach(r => r.classList.remove('resizing'));
+            currentTh = null;
+        }
+    });
+
+    // GENERADOR ÚNICO DE ENCABEZADOS
+    function getHeadersRow() {
         let html = `<tr class="header-columnas shadow-sm">`;
+        let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
         colOrder.forEach((c, i) => {
-            let titulo = columnasDef[c].titulo;
-            let display = hiddenCols[c] ? 'd-none' : '';
-            let style = `width:${columnasDef[c].ancho}; max-width:${columnasDef[c].ancho};`; // FIJACIÓN ESTRICTA
-            html += `<th class="${c} ${display}" style="${style}" draggable="true" ondragstart="dragColStart(event, ${i})" ondragover="dragColOver(event, ${i})" ondrop="dropCol(event, ${i})">
-                        <div class="d-flex justify-content-between align-items-center h-100">
+            let titulo = columnasDef[c].titulo; let display = hiddenCols[c] ? 'd-none' : ''; let ancho = savedWidths[c] || columnasDef[c].ancho;
+            html += `<th class="${c} ${display} position-relative" style="width:${ancho}; min-width:${ancho}; max-width:${ancho};" draggable="true" ondragstart="dragColStart(event, ${i})" ondragover="dragColOver(event, ${i})" ondrop="dropCol(event, ${i})">
+                        <div class="d-flex justify-content-between align-items-center h-100 px-1">
                             <span class="w-100 text-center">${titulo}</span>
-                            <i class="fa-solid fa-grip-vertical drag-handle"></i>
+                            <i class="fa-solid fa-grip-vertical drag-handle mx-1"></i>
                         </div>
+                        <div class="resizer"></div>
                     </th>`;
         });
-        html += `</tr>`;
-        document.getElementById('units-head').innerHTML = html;
+        return html + `</tr>`;
     }
 
     function initMap() { 
@@ -351,8 +391,7 @@
     
     function centrarUnidadMapa(lat, lon) { 
         if(!lat || !lon) { alert("Esta unidad no tiene coordenadas GPS válidas en este momento."); return; }
-        if(!mapVisible) toggleMap(); 
-        setTimeout(() => lmap.flyTo([lat, lon], 16), 400); 
+        if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lon], 16), 400); 
     }
 
     function pintarGeocercasEnMapa() {
@@ -425,7 +464,7 @@
 
     window.onload = function () {
         if(localStorage.getItem('tms_dark_mode') === 'true') document.body.classList.add('dark-mode');
-        inicializarMenuColumnas(); renderHeaders();
+        inicializarMenuColumnas();
         
         db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); renderizarBitacora(); });
         db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; renderizarBitacora(); if(mapVisible) actualizarMarcadoresMapa(); });
@@ -484,7 +523,6 @@
 
                     let autoLoginUrl = `${tk.url.includes("hst-api") ? "https://hosting.wialon.com" : tk.url}/login.html?token=${tk.token}`;
 
-                    // Carga de Recursos + Geocercas + Conductores Wialon
                     let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1 + 256 + 4096, from: 0, to: 4294967295 }, auth.sid);
                     let diccChoferes = {}; let diccZonasReq = {}; let diccZonasNombres = {};
 
@@ -496,7 +534,7 @@
                                 let drivers = r.drvrs || r.drv;
                                 Object.values(drivers).forEach(d => { 
                                     if(d.bu && d.bu > 0) { 
-                                        let telStr = d.p ? String(d.p) : ""; // Blindaje para evitar crash
+                                        let telStr = d.p ? String(d.p) : ""; 
                                         diccChoferes[d.bu] = { nombre: d.n, tel: telStr, cod: d.c || "---", rid: rId }; 
                                     } 
                                 }); 
@@ -504,7 +542,6 @@
                         });
                     }
 
-                    // Carga de Unidades
                     let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1 + 1024, from: 0, to: 4294967295 }, auth.sid);
                     if(reqU && reqU.items) {
                         conexionesExitosas++; estadoTokens[tk.nombre] = { status: 'OK', count: reqU.items.length };
@@ -552,9 +589,9 @@
                 let pos = uData ? uData.pos : null; let speed = pos ? pos.s : 0; 
                 let isLost = !uData || (uData && !pos && !isExternal);
                 
-                // ZOMBIE CHECK (4 Horas)
+                // CÁLCULO CAMIÓN ZOMBIE (> 4 HRS)
                 let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0;
-                let isStale = ageSecs > 14400; // 4 hrs = 14400s
+                let isStale = ageSecs > 14400; 
                 
                 let row = document.getElementById("row_" + vId);
                 if(row) {
@@ -566,7 +603,7 @@
                 let elIcon = document.getElementById("icon_" + vId); let elSpeed = document.getElementById("speed_" + vId);
                 if(elIcon && elSpeed) {
                     if (isExternal) {
-                        elIcon.innerHTML = '<i class="fa-solid fa-globe text-info me-1" style="font-size:0.75rem;" title="Plataforma Externa"></i>';
+                        elIcon.innerHTML = '<i class="fa-solid fa-globe text-info me-1" style="font-size:0.75rem;" title="Externa"></i>';
                         elSpeed.innerHTML = `<span class="speed-badge bg-secondary">${speed} km/h</span>`;
                     } else if (isLost) {
                         elIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1" style="font-size:0.75rem;"></i>';
@@ -589,23 +626,21 @@
                     }
                 }
 
-                // OPERADOR WIALON PURO
                 let wialonDriverObj = uData ? uData.choferObj : null;
                 let elOpWialon = document.getElementById("op_wialon_" + vId);
                 if (elOpWialon) {
                     if (wialonDriverObj && wialonDriverObj.nombre !== "Sin asignar") {
-                        let telRaw = wialonDriverObj.tel || "";
-                        let cleanTel = String(telRaw).replace(/\D/g,'');
+                        let telRaw = wialonDriverObj.tel || ""; let cleanTel = String(telRaw).replace(/\D/g,'');
                         let waBtn = cleanTel ? `<a href="https://wa.me/${cleanTel}" target="_blank" class="wa-btn w-100 text-center mt-1"><i class="fab fa-whatsapp me-1"></i>${telRaw}</a>` : '';
                         elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${wialonDriverObj.nombre}</div>${waBtn}`;
                     } else if (v.operador) {
-                        elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${v.operador}</div><div style="font-size:0.6rem; color:#64748b;">(Asignado Manual)</div>`;
+                        elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${v.operador}</div><div style="font-size:0.6rem; color:#64748b;">(Manual)</div>`;
                     } else { 
                         elOpWialon.innerHTML = '<span class="badge bg-secondary w-100 mt-1" style="font-size:0.65rem;">Sin asignar en GPS</span>'; 
                     }
                 }
 
-                // UBICACIÓN ESTRICTA Y GEOCERCA
+                // DIRECCIÓN COMPLETAMENTE VISIBLE PERO EN CONTENEDOR FIJO
                 let elAddrControl = document.getElementById("addr_control_" + vId);
                 if(elAddrControl) {
                     if (isLost || isExternal) {
@@ -623,8 +658,8 @@
                         let geoHtml = zonaGeo ? `<div class="badge-geo d-inline-block text-truncate mt-1" style="max-width:100%;"><i class="fa-solid fa-draw-polygon me-1"></i>${zonaGeo}</div>` : '';
                         
                         let newHtml = `
-                            <a href="${mapsLink}" target="_blank" class="addr-link text-center text-truncate" style="max-width:320px;" title="Abrir en Maps">
-                                <div id="addr_${vId}" class="addr-span-${geoKey}">${addrText}</div>
+                            <a href="${mapsLink}" target="_blank" class="addr-link text-center" title="Abrir en Maps">
+                                <div class="addr-container addr-span-${geoKey}" id="addr_${vId}">${addrText}</div>
                             </a>
                             ${geoHtml}
                         `;
@@ -660,7 +695,7 @@
             let elId = document.getElementById("addr_" + item.vId); if(elId) elId.innerHTML = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${a}`;
             document.querySelectorAll(`.addr-span-${item.key}`).forEach(span => span.innerHTML = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${a}`);
             if(item.dest && a.toUpperCase().includes(String(item.dest).toUpperCase())) {
-                let v = viajesActivos[item.vId]; if(v && !v.t_arribo) { db.ref('viajes_activos/'+item.vId+'/t_arribo').set(Date.now()); registrarLog(item.vId, 'Arribo Automático (Calle GPS)'); }
+                let v = viajesActivos[item.vId]; if(v && !v.t_arribo) { db.ref('viajes_activos/'+item.vId+'/t_arribo').set(Date.now()); registrarLog(item.vId, 'Arribo Automático (Calle)'); }
             }
         }).catch(e => console.log("Geo Err")).finally(() => { isGeocoding = false; });
     }
@@ -694,28 +729,32 @@
         for(let cId in tree) {
             let cliName = "SIN CLIENTE"; if (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].nombre) cliName = dataClientes[cId].nombre;
             
-            // LOGICA LOGO CLIENTE PADRE
+            // CHEQUEO PARA SABER SI EL CLIENTE TIENE AL MENOS 1 VIAJE EN SUS SUBCLIENTES
+            let hasClientUnits = false;
+            for(let sId in tree[cId]) { if(tree[cId][sId].length > 0) { hasClientUnits = true; break; } }
+            if(!hasClientUnits) continue;
+
             let logoHtml = ""; let txtCliente = cliName;
             if (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) {
                 logoHtml = `<img src="${dataClientes[cId].logo}" class="client-logo" title="${cliName}">`; txtCliente = ""; 
-            } else {
-                txtCliente = `📦 ${cliName}`;
-            }
+            } else { txtCliente = `📦 ${cliName}`; }
             
-            let cliHtml = "";
             let btnWaCli = cId !== "Sin_Cliente" ? `<button class="btn btn-primary btn-sm py-1 px-3 mt-1 float-end shadow-sm rounded-pill fw-bold" onclick="generarReporteGrupal('${cId}', 'N/A', '${cliName}')"><i class="fa-brands fa-whatsapp"></i> Enviar Reporte</button>` : '';
-            let hasClientUnits = false;
+            
+            html += `<tr class="header-cliente shadow-sm"><td colspan="${colOrder.length}"><div class="d-flex justify-content-between align-items-center"><span>${logoHtml} <span class="align-middle">${txtCliente}</span></span> ${btnWaCli}</div></td></tr>`;
 
             for(let sId in tree[cId]) {
-                if(tree[cId][sId].length === 0) continue; hasClientUnits = true;
+                if(tree[cId][sId].length === 0) continue;
                 let subName = ""; if (sId !== "N/A" && dataClientes[cId] && dataClientes[cId].subclientes && dataClientes[cId].subclientes[sId]) subName = dataClientes[cId].subclientes[sId].nombre || "";
                 
-                // LOGICA LOGO EN SUBCLIENTE
                 let logoHtmlSub = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo-sub" title="${cliName}">` : '';
                 let btnWaSub = sId !== "N/A" ? `<button class="btn btn-outline-primary bg-white btn-sm py-0 px-2 mt-0 float-end shadow-sm rounded-pill" style="font-size:0.65rem;" onclick="generarReporteGrupal('${cId}', '${sId}', '${cliName} -> ${subName}')"><i class="fa-brands fa-whatsapp"></i> Reporte Subcliente</button>` : '';
                 
-                if(sId !== "N/A" && subName !== "") cliHtml += `<tr class="header-subcliente"><td colspan="${colOrder.length}">↳ ${logoHtmlSub} Subcliente: ${subName} ${btnWaSub}</td></tr>`;
+                if(sId !== "N/A" && subName !== "") html += `<tr class="header-subcliente"><td colspan="${colOrder.length}">↳ ${logoHtmlSub} Subcliente: ${subName} ${btnWaSub}</td></tr>`;
                 
+                // INSERTAMOS LOS ENCABEZADOS JUSTO AQUÍ, DEBAJO DEL TITULO (Sin empalmes)
+                html += getHeadersRow();
+
                 tree[cId][sId].sort((a, b) => { let estA = String(a.v.estatus || ""); let estB = String(b.v.estatus || ""); return estA.localeCompare(estB); });
 
                 tree[cId][sId].forEach(({vId, v}) => {
@@ -729,10 +768,9 @@
 
                         let searchData = `${nombreCamion} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${v.operador||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                         let optionsHtml = Object.keys(window.estatusData).map(k=>`<option value="${k}" style="color:${window.estatusData[k].col}; font-weight:bold;" ${v.estatus===k?'selected':''}>${window.estatusData[k].nombre}</option>`).join('');
-                        let deepLinkHtml = (!isExternal && uData && uData.loginUrl) ? `<a href="${uData.loginUrl}" target="_blank" class="wialon-deep-link ms-1" title="Auto-Login Wialon"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : '';
 
                         let tds = {};
-                        tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}"><div class="d-flex align-items-center justify-content-center"><span class="unit-name" id="name_btn_${vId}" onclick="centrarUnidadMapa(null, null)">${nombreCamion}</span>${deepLinkHtml}</div></td>`;
+                        tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}"><div class="d-flex align-items-center justify-content-center"><span class="unit-name" id="name_btn_${vId}" onclick="centrarUnidadMapa(null, null)">${nombreCamion}</span></div></td>`;
                         tds['col-operador'] = `<td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}"><div id="op_wialon_${vId}"><span class="badge bg-secondary w-100 mt-1" style="font-size:0.6rem;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</span></div></td>`;
                         tds['col-ruta'] = `<td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}"><div class="position-relative ps-2"><div style="position:absolute; left:4px; top:10px; bottom:10px; width:1.5px; background:var(--border-col);"></div><div class="d-flex align-items-center position-relative mb-1"><i class="fa-solid fa-circle text-primary position-absolute" style="left:-6px; font-size:6px;"></i><input class="input-ghost text-start ps-2" value="${v.origen||''}" placeholder="ORIGEN" onblur="db.ref('viajes_activos/${vId}/origen').set(this.value.toUpperCase())"></div><div class="d-flex align-items-center position-relative"><i class="fa-solid fa-location-dot text-danger position-absolute" style="left:-6px; font-size:8px;"></i><input class="input-ghost text-start ps-2" value="${v.destino||''}" placeholder="DESTINO" onblur="db.ref('viajes_activos/${vId}/destino').set(this.value.toUpperCase())"></div></div></td>`;
                         tds['col-contenedores'] = `<td class="col-contenedores align-middle ${hiddenCols['col-contenedores'] ? 'd-none' : ''}"><textarea class="input-ghost text-start" style="resize:none; min-height:40px;" placeholder="CONTENEDORES" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">${v.contenedores||''}</textarea></td>`;
@@ -756,12 +794,11 @@
 
                         let trInner = colOrder.map(c => tds[c]).join('');
                         let trClass = isExternal ? 'external-connection-row data-row' : 'needs-gps-update data-row';
-                        cliHtml += `<tr class="${trClass}" id="row_${vId}" data-search="${searchData}" style="background-color: ${rowBg} !important;">${trInner}</tr>`;
+                        html += `<tr class="${trClass}" id="row_${vId}" data-search="${searchData}" style="background-color: ${rowBg} !important;">${trInner}</tr>`;
 
                     } catch(err) { console.error("Fila omitida por error:", vId, err); }
                 });
             }
-            if(hasClientUnits) html += `<tr class="header-cliente shadow-sm"><td colspan="${colOrder.length}"><div class="d-flex justify-content-between align-items-center"><span>${logoHtml} <span class="align-middle">${txtCliente}</span></span> ${btnWaCli}</div></td></tr>` + cliHtml;
         }
         tbody.innerHTML = html || `<tr><td colspan="${colOrder.length}" class="p-5 text-muted fs-6"><i class="fa-solid fa-folder-open mb-2 fs-3 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>`;
         filtrarTablaInteligente();
@@ -772,12 +809,16 @@
         let t = document.getElementById("buscador").value.toLowerCase(); let rows = Array.from(document.querySelectorAll("#units-body tr"));
         rows.forEach(r => { if(r.classList.contains("data-row")) r.style.display = (r.getAttribute("data-search") || "").includes(t) ? "" : "none"; });
         
-        let visSub = 0, visCli = 0;
+        let currentSubclientVisible = false; let currentClientVisible = false;
+        // Lectura de Abajo hacia Arriba para un filtro perfecto
         for (let i = rows.length - 1; i >= 0; i--) {
             let r = rows[i];
-            if (r.classList.contains("data-row")) { if (r.style.display !== "none") { visSub++; visCli++; } } 
-            else if (r.classList.contains("header-subcliente")) { r.style.display = visSub > 0 ? "" : "none"; visSub = 0; } 
-            else if (r.classList.contains("header-cliente")) { r.style.display = visCli > 0 ? "" : "none"; visCli = 0; visSub = 0; }
+            if (r.classList.contains("data-row")) { 
+                if (r.style.display !== "none") { currentSubclientVisible = true; currentClientVisible = true; } 
+            } 
+            else if (r.classList.contains("header-columnas")) { r.style.display = currentSubclientVisible ? "" : "none"; }
+            else if (r.classList.contains("header-subcliente")) { r.style.display = currentSubclientVisible ? "" : "none"; currentSubclientVisible = false; } 
+            else if (r.classList.contains("header-cliente")) { r.style.display = currentClientVisible ? "" : "none"; currentClientVisible = false; currentSubclientVisible = false; }
         }
     }
 
