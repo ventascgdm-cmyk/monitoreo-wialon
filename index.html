@@ -24,27 +24,27 @@
         :root { --bg-main: #f8fafc; --bg-card: #ffffff; --text-main: #334155; --header-bg: #0f172a; --border-col: #e2e8f0; --accent: #3b82f6;}
         body.dark-mode { --bg-main: #0f172a; --bg-card: #1e293b; --text-main: #e2e8f0; --header-bg: #020617; --border-col: #334155; --accent: #60a5fa;}
         
-        /* ESTRUCTURA FLEXBOX: BLOQUEO TOTAL DE DOBLE SCROLL */
+        /* BLOQUEO MAESTRO DE SCROLL Y FLEXBOX ESTRICTO */
         body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 0.75rem; transition: background 0.3s; margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
         .login-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
         .login-card { background: var(--bg-card); color: var(--text-main); width: 380px; border-radius: 16px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);}
         
-        /* ENCABEZADO IMPONENTE */
+        #dashboard { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
         .header-bar { background: var(--bg-card); padding: 12px 24px; border-bottom: 2px solid var(--border-col); box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0; }
         
-        /* LAYOUT LIMPIO */
-        #dashboard { display: flex; flex-direction: column; height: 100%; width: 100%; }
-        .workspace-container { display: flex; flex-direction: column; flex-grow: 1; width: 100%; overflow: hidden; }
-        .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--border-col); position: relative; flex-shrink: 0;}
-        .workspace-container.show-map .map-panel { height: 40%; border-bottom: 3px solid var(--accent); }
+        /* LAYOUT LIMPIO: SOLO EL WRAPPER HACE SCROLL */
+        .workspace-container { display: flex; flex-direction: column; flex: 1; width: 100%; overflow: hidden; }
         
-        .table-panel { display: flex; flex-direction: column; flex-grow: 1; padding: 10px; overflow: hidden; }
-        .table-wrapper { flex-grow: 1; overflow: auto; border-radius: 6px; padding-bottom: 40px; }
-        
+        /* MAPA DINÁMICO REPARADO */
+        .map-panel { flex-basis: 0%; height: 0; overflow: hidden; transition: all 0.4s ease; border-bottom: 0px solid var(--accent); flex-shrink: 0;}
+        .workspace-container.show-map .map-panel { flex-basis: 40%; height: 40%; border-bottom: 3px solid var(--accent); }
         #map { width: 100%; height: 100%; z-index: 1;}
         
-        /* TABLA DE DISEÑO RÍGIDO */
+        .table-panel { display: flex; flex-direction: column; flex: 1; padding: 10px; overflow: hidden; }
+        .table-wrapper { flex: 1; overflow: auto; border-radius: 6px; padding-bottom: 40px; }
+        
+        /* TABLA DE DISEÑO RÍGIDO (NO SE DEFORMA NUNCA) */
         .table-custom { width: 100%; border-collapse: separate; border-spacing: 0 3px; margin-top: 0; table-layout: fixed; min-width: 1400px;}
         
         .header-columnas th { 
@@ -53,7 +53,7 @@
         }
         .header-columnas th.drag-over { border-left: 3px solid #38bdf8; background: #1e293b; }
         
-        /* ICONOS DE ARRASTRE Y REDIMENSIONAMIENTO MEJORADOS */
+        /* ICONOS DE ARRASTRE Y REDIMENSIONAMIENTO */
         .drag-handle { cursor: grab; opacity: 0.5; padding: 2px 5px; } .drag-handle:active { cursor: grabbing; }
         .resizer { position: absolute; right: -5px; top: 0; width: 10px; height: 100%; cursor: col-resize; z-index: 1; background: transparent; transition: 0.2s; }
         .resizer:hover, .resizing { background: var(--accent); opacity: 0.8; }
@@ -99,18 +99,18 @@
         
         .wa-btn { background: #22c55e; color: white; padding: 3px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.65rem; transition: 0.3s; display: inline-block;}
         .wa-btn:hover { background: #16a34a; color: white; transform: scale(1.05); }
-        .badge-geo { background: #f8fafc; color: #15803d; font-weight: 700; padding: 2px 6px; border-radius: 4px; border: 1px dashed #22c55e; font-size: 0.65rem;}
+        
+        .badge-geo { background: #f8fafc; color: #15803d; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px dashed #22c55e; font-size: 0.70rem; margin-top: 4px; display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
         .dark-mode .badge-geo { background: #064e3b; color: #4ade80; border-color: #22c55e; }
         
         .speed-badge { font-size: 0.75rem; font-weight: 900; border-radius: 6px; padding: 2px 8px; text-align: center; color: white; display: inline-block; margin-bottom: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);}
         
-        /* UBICACIÓN COMPLETA SIN DEFORMAR LA TABLA */
-        .addr-container { height: 42px; overflow-y: auto; overflow-x: hidden; white-space: normal; word-break: break-word; font-size: 0.70rem; line-height: 1.1; color: #0f172a; font-weight: 800; display: flex; align-items: center; justify-content: center; padding-right: 4px;}
+        /* UBICACIÓN COMPLETA, GRANDE Y CON MICRO-SCROLL INTELIGENTE */
+        .addr-container { max-height: 48px; overflow-y: auto; overflow-x: hidden; white-space: normal; word-break: break-word; font-size: 0.85rem; line-height: 1.15; color: #0f172a; font-weight: 900; padding-right: 4px;}
         .dark-mode .addr-container { color: #e2e8f0; }
-        /* Scrollbar invisible pero funcional */
-        .addr-container::-webkit-scrollbar { width: 3px; }
+        .addr-container::-webkit-scrollbar { width: 4px; }
         .addr-container::-webkit-scrollbar-track { background: transparent; }
-        .addr-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .addr-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .dark-mode .addr-container::-webkit-scrollbar-thumb { background: #475569; }
         
         .addr-link { text-decoration: none; display: block; width: 100%; transition: 0.2s;}
@@ -119,9 +119,11 @@
         .cp { cursor: pointer; }
         
         @media (max-width: 768px) {
-            .header-bar { flex-direction: column; gap: 10px; text-align: center; padding: 15px; }
+            .header-bar { flex-direction: column; gap: 10px; text-align: center; padding: 15px; flex-shrink: 0;}
             .header-bar img { height: 60px !important; margin-bottom: 5px; }
+            .btn-action-group { margin-top: 10px; }
             .client-logo { height: 50px; }
+            body { overflow: auto; } /* Móvil permite scroll general por diseño de pantalla */
         }
     </style>
 </head>
@@ -134,7 +136,7 @@
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Multi-Host v26.0 (Master Edition)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Multi-Host v27.0 (Scroll Fijo)</div>
     </div>
 </div>
 
@@ -227,17 +229,17 @@
     let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
     let geoQueue = []; let isGeocoding = false; let motorArrancado = false; let isSyncingFlotas = false;
 
-    // --- MOTOR DE COLUMNAS DRAG & RESIZE ---
+    // --- PRIORIDADES DE TAMAÑO EN COLUMNAS ---
     const columnasDef = {
-        'col-unidad': { titulo: 'UNIDAD', ancho: '120px' },
+        'col-unidad': { titulo: 'UNIDAD', ancho: '110px' },
         'col-operador': { titulo: 'OPERADOR GPS', ancho: '150px' },
-        'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '160px' },
-        'col-contenedores': { titulo: 'CONTENEDORES', ancho: '120px' },
-        'col-horarios': { titulo: 'HORARIOS', ancho: '120px' },
-        'col-estatus': { titulo: 'ESTATUS', ancho: '130px' },
-        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '350px' }, // COLUMNA EXTRA GRANDE
-        'col-alertas': { titulo: 'ALERTAS', ancho: '80px' },
-        'col-historial': { titulo: 'HISTORIAL LOG', ancho: '180px' },
+        'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '150px' },
+        'col-contenedores': { titulo: 'CONTENEDORES', ancho: '110px' },
+        'col-horarios': { titulo: 'HORARIOS', ancho: '100px' }, // Horarios reducido
+        'col-estatus': { titulo: 'ESTATUS', ancho: '120px' },
+        'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '400px' }, // Prioridad: Mucho más ancho
+        'col-alertas': { titulo: 'ALERTAS', ancho: '120px' }, // Prioridad: Más ancho
+        'col-historial': { titulo: 'HISTORIAL LOG', ancho: '160px' },
         'col-accion': { titulo: '<i class="fa-solid fa-gear"></i>', ancho: '50px' }
     };
     
@@ -342,9 +344,9 @@
         localStorage.removeItem('tms_colOrder'); localStorage.removeItem('tms_hiddenCols'); localStorage.removeItem('tms_colWidths'); location.reload();
     }
 
-    // --- LOGICA DE ARRASTRE DE COLUMNAS (Opcional por Switch) ---
+    // --- LOGICA DE ARRASTRE DE COLUMNAS (Opcional por Switch para evitar conflictos) ---
     let dragColsEnabled = false;
-    function toggleDragCols(enabled) { dragColsEnabled = enabled; renderizarBitacora(); } // Reconstruye los headers
+    function toggleDragCols(enabled) { dragColsEnabled = enabled; renderizarBitacora(); }
     
     let draggedColIndex = null;
     function dragColStart(e, idx) { draggedColIndex = idx; e.dataTransfer.effectAllowed = 'move'; }
@@ -359,7 +361,7 @@
         renderizarBitacora(); 
     }
 
-    // --- SCRIPT DE REDIMENSIONAMIENTO (Siempre activo) ---
+    // --- SCRIPT DE REDIMENSIONAMIENTO SEGURO ---
     let isResizing = false; let currentTh = null; let startX = 0; let startWidth = 0;
     document.addEventListener('mousedown', function(e) {
         if (e.target.classList.contains('resizer')) {
@@ -415,11 +417,16 @@
         mapLayerGroup = L.layerGroup().addTo(lmap); geofenceLayerGroup = L.layerGroup().addTo(lmap);
     }
     
-    function toggleMap() { document.getElementById("mainWorkspace").classList.toggle("show-map"); if(!lmap) initMap(); mapVisible = !mapVisible; setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); pintarGeocercasEnMapa(); } }, 400); }
+    function toggleMap() { 
+        document.getElementById("mainWorkspace").classList.toggle("show-map"); 
+        if(!lmap) initMap(); mapVisible = !mapVisible; 
+        setTimeout(() => { if(lmap) { lmap.invalidateSize(); actualizarMarcadoresMapa(); pintarGeocercasEnMapa(); } }, 400); 
+    }
     
     function centrarUnidadMapa(lat, lon) { 
         if(!lat || !lon) { alert("Esta unidad no tiene coordenadas GPS válidas en este momento."); return; }
-        if(!mapVisible) toggleMap(); setTimeout(() => lmap.flyTo([lat, lon], 16), 400); 
+        if(!mapVisible) toggleMap(); 
+        setTimeout(() => { if(lmap) lmap.flyTo([lat, lon], 16); }, 400); 
     }
 
     function pintarGeocercasEnMapa() {
@@ -490,7 +497,7 @@
 
     function registrarLog(viajeId, accion, detalle = "") { let usrName = currentUser ? currentUser.nom : "Sistema"; db.ref(`viajes_activos/${viajeId}/log`).push({ t: Date.now(), usr: usrName, act: accion, det: detalle }); }
 
-    // MODAL DE ACCIONES PARA REEMPLAZAR EL DROPDOWN (CERO PARPADEOS)
+    // --- MODAL DE ACCIONES ANTI-PARPADEO ---
     function abrirModalAcciones(vId, uName) {
         document.getElementById("acc_vId").value = vId;
         document.getElementById("acc_uName").innerText = uName;
@@ -529,7 +536,7 @@
             let user = s.val(); if(!user && u === "admin" && p === "admin123") user = { pass: "admin123", rol: "admin", nom: "Administrador Maestro" };
             if(user && user.pass === p) {
                 currentUser = user; localStorage.setItem("tms_user", u); localStorage.setItem("tms_pass", p);
-                document.getElementById("loginOverlay").style.display = "none"; document.getElementById("dashboard").style.display = "block";
+                document.getElementById("loginOverlay").style.display = "none"; document.getElementById("dashboard").style.display = "flex";
                 document.getElementById("lblUsuarioActivo").innerHTML = "<i class='fa-solid fa-user-shield me-1'></i> Monitor: " + currentUser.nom;
                 if(currentUser.rol === "admin") document.getElementById("btnAdminMenu").style.display = "block";
                 if(!motorArrancado) arranqueMotor();
@@ -636,7 +643,7 @@
                 let isLost = !uData || (uData && !pos && !isExternal);
                 
                 let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0;
-                let isStale = ageSecs > 14400; // 4 hrs 
+                let isStale = ageSecs > 14400; 
                 
                 let row = document.getElementById("row_" + vId);
                 if(row) {
@@ -671,7 +678,6 @@
                     }
                 }
 
-                // INYECCIÓN DE CLIC AL MAPA (Corregido)
                 let btnName = document.getElementById("name_btn_" + vId);
                 if (btnName && pos && pos.y && pos.x) {
                     btnName.setAttribute("onclick", `centrarUnidadMapa(${pos.y}, ${pos.x})`);
@@ -718,6 +724,13 @@
                         if(elAddrControl.innerHTML !== newHtml) elAddrControl.innerHTML = newHtml;
                     }
                 }
+                
+                // ACTUALIZACIÓN DE ALERTAS EN VIVO
+                let elAlertas = document.getElementById("alertas_" + vId);
+                if (elAlertas) {
+                    elAlertas.innerHTML = v.alerta ? `<span class="text-danger fw-bold" style="font-size:0.85rem;">${v.alerta.txt}</span>` : `<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>`;
+                }
+
             } catch(e) { console.error("Error GPS:", vId, e); }
         });
         desencadenarGeocoding();
@@ -752,13 +765,14 @@
         }).catch(e => console.log("Geo Err")).finally(() => { isGeocoding = false; });
     }
 
+    // BOTONES DE HORARIOS MINIATURA (Ocupan la mitad de altura)
     function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColor) {
-        if(!timestampStr) return `<button class="btn btn-modern btn-outline-${claseColor} w-100 bg-white border-dashed text-${claseColor}" onclick="registrarLog('${vId}', 'Marcó ${textoVacio}'); db.ref('viajes_activos/${vId}/${dbField}').set(Date.now());">${textoVacio}</button>`;
+        if(!timestampStr) return `<button class="btn btn-sm w-100 bg-white text-${claseColor}" style="font-size:0.6rem; font-weight:800; padding:1px 0; margin-bottom:2px; border: 1px dashed var(--bs-${claseColor});" onclick="registrarLog('${vId}', 'Marcó ${textoVacio}'); db.ref('viajes_activos/${vId}/${dbField}').set(Date.now());">${textoVacio}</button>`;
         let displayDate = formatearFechaElegante(timestampStr);
-        return `<div class="position-relative mb-1 w-100 cp" title="Clic para editar">
-                    <div class="d-flex align-items-center rounded bg-white shadow-sm border border-${claseColor}" style="overflow: hidden;">
-                        <span class="bg-${claseColor} text-white fw-bold px-1 text-center" style="font-size:0.65rem; min-width:18px;">${textoVacio.charAt(0)}</span>
-                        <span class="fw-bold text-center w-100 text-${claseColor}" style="font-size:0.65rem;">${displayDate}</span>
+        return `<div class="position-relative w-100 cp" style="margin-bottom:2px;" title="Clic para editar">
+                    <div class="d-flex align-items-center rounded bg-white shadow-sm border border-${claseColor}" style="overflow: hidden; height:18px;">
+                        <span class="bg-${claseColor} text-white fw-bold px-1 text-center" style="font-size:0.55rem; min-width:16px; line-height:18px;">${textoVacio.charAt(0)}</span>
+                        <span class="fw-bold text-center w-100 text-${claseColor}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span>
                     </div>
                     <input type="datetime-local" class="position-absolute top-0 start-0 w-100 h-100 cp" style="opacity: 0;" value="${getLocalISO(timestampStr)}" onchange="let d=new Date(this.value).getTime(); if(d){ db.ref('viajes_activos/${vId}/${dbField}').set(d); registrarLog('${vId}', 'Modificó horario de ${textoVacio}'); }">
                 </div>`;
@@ -798,12 +812,12 @@
                 if(tree[cId][sId].length === 0) continue;
                 let subName = ""; if (sId !== "N/A" && dataClientes[cId] && dataClientes[cId].subclientes && dataClientes[cId].subclientes[sId]) subName = dataClientes[cId].subclientes[sId].nombre || "";
                 
-                // INYECCIÓN DE LOGO MINIATURA AL LADO DEL SUBCLIENTE
                 let logoHtmlSub = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo-sub" title="${cliName}">` : '';
                 let btnWaSub = sId !== "N/A" ? `<button class="btn btn-outline-primary bg-white btn-sm py-0 px-2 mt-0 float-end shadow-sm rounded-pill" style="font-size:0.65rem;" onclick="generarReporteGrupal('${cId}', '${sId}', '${cliName} -> ${subName}')"><i class="fa-brands fa-whatsapp"></i> Reporte Subcliente</button>` : '';
                 
                 if(sId !== "N/A" && subName !== "") html += `<tr class="header-subcliente"><td colspan="${colOrder.length}">↳ ${logoHtmlSub} Subcliente: ${subName} ${btnWaSub}</td></tr>`;
                 
+                // ENCABEZADOS DEBAJO DEL CLIENTE/SUBCLIENTE
                 html += getHeadersRow();
 
                 tree[cId][sId].sort((a, b) => { let estA = String(a.v.estatus || ""); let estB = String(b.v.estatus || ""); return estA.localeCompare(estB); });
@@ -830,10 +844,9 @@
                         tds['col-horarios'] = `<td class="col-horarios align-middle ${hiddenCols['col-horarios'] ? 'd-none' : ''}"><div class="d-flex flex-column justify-content-center h-100">${construirBotonHorario(vId, v.t_salida, 't_salida', 'SALIDA', 'success')}${construirBotonHorario(vId, v.t_arribo, 't_arribo', 'ARRIBO', 'primary')}${construirBotonHorario(vId, v.t_fin, 't_fin', 'FINALIZADO', 'dark')}</div></td>`;
                         tds['col-estatus'] = `<td class="col-estatus align-middle ${hiddenCols['col-estatus'] ? 'd-none' : ''}"><select class="form-select status-select shadow-sm" style="color:${colEstatus}; border-color:${colEstatus};" onchange="cambiarEstatus(this, '${vId}')">${optionsHtml}</select></td>`;
                         tds['col-gps'] = `<td class="col-gps align-middle ${hiddenCols['col-gps'] ? 'd-none' : ''}" id="gps_cell_${vId}"><div class="d-flex flex-column align-items-center px-1"><div class="d-flex align-items-center mb-1"><span id="icon_${vId}"><i class="fa-solid fa-spinner fa-spin text-muted me-1 fs-6"></i></span><span id="speed_${vId}"><span class="speed-badge bg-secondary">-- km/h</span></span></div><div class="w-100" id="addr_control_${vId}"><div style="font-size:0.75rem; color:#64748b; font-weight:800;" class="text-center">Sincronizando...</div></div><div id="time_${vId}" style="font-size:0.65rem; color:#64748b; font-weight:600; margin-top:2px;">--</div></div></td>`;
-                        tds['col-alertas'] = `<td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.7rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.7rem;">OK</span>'}</td>`;
+                        tds['col-alertas'] = `<td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}" id="alertas_${vId}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.85rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>'}</td>`;
                         tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}"><div class="d-flex flex-column justify-content-between h-100">${lastLog}<button class="btn btn-dark btn-sm p-0 w-100 fw-bold mt-1 shadow-sm rounded-pill" style="font-size:0.6rem;" onclick="abrirModalLog('${vId}', '${nombreCamion}')"><i class="fa-solid fa-list-check"></i> Historial</button></div></td>`;
                         
-                        // EL BOTÓN ABRE EL MODAL CENTRAL (NO PARPADEA NUNCA MÁS)
                         tds['col-accion'] = `<td class="col-accion align-middle ${hiddenCols['col-accion'] ? 'd-none' : ''}">
                             <button class="btn btn-light btn-sm shadow-sm border rounded-pill p-1 cp" title="Opciones" onclick="abrirModalAcciones('${vId}', '${nombreCamion}')"><i class="fa-solid fa-ellipsis-vertical mx-2"></i></button>
                         </td>`;
@@ -860,13 +873,15 @@
         let t = document.getElementById("buscador").value.toLowerCase(); let rows = Array.from(document.querySelectorAll("#units-body tr"));
         rows.forEach(r => { if(r.classList.contains("data-row")) r.style.display = (r.getAttribute("data-search") || "").includes(t) ? "" : "none"; });
         
-        let visSub = 0, visCli = 0;
+        let currentSubclientVisible = false; let currentClientVisible = false;
         for (let i = rows.length - 1; i >= 0; i--) {
             let r = rows[i];
-            if (r.classList.contains("data-row")) { if (r.style.display !== "none") { visSub++; visCli++; } } 
-            else if (r.classList.contains("header-columnas")) { r.style.display = visSub > 0 ? "" : "none"; }
-            else if (r.classList.contains("header-subcliente")) { r.style.display = visSub > 0 ? "" : "none"; visSub = 0; } 
-            else if (r.classList.contains("header-cliente")) { r.style.display = visCli > 0 ? "" : "none"; visCli = 0; visSub = 0; }
+            if (r.classList.contains("data-row")) { 
+                if (r.style.display !== "none") { currentSubclientVisible = true; currentClientVisible = true; } 
+            } 
+            else if (r.classList.contains("header-columnas")) { r.style.display = currentSubclientVisible ? "" : "none"; }
+            else if (r.classList.contains("header-subcliente")) { r.style.display = currentSubclientVisible ? "" : "none"; currentSubclientVisible = false; } 
+            else if (r.classList.contains("header-cliente")) { r.style.display = currentClientVisible ? "" : "none"; currentClientVisible = false; currentSubclientVisible = false; }
         }
     }
 
