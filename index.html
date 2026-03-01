@@ -31,7 +31,7 @@
         
         .header-bar { background: var(--bg-card); padding: 8px 16px; border-bottom: 1px solid var(--border-col); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         
-        .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 65px); width: 100%; overflow: hidden; }
+        .workspace-container { display: flex; flex-direction: column; height: calc(100vh - 70px); width: 100%; overflow: hidden; }
         .map-panel { height: 0%; width: 100%; transition: height 0.4s ease; border-bottom: 0 solid var(--border-col); position: relative;}
         .workspace-container.show-map .map-panel { height: 40%; border-bottom: 2px solid var(--accent); }
         .table-panel { height: 100%; width: 100%; transition: height 0.4s ease; overflow-y: auto; padding: 10px; }
@@ -45,10 +45,9 @@
             position: sticky; top: 0; z-index: 10; border-bottom: 3px solid var(--accent);
         }
         
-        /* OPTIMIZACIÓN DE ESPACIO EN FILAS */
         .data-row td { 
             background: transparent !important; 
-            padding: 4px 6px; /* <-- MÁS DELGADO */
+            padding: 4px 6px; 
             vertical-align: middle; 
             border-top: 1px solid var(--border-col); border-bottom: 1px solid var(--border-col);
             transition: all 0.2s ease;
@@ -63,21 +62,19 @@
         }
         .dark-mode .data-row:hover td { background: rgba(0,0,0,0.2) !important; }
         
-        /* ENCABEZADOS DE CLIENTE REDUCIDOS */
-        .header-cliente td { background: transparent !important; color: #0f172a !important; font-size: 1.1rem; font-weight: 900; padding: 15px 10px 5px 10px !important; text-transform: uppercase; border: none !important; letter-spacing: -0.5px;}
+        /* ENCABEZADOS Y LOGOS AJUSTADOS */
+        .header-cliente td { background: transparent !important; color: #0f172a !important; font-size: 1.3rem; font-weight: 900; padding: 15px 10px 5px 10px !important; text-transform: uppercase; border: none !important; letter-spacing: -0.5px;}
         .dark-mode .header-cliente td { color: #f8fafc !important; }
         
         .header-subcliente td { background: transparent !important; color: #475569 !important; font-size: 0.9rem; font-weight: 800; padding: 5px 10px 5px 30px !important; border: none !important;}
         .dark-mode .header-subcliente td { color: #cbd5e1 !important; }
         
-        /* LOGOS MÁS CHICOS */
-        .client-logo { height: 28px; max-width: 120px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background: white; padding: 2px; }
+        .client-logo { height: 40px; max-width: 180px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background: white; padding: 2px; }
 
         .lost-connection-row { outline: 1px dashed #ef4444; outline-offset: -1px; border-radius: 6px;}
         .external-gps-cell { background-color: rgba(14, 165, 233, 0.12) !important; border: 1px dashed #0ea5e9 !important; border-radius: 6px; }
         .dark-mode .external-gps-cell { background-color: rgba(14, 165, 233, 0.25) !important; }
 
-        /* INPUTS MÁS AJUSTADOS */
         .input-ghost { border: 1px solid transparent; background: transparent; border-radius: 4px; padding: 2px 4px; width: 100%; font-size: 0.7rem; font-weight: 700; color: inherit; text-transform: uppercase; text-align: center; transition: all 0.2s; outline: none; }
         .input-ghost:hover { border-color: var(--border-col); background: rgba(255,255,255,0.6); }
         .input-ghost:focus { border-color: var(--accent); background: var(--bg-card); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
@@ -85,7 +82,7 @@
         .dark-mode .input-ghost:focus { background: #0f172a; }
         
         .col-unidad { min-width: 110px; width: 120px; }
-        .col-operador { min-width: 120px; }
+        .col-operador { min-width: 130px; }
         .col-ruta { min-width: 140px; }
         .col-contenedores { min-width: 100px; }
         .col-horarios { min-width: 110px; }
@@ -106,14 +103,18 @@
         .wialon-deep-link:hover { color: #f59e0b; transform: scale(1.1); }
         
         .speed-badge { font-size: 0.75rem; font-weight: 900; border-radius: 6px; padding: 2px 8px; text-align: center; color: white; display: inline-block; margin-bottom: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);}
+        
+        /* BOTÓN DE WA y GEOCERCAS ESTILO BITÁCORA MAESTRA */
+        .wa-btn { background: #22c55e; color: white; padding: 3px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.65rem; transition: 0.3s; display: inline-block;}
+        .wa-btn:hover { background: #16a34a; color: white; transform: scale(1.05); }
+        .badge-geo { background: #dcfce7; color: #166534; font-weight: 700; padding: 4px 8px; border-radius: 6px; border: 1px solid #16a34a; font-size: 0.65rem;}
+        
         .addr-link { font-size: 0.7rem; line-height: 1.1; color: #0284c7; text-decoration: none; display: block; width: 100%; margin: 0 auto; font-weight: 700; text-align: center; transition: 0.2s;}
         .dark-mode .addr-link { color: #38bdf8; }
         .addr-link:hover { text-decoration: underline; color: #0369a1; }
         
         .cp { cursor: pointer; }
         .btn-modern { border-radius: 6px; font-weight: 700; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); padding-top: 2px !important; padding-bottom: 2px !important; margin-bottom: 2px !important;}
-        
-        /* BOTONES DE ACCIÓN MÁS CHICOS */
         .btn-action-sm { width: 24px; height: 24px; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; padding: 0;}
     </style>
 </head>
@@ -121,22 +122,22 @@
 
 <div id="loginOverlay" class="login-bg">
     <div class="login-card text-center">
-        <img src="TIGPS HD2.png" alt="Logo" style="height: 90px; margin-bottom: 20px;">
+        <img src="TIGPS HD2.png" alt="Logo" style="height: 100px; margin-bottom: 20px;">
         <h5 class="fw-bold mb-4" style="color: #0f172a;">GRUDICOM TI & GPS</h5>
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-pill"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v20.2 (HD Edition)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor Multi-Host v21.0 (Master Edition)</div>
     </div>
 </div>
 
 <div id="dashboard" style="display:none;">
     <div class="header-bar d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center">
-            <img src="TIGPS HD2.png" alt="Logo" style="height: 40px;" class="me-3">
+            <img src="TIGPS HD2.png" alt="Logo" style="height: 55px;" class="me-3">
             <div>
                 <h5 class="fw-bold m-0 text-primary" style="letter-spacing:-0.5px;">C4 - BITÁCORA GRUDICOM</h5>
-                <div class="text-muted fw-bold" id="lblUsuarioActivo" style="font-size: 10px;">Monitor: </div>
+                <div class="text-muted fw-bold" id="lblUsuarioActivo" style="font-size: 11px;">Monitor: </div>
             </div>
         </div>
         <div>
@@ -183,54 +184,9 @@
 </div>
 
 <div class="modal fade" id="modalStatusTokens" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-warning text-dark border-0 py-2"><h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-satellite-dish"></i> ESTATUS GPS</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><ul class="list-group list-group-flush rounded-bottom-4" id="listaStatusTokens"></ul></div></div></div></div>
-
-<div class="modal fade" id="modalAdmin" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content border-0 shadow-lg rounded-4">
-    <div class="modal-header bg-danger text-white border-0 py-2"><h6 class="modal-title fw-bold m-0">ADMINISTRACIÓN MAESTRA</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body bg-light rounded-bottom-4 p-3">
-        <div class="row g-2">
-            <div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Tokens GPS</h6><input type="text" id="tk_nom" class="form-control form-control-sm mb-1 bg-light" placeholder="Ej. RACEL"><input type="text" id="tk_url" class="form-control form-control-sm mb-1 bg-light" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-1 bg-light" placeholder="Token Largo"><button class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0" onclick="agregarToken()">Guardar</button><ul class="list-group list-group-sm mt-2" id="listaTokensActivos" style="font-size:0.7rem;"></ul></div></div>
-            <div class="col-lg-3 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Operadores Manuales</h6><input class="form-control form-control-sm mb-1 bg-light" list="listaUnidadesTotales" id="op_unidad" placeholder="Unidad" autocomplete="off"><input type="text" id="op_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Nombre Chófer"><button onclick="vincularOperador()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Vincular</button><ul class="list-group list-group-sm mt-2" id="listaOperadoresAdmin" style="font-size:0.7rem;"></ul></div></div>
-            
-            <div class="col-lg-2 col-md-4">
-                <div class="bg-white p-2 rounded-3 shadow-sm h-100">
-                    <h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Clientes</h6>
-                    <input type="text" id="cli_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Empresa">
-                    <input type="file" id="cli_logo_file" accept="image/*" class="form-control form-control-sm mb-1 bg-light" title="Seleccionar Logo" style="font-size:0.6rem;">
-                    <button onclick="crearCliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Añadir</button>
-                    
-                    <input type="file" id="edit_cli_logo_file" accept="image/*" style="display:none;" onchange="
-                        if(this.files && this.files[0] && window.currentEditCli){
-                            let reader = new FileReader();
-                            reader.onload = e => {
-                                db.ref('clientes/' + window.currentEditCli).update({logo: e.target.result});
-                                this.value = '';
-                            };
-                            reader.readAsDataURL(this.files[0]);
-                        }
-                    ">
-                    <ul class="list-group list-group-sm mt-2" id="listaClientesAdmin" style="max-height: 200px; overflow-y:auto; font-size:0.7rem;"></ul>
-                </div>
-            </div>
-
-            <div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Subclientes</h6><select id="sub_clientePadre" class="form-select form-select-sm mb-1 bg-light"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Sub-empresa"><button onclick="crearSubcliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Añadir</button><ul class="list-group list-group-sm mt-2" id="listaSubclientesAdmin" style="max-height: 200px; overflow-y:auto; font-size:0.7rem;"></ul></div></div>
-            <div class="col-lg-3 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Monitoristas</h6><input type="text" id="usr_id" class="form-control form-control-sm mb-1 bg-light" placeholder="Usuario (login)"><input type="text" id="usr_nom" class="form-control form-control-sm mb-1 bg-light" placeholder="Nombre completo"><input type="text" id="usr_pass" class="form-control form-control-sm mb-1 bg-light" placeholder="Contraseña"><button onclick="crearUsuario()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Crear</button><ul class="list-group list-group-sm mt-2" id="listaUsuariosAdmin" style="font-size:0.7rem;"></ul></div></div>
-        </div>
-    </div>
-</div></div></div>
-
-<div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-primary text-white border-0 py-2"><h6 class="modal-title fw-bold m-0">REGISTRAR UNIDAD</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small bg-light rounded-bottom-4 p-3"><div class="bg-white p-3 rounded-4 shadow-sm">
-    <div class="form-check form-switch mb-2 bg-light p-1 rounded border border-info" style="font-size:0.8rem;">
-        <input class="form-check-input ms-1" type="checkbox" id="nv_externa" style="cursor:pointer;">
-        <label class="form-check-label fw-bold text-info ms-2" for="nv_externa" style="cursor:pointer;"><i class="fa-solid fa-globe"></i> UNIDAD EXTERNA (No buscar en Wialon)</label>
-    </div>
-    <label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Unidad GPS:</label><input type="text" class="form-control form-control-sm mb-2 border-primary fw-bold bg-light" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off" placeholder="Escribe o selecciona...">
-    <label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Operador:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2 bg-light" list="listaConductores" autocomplete="off">
-    <div class="row mb-2"><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Cliente:</label><select id="nv_cliente" class="form-select form-select-sm bg-light" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm bg-light"><option value="">N/A</option></select></div></div>
-    <div class="row mb-3"><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm bg-light" list="listaGeocercas"></div><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Destino:</label><input type="text" id="nv_destino" class="form-control form-control-sm bg-light" list="listaGeocercas"></div></div>
-    <button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold py-1 rounded-pill shadow-sm">INICIAR VIAJE EN BITÁCORA</button></div></div></div></div></div>
-
+<div class="modal fade" id="modalAdmin" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-danger text-white border-0 py-2"><h6 class="modal-title fw-bold m-0">ADMINISTRACIÓN MAESTRA</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body bg-light rounded-bottom-4 p-3"><div class="row g-2"><div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Tokens GPS</h6><input type="text" id="tk_nom" class="form-control form-control-sm mb-1 bg-light" placeholder="Ej. RACEL"><input type="text" id="tk_url" class="form-control form-control-sm mb-1 bg-light" value="https://hst-api.wialon.com"><input type="text" id="tk_val" class="form-control form-control-sm mb-1 bg-light" placeholder="Token Largo"><button class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0" onclick="agregarToken()">Guardar</button><ul class="list-group list-group-sm mt-2" id="listaTokensActivos" style="font-size:0.7rem;"></ul></div></div><div class="col-lg-3 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Operadores Manuales</h6><input class="form-control form-control-sm mb-1 bg-light" list="listaUnidadesTotales" id="op_unidad" placeholder="Unidad" autocomplete="off"><input type="text" id="op_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Nombre Chófer"><button onclick="vincularOperador()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Vincular</button><ul class="list-group list-group-sm mt-2" id="listaOperadoresAdmin" style="font-size:0.7rem;"></ul></div></div><div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Clientes</h6><input type="text" id="cli_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Empresa"><input type="file" id="cli_logo_file" accept="image/*" class="form-control form-control-sm mb-1 bg-light" title="Seleccionar Logo" style="font-size:0.6rem;"><button onclick="crearCliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Añadir</button><input type="file" id="edit_cli_logo_file" accept="image/*" style="display:none;" onchange="if(this.files && this.files[0] && window.currentEditCli){let reader = new FileReader(); reader.onload = e => {db.ref('clientes/' + window.currentEditCli).update({logo: e.target.result}); this.value = '';}; reader.readAsDataURL(this.files[0]);}"><ul class="list-group list-group-sm mt-2" id="listaClientesAdmin" style="max-height: 200px; overflow-y:auto; font-size:0.7rem;"></ul></div></div><div class="col-lg-2 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Subclientes</h6><select id="sub_clientePadre" class="form-select form-select-sm mb-1 bg-light"></select><input type="text" id="sub_nombre" class="form-control form-control-sm mb-1 bg-light" placeholder="Sub-empresa"><button onclick="crearSubcliente()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Añadir</button><ul class="list-group list-group-sm mt-2" id="listaSubclientesAdmin" style="max-height: 200px; overflow-y:auto; font-size:0.7rem;"></ul></div></div><div class="col-lg-3 col-md-4"><div class="bg-white p-2 rounded-3 shadow-sm h-100"><h6 class="fw-bold text-primary border-bottom pb-1" style="font-size:0.8rem;">Monitoristas</h6><input type="text" id="usr_id" class="form-control form-control-sm mb-1 bg-light" placeholder="Usuario (login)"><input type="text" id="usr_nom" class="form-control form-control-sm mb-1 bg-light" placeholder="Nombre completo"><input type="text" id="usr_pass" class="form-control form-control-sm mb-1 bg-light" placeholder="Contraseña"><button onclick="crearUsuario()" class="btn btn-primary btn-sm w-100 fw-bold rounded-pill py-0">Crear</button><ul class="list-group list-group-sm mt-2" id="listaUsuariosAdmin" style="font-size:0.7rem;"></ul></div></div></div></div></div></div></div>
+<div class="modal fade" id="modalNuevoViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-primary text-white border-0 py-2"><h6 class="modal-title fw-bold m-0">REGISTRAR UNIDAD</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small bg-light rounded-bottom-4 p-3"><div class="bg-white p-3 rounded-4 shadow-sm"><div class="form-check form-switch mb-2 bg-light p-1 rounded border border-info" style="font-size:0.8rem;"><input class="form-check-input ms-1" type="checkbox" id="nv_externa" style="cursor:pointer;"><label class="form-check-label fw-bold text-info ms-2" for="nv_externa" style="cursor:pointer;"><i class="fa-solid fa-globe"></i> UNIDAD EXTERNA (No buscar en Wialon)</label></div><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Unidad GPS:</label><input type="text" class="form-control form-control-sm mb-2 border-primary fw-bold bg-light" list="listaUnidadesTotales" id="nv_unidad_input" autocomplete="off" placeholder="Escribe o selecciona..."><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Operador:</label><input type="text" id="nv_operador" class="form-control form-control-sm mb-2 bg-light" list="listaConductores" autocomplete="off"><div class="row mb-2"><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Cliente:</label><select id="nv_cliente" class="form-select form-select-sm bg-light" onchange="cargarSubclientesEnSelect('nv_subcliente', this.value)"></select></div><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Subcliente:</label><select id="nv_subcliente" class="form-select form-select-sm bg-light"><option value="">N/A</option></select></div></div><div class="row mb-3"><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Origen:</label><input type="text" id="nv_origen" class="form-control form-control-sm bg-light" list="listaGeocercas"></div><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Destino:</label><input type="text" id="nv_destino" class="form-control form-control-sm bg-light" list="listaGeocercas"></div></div><button onclick="registrarViaje()" class="btn btn-primary btn-sm w-100 fw-bold py-1 rounded-pill shadow-sm">INICIAR VIAJE EN BITÁCORA</button></div></div></div></div></div>
 <div class="modal fade" id="modalEditarViaje" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-success text-white border-0 py-2"><h6 class="modal-title fw-bold m-0">EDITAR VIAJE: <span id="edU_name"></span></h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body small bg-light rounded-bottom-4 p-3"><div class="bg-white p-3 rounded-4 shadow-sm"><input type="hidden" id="edU_id"><div class="row mb-2"><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Cliente:</label><select id="ed_cliente" class="form-select form-select-sm bg-light" onchange="cargarSubclientesEnSelect('ed_subcliente', this.value)"></select></div><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Subcliente:</label><select id="ed_subcliente" class="form-select form-select-sm bg-light"><option value="">N/A</option></select></div></div><div class="row mb-2"><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Origen:</label><input type="text" id="ed_origen" class="form-control form-control-sm bg-light" list="listaGeocercas"></div><div class="col-6"><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Destino:</label><input type="text" id="ed_destino" class="form-control form-control-sm bg-light" list="listaGeocercas"></div></div><label class="fw-bold text-secondary mb-0" style="font-size:0.75rem;">Operador:</label><input type="text" id="ed_operador" class="form-control form-control-sm mb-3 bg-light" list="listaConductores"><button onclick="guardarEdicionViaje()" class="btn btn-success btn-sm w-100 fw-bold py-1 rounded-pill shadow-sm">ACTUALIZAR DATOS</button></div></div></div></div></div>
-
 <div class="modal fade" id="modalLog" tabindex="-1"><div class="modal-dialog"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-dark text-white border-0 py-2"><h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-list-ul"></i> HISTORIAL: <span id="log_uName"></span></h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-3 bg-light rounded-bottom-4"><div id="log_container" class="mb-3 bg-white border border-light rounded-4 p-2 shadow-sm" style="height:200px; overflow-y:auto; font-size:0.75rem;"></div><input type="hidden" id="log_uid"><div class="input-group input-group-sm shadow-sm rounded-pill overflow-hidden"><input type="text" id="log_txt" class="form-control border-0 text-uppercase bg-white px-3" placeholder="Nota manual..."><button class="btn btn-primary fw-bold px-3" onclick="guardarLogManual()"><i class="fa-solid fa-paper-plane"></i></button></div></div></div></div></div>
 
 <datalist id="listaGeocercas"></datalist><datalist id="listaConductores"></datalist><datalist id="listaUnidadesTotales"></datalist>
@@ -415,7 +371,7 @@
         let geoTextWA = "";
 
         if (pos) {
-            let zonaGeo = resolverGeocerca(pos.y, pos.x);
+            let zonaGeo = uData.zonaOficial || resolverGeocerca(pos.y, pos.x);
             if(zonaGeo) geoTextWA = `\n📍 *Geocerca:* ${zonaGeo}`;
             
             let domAddr = document.getElementById("addr_" + vId);
@@ -461,7 +417,7 @@
             let geoTextWA = "";
             
             if (pos) {
-                let zonaGeo = resolverGeocerca(pos.y, pos.x);
+                let zonaGeo = uData.zonaOficial || resolverGeocerca(pos.y, pos.x);
                 if(zonaGeo) geoTextWA = `\n📍 *Geocerca:* ${zonaGeo}`;
                 
                 let domAddr = document.getElementById("addr_" + vId);
@@ -599,23 +555,80 @@
                     let webUrl = tk.url.includes("hst-api") ? "https://hosting.wialon.com" : tk.url;
                     let autoLoginUrl = `${webUrl}/login.html?token=${tk.token}`;
 
-                    let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1025, from: 0, to: 4294967295 }, auth.sid);
+                    // RECURSOS Y GEOCERCAS (El Filtro Láser de Wialon)
+                    let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1 + 256 + 4096, from: 0, to: 4294967295 }, auth.sid);
+                    
+                    let diccChoferes = {};
+                    let diccZonasReq = {};
+                    let diccZonasNombres = {};
+
+                    if(reqR && reqR.items) {
+                        reqR.items.forEach(r => { 
+                            let rId = r.id;
+                            diccZonasReq[rId] = [];
+                            diccZonasNombres[rId] = {};
+                            
+                            if(r.zl) {
+                                Object.values(r.zl).forEach(z => { 
+                                    diccZonasReq[rId].push(z.id);
+                                    diccZonasNombres[rId][z.id] = z.n;
+                                    tempGeo.push(z); 
+                                });
+                            }
+                            
+                            if(r.drvrs || r.drv) {
+                                let drivers = r.drvrs || r.drv;
+                                Object.values(drivers).forEach(d => { 
+                                    if(d.bu && d.bu > 0) { 
+                                        diccChoferes[d.bu] = { nombre: d.n, tel: d.p || "", cod: d.c || "---", rid: rId };
+                                        ramDrivers[String(d.bu)] = String(d.n||"").toUpperCase(); 
+                                        listDrv.add(String(d.n||"").toUpperCase()); 
+                                    } 
+                                }); 
+                            }
+                        });
+                    }
+
+                    // UNIDADES
+                    let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1 + 1024, from: 0, to: 4294967295 }, auth.sid);
+                    
                     if(reqU && reqU.items) {
                         conexionesExitosas++; estadoTokens[tk.nombre] = { status: 'OK', count: reqU.items.length };
-                        let localMap = {}; 
+                        
+                        let uIds = reqU.items.map(u => u.id);
+                        let checkGeo = {};
+                        if(uIds.length > 0) {
+                            checkGeo = await peticionWialon(tk.url, "resource/get_zones_by_unit", { spec: { zoneId: diccZonasReq, units: uIds, time: 0 } }, auth.sid);
+                        }
+
                         reqU.items.forEach(u => { 
                             let n = String(u.nm || "Desconocida").toUpperCase(); 
-                            tempUnits[u.id] = { id: u.id, name: n, pos: u.pos, loginUrl: autoLoginUrl }; 
-                            localMap[u.id] = n; listUni.add(n); 
+                            
+                            // Integración Mágica: Choferes y Geocercas
+                            let chofer = diccChoferes[u.id] || { nombre: "Sin asignar", tel: "", cod: "---", rid: null };
+                            let miZona = null;
+                            
+                            let recursoDueño = chofer.rid ? chofer.rid : u.bact;
+                            if (recursoDueño && checkGeo && checkGeo[recursoDueño]) {
+                                for (let zId in checkGeo[recursoDueño]) {
+                                    if (checkGeo[recursoDueño][zId].includes(u.id)) { miZona = diccZonasNombres[recursoDueño][zId]; break; }
+                                }
+                            } else if (checkGeo) {
+                                for (let rId in checkGeo) {
+                                    for (let zId in checkGeo[rId]) {
+                                        if (checkGeo[rId][zId].includes(u.id)) { miZona = diccZonasNombres[rId][zId]; break; }
+                                    }
+                                    if (miZona) break;
+                                }
+                            }
+
+                            tempUnits[u.id] = { 
+                                id: u.id, name: n, pos: u.pos, loginUrl: autoLoginUrl,
+                                choferObj: chofer, zonaOficial: miZona 
+                            }; 
+                            listUni.add(n); 
                         });
                         
-                        let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 4353, from: 0, to: 4294967295 }, auth.sid);
-                        if(reqR && reqR.items) {
-                            reqR.items.forEach(r => { 
-                                if(r.drv) Object.values(r.drv).forEach(d => { if(d.bu) ramDrivers[String(d.bu)] = String(d.n||"").toUpperCase(); listDrv.add(String(d.n||"").toUpperCase()); }); 
-                                if(r.zl) Object.values(r.zl).forEach(z => tempGeo.push(z)); 
-                            });
-                        }
                     } else { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; }
                 } catch(errTk) {
                     console.error("Token Falló:", tk.nombre);
@@ -702,13 +715,19 @@
                     btnName.setAttribute("onclick", `centrarUnidadMapa(null, null)`);
                 }
 
-                let wialonDriver = uData && ramDrivers[String(uData.id)] ? ramDrivers[String(uData.id)] : "";
+                // INYECCIÓN DE OPERADOR WIALON (MRL) Y BOTÓN DE WHATSAPP
+                let wialonDriverObj = uData ? uData.choferObj : null;
                 let elOpWialon = document.getElementById("op_wialon_" + vId);
                 if (elOpWialon) {
-                    if (wialonDriver) {
-                        elOpWialon.innerHTML = `<div class="text-info text-truncate w-100" style="font-size:0.6rem; font-weight:800;" title="Operador Wialon"><i class="fa-solid fa-id-card"></i> ${wialonDriver}</div>`;
+                    if (wialonDriverObj && wialonDriverObj.nombre !== "Sin asignar") {
+                        let cleanTel = wialonDriverObj.tel.replace(/\D/g,'');
+                        let waBtn = wialonDriverObj.tel ? `<a href="https://wa.me/${cleanTel}" target="_blank" class="wa-btn w-100 text-center mt-1"><i class="fab fa-whatsapp me-1"></i>${wialonDriverObj.tel}</a>` : '';
+                        elOpWialon.innerHTML = `
+                            <div class="badge bg-light text-dark border w-100 text-truncate mt-1 text-uppercase" style="font-size:0.6rem;" title="Cod: ${wialonDriverObj.cod}"><i class="fa-solid fa-id-card"></i> ${wialonDriverObj.nombre}</div>
+                            ${waBtn}
+                        `;
                     } else {
-                        elOpWialon.innerHTML = '';
+                        elOpWialon.innerHTML = '<span class="badge bg-secondary w-100 mt-1" style="font-size:0.6rem;">Sin asignar en GPS</span>';
                     }
                 }
 
@@ -726,12 +745,14 @@
                     } else {
                         let mapsLink = `https://www.google.com/maps?q=${pos.y},${pos.x}`;
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`;
-                        let zonaGeo = resolverGeocerca(pos.y, pos.x);
+                        
+                        // INYECCIÓN DEL FILTRO LÁSER DE GEOCERCAS
+                        let zonaGeo = uData.zonaOficial || resolverGeocerca(pos.y, pos.x);
                         
                         let addrText = `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`;
                         if(geocodeCache[geoKey]) addrText = `<i class="fa-solid fa-map-location-dot me-1 text-primary"></i> ${geocodeCache[geoKey]}`;
                         
-                        let geoHtml = zonaGeo ? `<div class="mb-1 rounded text-center" style="background-color: #dcfce7; border: 1px solid #10b981; font-size:0.65rem; padding:1px 4px; font-weight:800;"><i class="fa-solid fa-draw-polygon text-success me-1"></i><span class="text-success">${zonaGeo}</span></div>` : '';
+                        let geoHtml = zonaGeo ? `<div class="mb-1 text-center"><span class="badge-geo w-100 d-inline-block text-truncate"><i class="fa-solid fa-location-dot me-1"></i>${zonaGeo}</span></div>` : '';
                         
                         let newHtml = `
                             ${geoHtml}
@@ -760,7 +781,7 @@
             let uData = encontrarUnidad(v, vId); 
             
             if(uData && uData.pos) {
-                let zonaGeo = resolverGeocerca(uData.pos.y, uData.pos.x);
+                let zonaGeo = uData.zonaOficial || resolverGeocerca(uData.pos.y, uData.pos.x);
                 if(zonaGeo) {
                     if(v.destino && !v.t_arribo && zonaGeo.toUpperCase().includes(String(v.destino).toUpperCase())) {
                         db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); registrarLog(vId, 'Arribo Automático (Geocerca)');
@@ -885,7 +906,13 @@
             let cliName = "SIN CLIENTE";
             if (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].nombre) cliName = dataClientes[cId].nombre;
             
-            let logoHtml = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo" onerror="this.style.display='none'">` : '';
+            // LA MAGIA DE LOS LOGOS: Si hay imagen, se muestra imponente y se oculta el texto.
+            let logoHtml = "";
+            let txtCliente = cliName;
+            if (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) {
+                logoHtml = `<img src="${dataClientes[cId].logo}" class="client-logo" title="${cliName}">`;
+                txtCliente = ""; 
+            }
             
             let cliHtml = "";
             let btnWaCli = cId !== "Sin_Cliente" ? `<button class="btn btn-primary btn-sm py-0 px-2 mt-1 float-end shadow-sm border-light rounded-pill" style="font-size:0.7rem;" onclick="generarReporteGrupal('${cId}', 'N/A', '${cliName}')"><i class="fa-brands fa-whatsapp"></i> Reporte WhatsApp</button>` : '';
@@ -1006,7 +1033,7 @@
                     }
                 });
             }
-            if(hasClientUnits) html += `<tr class="header-cliente shadow-sm"><td colspan="10"><div class="d-flex justify-content-between align-items-end"><span>📦 ${logoHtml} CLIENTE: ${cliName}</span> ${btnWaCli}</div></td></tr>` + cliHtml;
+            if(hasClientUnits) html += `<tr class="header-cliente shadow-sm"><td colspan="10"><div class="d-flex justify-content-between align-items-end"><span>📦 ${logoHtml} <span class="align-middle">${txtCliente}</span></span> ${btnWaCli}</div></td></tr>` + cliHtml;
         }
         tbody.innerHTML = html || '<tr><td colspan="10" class="p-5 text-muted fs-6"><i class="fa-solid fa-folder-open mb-2 fs-3 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>';
         filtrarTablaInteligente();
@@ -1040,6 +1067,7 @@
             else if (r.classList.contains("header-cliente")) { 
                 r.style.display = visCli > 0 ? "" : "none"; 
                 visCli = 0; 
+                visSub = 0; // MAGIA: Reseteamos el subcliente para que no se "filtre" hacia arriba
             }
         }
     }
