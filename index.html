@@ -828,7 +828,7 @@
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center w-100">
-                                    <a href="https://www.google.com/maps?q=$${pos.y},${pos.x}" target="_blank" class="addr-link text-start flex-grow-1" title="Abrir en Maps">
+                                    <a href="https://www.google.com/maps?q=${pos.y},${pos.x}" target="_blank" class="addr-link text-start flex-grow-1" title="Abrir en Maps">
                                         <div class="addr-container addr-span-${geoKey}" id="addr_${vId}">${addrText}</div>
                                     </a>
                                 </div>
@@ -909,7 +909,7 @@
     }
 
     function renderizarBitacora() {
-        if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA") return;
+        if(document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT" || document.activeElement.tagName === "TEXTAREA" || document.querySelector('.dropdown-menu.show')) return;
         const tbody = document.getElementById('units-body'); let html = "";
         let tree = { "Sin_Cliente": { "N/A": [] } };
         
