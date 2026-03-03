@@ -1,5 +1,5 @@
 // ============================================================================
-// PARTE 1: CONFIGURACIÓN, VARIABLES GLOBALES Y UTILIDADES
+// PARTE 1: CONFIGURACIÓN, VARIABLES GLOBALES, UTILIDADES Y MAPA
 // ============================================================================
 
 const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
@@ -16,8 +16,8 @@ function mostrarNotificacion(msg) {
 let UI_PAUSED = false;
 document.addEventListener('show.bs.dropdown', () => { UI_PAUSED = true; });
 document.addEventListener('hide.bs.dropdown', () => { UI_PAUSED = false; setTimeout(renderizarBitacora, 100); });
-document.addEventListener('focusin', (e) => { if(['INPUT', 'TEXTAREA'].includes(e.target.tagName)) UI_PAUSED = true; });
-document.addEventListener('focusout', (e) => { if(['INPUT', 'TEXTAREA'].includes(e.target.tagName)) { UI_PAUSED = false; setTimeout(renderizarBitacora, 100); } });
+document.addEventListener('focusin', (e) => { if(['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) UI_PAUSED = true; });
+document.addEventListener('focusout', (e) => { if(['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) { UI_PAUSED = false; setTimeout(renderizarBitacora, 100); } });
 
 // --- VARIABLES GLOBALES ---
 let currentUser = null;
@@ -25,7 +25,7 @@ let configSistema = { tokens: [] };
 let dataClientes = {};
 let viajesActivos = {};
 let unidadesGlobales = {};
-let diccChoferesGlobal = {}; // PUNTO 2: Diccionario de Operadores Wialon
+let diccChoferesGlobal = {}; 
 let ramDrivers = {};
 let dbOperadores = {};
 let geocercasNativas = [];
@@ -38,7 +38,7 @@ let geofenceLayerGroup = null;
 let estadoTokens = {};
 let datosAgrupadosGlobal = {}; 
 let mapaMarcadores = {}; 
-let salidasPendientes = {}; // PUNTO 5: Objeto para la ventana flotante
+let salidasPendientes = {}; 
 
 let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
 let geoQueue = []; 
@@ -105,7 +105,6 @@ window.estatusData = {
 };
 
 // --- FUNCIONES MATEMÁTICAS Y LIMPIEZA ---
-// PUNTO 6: Limpia espacios vacíos que arruinan la lectura de geocercas
 function limpiarStr(str) {
     if(!str) return "";
     return String(str).trim().replace(/\s+/g, ' ').toUpperCase();
@@ -207,7 +206,7 @@ function inicializarMenuColumnas() {
             ? `<i class="fa-solid fa-arrow-down mx-1 text-primary cp fs-6" title="Mover Derecha" onclick="moverColumna(${index}, 1)"></i>` 
             : `<i class="fa-solid fa-arrow-down mx-1 text-muted fs-6" style="opacity:0.2"></i>`;
         
-        let tituloLimpio = columnasDef[k].titulo.replace(/<[^>]*>?/gm, ''); // Quita iconos HTML
+        let tituloLimpio = columnasDef[k].titulo.replace(/<[^>]*>?/gm, ''); 
 
         menuHtml += `
             <li class="dropdown-item d-flex justify-content-between align-items-center py-1 px-3 border-bottom">
@@ -404,7 +403,8 @@ function actualizarMarcadoresMapa() {
             let est = window.estatusData[v.estatus]?.nombre || "En Trayecto";
             let operador = v.operador || (uData.choferObj && uData.choferObj.nombre !== "Sin asignar" ? uData.choferObj.nombre : "Sin Operador");
 
-            let hoverText = isMoving ? `En movimiento a ${vel} km/h` : `Unidad detenida`;
+            // Hover en Mapa (Punto 8)
+            let hoverText = isMoving ? `En movimiento a ${vel} km/h (hace ${timeAgo(uData.pos.t)})` : `Unidad detenida (hace ${timeAgo(uData.pos.t)})`;
 
             let popupContent = `
                 <div style="text-align:center; min-width: 160px; font-family: 'Inter', sans-serif;">
@@ -521,7 +521,7 @@ function guardarLogManual() {
     if(!txt) return; 
     registrarLog(uId, "Agregó Nota", txt); 
     
-    // Si la unidad estaba detenida (+5 min) y el monitorista agrega nota, "justifica" la parada
+    // PUNTO 3: Si la unidad estaba detenida (+5 min) y el monitorista agrega nota, "justifica" la parada y apaga la alarma roja
     let v = viajesActivos[uId];
     if (v && v.alerta_detenida) {
         db.ref('viajes_activos/'+uId+'/alerta_detenida').set(null);
@@ -872,30 +872,41 @@ function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColo
     }
 }
 
-// --- NUEVO SISTEMA BATCH ---
+// --- NUEVO SISTEMA BATCH Y CLIENTES (PUNTO 4 Y 5) ---
+window.promptNuevoCliente = function() {
+    let n = prompt("Nombre del Nuevo Cliente (Aparecerá en el sistema general):");
+    if(n) { 
+        db.ref('clientes').push({nombre: limpiarStr(n), logo: ""}); 
+        mostrarNotificacion("Cliente agregado. Seleccionelo de la lista."); 
+    }
+};
+
+window.promptNuevoSubcliente = function() {
+    let cId = document.getElementById("nv_cliente").value;
+    if(!cId) return alert("Primero selecciona un cliente principal.");
+    let n = prompt("Nombre del Nuevo Subcliente:");
+    if(n) { 
+        db.ref(`clientes/${cId}/subclientes`).push({nombre: limpiarStr(n)}); 
+        mostrarNotificacion("Subcliente agregado. Seleccionelo de la lista."); 
+        setTimeout(cargarSubclientesNuevoViaje, 600);
+    }
+};
+
+window.cargarSubclientesNuevoViaje = function() {
+    let cId = document.getElementById("nv_cliente").value;
+    let selSub = document.getElementById("nv_subcliente");
+    selSub.innerHTML = '<option value="">-- SIN SUBCLIENTE --</option>';
+    if(cId && dataClientes[cId] && dataClientes[cId].subclientes) {
+        selSub.innerHTML += Object.keys(dataClientes[cId].subclientes).map(k => `<option value="${k}">${dataClientes[cId].subclientes[k].nombre}</option>`).join('');
+    }
+};
+
 function prepararNuevoViaje() { 
-    let listCli = document.getElementById("list_clientes"); 
-    if(!listCli) { 
-        listCli = document.createElement('datalist'); 
-        listCli.id="list_clientes"; 
-        document.body.appendChild(listCli); 
-    } 
-    listCli.innerHTML = Object.keys(dataClientes).map(k => `<option value="${dataClientes[k].nombre}">`).join('');
-
-    let listSub = document.getElementById("list_subclientes"); 
-    if(!listSub) { 
-        listSub = document.createElement('datalist'); 
-        listSub.id="list_subclientes"; 
-        document.body.appendChild(listSub); 
-    } 
-    let subHtml = ""; 
-    Object.values(dataClientes).forEach(c => { 
-        if(c.subclientes) Object.values(c.subclientes).forEach(s => subHtml += `<option value="${s.nombre}">`); 
-    }); 
-    listSub.innerHTML = subHtml;
-
-    document.getElementById("nv_cliente").value = ""; 
-    document.getElementById("nv_subcliente").value = "";
+    let selCli = document.getElementById("nv_cliente");
+    selCli.innerHTML = '<option value="">-- SELECCIONE CLIENTE --</option>' + 
+                       Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join('');
+    
+    document.getElementById("nv_subcliente").innerHTML = '<option value="">-- SIN SUBCLIENTE --</option>';
     document.getElementById("nv_filas_container").innerHTML = "";
     document.getElementById("nv_externa").checked = false; 
     
@@ -962,30 +973,11 @@ function autofillOp(inputEl) {
     } 
 }
 
-function getClienteIdByName(name) { 
-    let found = Object.keys(dataClientes).find(k => limpiarStr(dataClientes[k].nombre) === limpiarStr(name)); 
-    return found || name; 
-}
-
-function getSubclienteIdByName(cliId, subName) { 
-    if(dataClientes[cliId] && dataClientes[cliId].subclientes) { 
-        let found = Object.keys(dataClientes[cliId].subclientes).find(k => limpiarStr(dataClientes[cliId].subclientes[k].nombre) === limpiarStr(subName)); 
-        return found || subName; 
-    } 
-    return subName; 
-}
-
 function registrarViajesMultiples() {
-    let cliName = limpiarStr(document.getElementById("nv_cliente").value);
-    let subName = limpiarStr(document.getElementById("nv_subcliente").value);
-    if(!cliName) return alert("Debes poner el nombre del Cliente.");
-
-    let cId = getClienteIdByName(cliName); 
-    let sId = getSubclienteIdByName(cId, subName);
-
-    if(cId === cliName && cliName !== "") { let ref = db.ref('clientes').push({nombre: cliName, logo: ""}); cId = ref.key; }
-    if(sId === subName && subName !== "") { let ref = db.ref('clientes/'+cId+'/subclientes').push({nombre: subName}); sId = ref.key; }
-    if(subName === "") sId = "N/A";
+    let cId = document.getElementById("nv_cliente").value;
+    let sId = document.getElementById("nv_subcliente").value || "N/A";
+    
+    if(!cId) return alert("Debes seleccionar un Cliente de la lista.");
 
     let isExterna = document.getElementById("nv_externa").checked;
     let filas = document.querySelectorAll(".nv-fila");
@@ -1079,7 +1071,11 @@ function abrirEdicionViaje(uId, uName) {
     document.getElementById("ed_origen").value = v.origen || ""; 
     document.getElementById("ed_t_programada").value = v.t_programada ? getLocalISO(v.t_programada) : "";
     
-    // PUNTO 2: Llenar el Dropdown de Operadores desde Wialon
+    // PUNTO 2: Lógica de Operador Blindado según el Tipo de Unidad
+    let isExt = (v.wialonId === "EXTERNO");
+    document.getElementById("ed_operador_wialon_wrapper").style.display = isExt ? 'none' : 'block';
+    document.getElementById("ed_operador_manual_wrapper").style.display = isExt ? 'block' : 'none';
+
     let opSelect = document.getElementById("ed_operador_wialon");
     opSelect.innerHTML = `<option value="">-- SELECCIONAR DE WIALON --</option>`;
     
@@ -1093,10 +1089,10 @@ function abrirEdicionViaje(uId, uName) {
         }
     });
 
-    document.getElementById("ed_operador").value = v.operador || ""; 
+    document.getElementById("ed_operador").value = isExt ? (v.operador || "") : ""; 
     
-    let cName = (v.cliente && v.cliente !== "Sin_Cliente" && dataClientes[v.cliente]) ? dataClientes[v.cliente].nombre : "";
-    let sName = (v.subcliente && v.subcliente !== "N/A" && dataClientes[v.cliente] && dataClientes[v.cliente].subclientes && dataClientes[v.cliente].subclientes[v.subcliente]) ? dataClientes[v.cliente].subclientes[v.subcliente].nombre : "";
+    let cName = (v.cliente && v.cliente !== "Sin_Cliente" && dataClientes[v.cliente]) ? dataClientes[v.cliente].nombre : "SIN CLIENTE";
+    let sName = (v.subcliente && v.subcliente !== "N/A" && dataClientes[v.cliente] && dataClientes[v.cliente].subclientes && dataClientes[v.cliente].subclientes[v.subcliente]) ? dataClientes[v.cliente].subclientes[v.subcliente].nombre : "SIN SUBCLIENTE";
     document.getElementById("ed_cliente").value = cName; 
     document.getElementById("ed_subcliente").value = sName; 
     
@@ -1111,28 +1107,19 @@ function abrirEdicionViaje(uId, uName) {
 
 function guardarEdicionViaje() { 
     let uId = document.getElementById("edU_id").value; 
-    let cliName = limpiarStr(document.getElementById("ed_cliente").value);
-    let subName = limpiarStr(document.getElementById("ed_subcliente").value);
-    let cId = getClienteIdByName(cliName); 
-    let sId = getSubclienteIdByName(cId, subName);
-
-    if(cId === cliName && cliName !== "") { let ref = db.ref('clientes').push({nombre: cliName, logo: ""}); cId = ref.key; }
-    if(sId === subName && subName !== "") { let ref = db.ref('clientes/'+cId+'/subclientes').push({nombre: subName}); sId = ref.key; }
-    if(cliName === "") cId = "Sin_Cliente"; 
-    if(subName === "") sId = "N/A";
+    let v = viajesActivos[uId];
+    if(!v) return;
 
     let tProgRaw = document.getElementById("ed_t_programada").value;
     let tProgTs = tProgRaw ? new Date(tProgRaw).getTime() : null;
 
-    // Tomar operador del select de Wialon si existe, si no, del input manual
+    let isExt = (v.wialonId === "EXTERNO");
     let opWialon = document.getElementById("ed_operador_wialon").value;
     let opManual = document.getElementById("ed_operador").value;
-    let finalOp = limpiarStr(opWialon || opManual);
+    let finalOp = isExt ? limpiarStr(opManual) : limpiarStr(opWialon);
 
-    registrarLog(uId, "Editó Datos", "Rutas/Cliente/Contenedor/Hora"); 
+    registrarLog(uId, "Editó Datos", "Rutas/Contenedor/Hora"); 
     db.ref('viajes_activos/' + uId).update({ 
-        cliente: cId, 
-        subcliente: sId, 
         origen: limpiarStr(document.getElementById("ed_origen").value), 
         destinos: edChipsArray, 
         contenedores_arr: edChipsContArray,
@@ -1197,11 +1184,12 @@ function renderizarBitacora() {
                 </ul>
             </div>` : '';
         
+        // PUNTO 6: Logos Grudicom y Cliente hermanados
         let clientTitleHtml = `
             <div class="d-flex align-items-center justify-content-center w-100 position-relative">
                 <img src="TIGPS HD2.png" class="grudicom-logo-header" title="Grudicom TI & GPS" onerror="this.style.display='none'">
                 ${logoHtml}
-                <span class="align-middle text-uppercase fw-bold ms-2" style="font-size: 1.2rem; letter-spacing: 0.5px;">${cliName}</span>
+                <span class="align-middle text-uppercase fw-bold ms-2" style="font-size: 1.3rem; letter-spacing: 0.5px;">${cliName}</span>
                 ${clientActions}
             </div>
         `;
@@ -1240,19 +1228,10 @@ function renderizarBitacora() {
 
             tree[cId][sId].sort((a, b) => { 
                 let valA = "", valB = "";
-                if (sortState.column === 'unidad') {
-                    valA = String(a.v.unidadN || a.v.unidadFallback || "");
-                    valB = String(b.v.unidadN || b.v.unidadFallback || "");
-                } else if (sortState.column === 'ruta') {
-                    valA = String(a.v.origen || "");
-                    valB = String(b.v.origen || "");
-                } else if (sortState.column === 'estatus') {
-                    valA = String(a.v.estatus || "");
-                    valB = String(b.v.estatus || "");
-                } else {
-                    valA = String(a.v.estatus || "");
-                    valB = String(b.v.estatus || "");
-                }
+                if (sortState.column === 'unidad') { valA = String(a.v.unidadN || a.v.unidadFallback || ""); valB = String(b.v.unidadN || b.v.unidadFallback || ""); } 
+                else if (sortState.column === 'ruta') { valA = String(a.v.origen || ""); valB = String(b.v.origen || ""); } 
+                else if (sortState.column === 'estatus') { valA = String(a.v.estatus || ""); valB = String(b.v.estatus || ""); } 
+                else { valA = String(a.v.estatus || ""); valB = String(b.v.estatus || ""); }
                 let cmp = valA.localeCompare(valB);
                 return sortState.direction === 'asc' ? cmp : -cmp;
             });
@@ -1265,6 +1244,7 @@ function renderizarBitacora() {
 
                     let logsObj = v.log || {}; 
                     let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
+                    
                     let lastLog = logsArr.length > 0 ? 
                         `<div class="text-start w-100 d-flex flex-column h-100 justify-content-center">
                             <div style="font-size:0.6rem; color:#64748b; font-weight:800; margin-bottom:2px;">
@@ -1276,6 +1256,14 @@ function renderizarBitacora() {
                                 <div class="text-muted text-truncate mt-1" style="max-width:100%;" title="${String(logsArr[0].det||'')}">${String(logsArr[0].det||'')}</div>
                             </div>
                         </div>` : `<div style="font-size:0.65rem; color:#94a3b8;">Sin eventos</div>`;
+
+                    // PUNTO 3: Campana de Alerta en lugar de Log normal si requiere justificación
+                    let htmlCajaLog = v.alerta_detenida 
+                        ? `<div class="log-alert-container shadow-sm" onclick="abrirModalLog('${vId}', '${nombreCamion}')" title="Dale clic para escribir qué pasó">
+                                <i class="fa-solid fa-bell log-alert-icon"></i>
+                                <div class="log-alert-text">ALERTA: JUSTIFICAR PARADA</div>
+                           </div>` 
+                        : lastLog;
 
                     let curEst = window.estatusData[v.estatus] || window.estatusData["s1"];
                     let optionsHtml = `
@@ -1298,7 +1286,6 @@ function renderizarBitacora() {
                     let cDestino = arrDests[cIdx] || v.destino || "";
                     if (isTripFullyFinished) { cOrigen = v.origen || ""; cDestino = arrDests[totDests - 1] || v.destino || ""; }
 
-                    // Semáforo de Horario Programado
                     let semaforoHtml = '';
                     if(v.t_programada) {
                         let pTime = new Date(v.t_programada);
@@ -1306,10 +1293,7 @@ function renderizarBitacora() {
                         let msRef = v.t_salida || Date.now();
                         let diffMins = Math.floor((msRef - v.t_programada) / 60000);
 
-                        let sClass = "semaforo-verde";
-                        let sText = "A tiempo";
-                        let sIcon = "fa-circle-check";
-
+                        let sClass = "semaforo-verde"; let sText = "A tiempo"; let sIcon = "fa-circle-check";
                         if (diffMins > 20) { sClass = "semaforo-rojo"; sText = `Retraso ${diffMins}m`; sIcon = "fa-circle-xmark"; }
                         else if (diffMins > 10) { sClass = "semaforo-amarillo"; sText = `Retraso ${diffMins}m`; sIcon = "fa-triangle-exclamation"; }
                         else if (diffMins < 0) { sText = `Adelantado ${Math.abs(diffMins)}m`; }
@@ -1392,7 +1376,9 @@ function renderizarBitacora() {
                     </td>`;
                     
                     tds['col-alertas'] = `<td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}" id="alertas_${vId}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.85rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>'}</td>`;
-                    tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}">${lastLog}</td>`;
+                    
+                    // Asignar el HTML de la campana si es necesario
+                    tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}">${htmlCajaLog}</td>`;
                     
                     tds['col-accion'] = `<td class="col-accion align-middle ${hiddenCols['col-accion'] ? 'd-none' : ''}" style="overflow: visible !important;">
                         <div class="d-flex align-items-center justify-content-center h-100">
@@ -1416,11 +1402,10 @@ function renderizarBitacora() {
                     
                     let searchData = `${nombreCamion} ${v.origen||''} ${v.destino||''} ${contArr.join(' ')} ${v.operador||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                     
-                    // PUNTO 7: Tinte de fila según estatus y alertas
                     let classAlerts = isExternal ? 'external-connection-row ' : 'needs-gps-update ';
-                    if (v.alerta_detenida) classAlerts += 'stop-warning-row ';
-
-                    html += `<tr class="data-row client-group-${cId} ${classAlerts}" id="row_${vId}" data-search="${searchData}" style="--row-bg: ${hexToRgba(colEstatus, 0.05)};">${trInner}</tr>`;
+                    
+                    // PUNTO 7: Tinte de fila según estatus. Se inyecta la variable CSS --row-bg
+                    html += `<tr class="data-row client-group-${cId} ${classAlerts}" id="row_${vId}" data-search="${searchData}" style="--row-bg: ${hexToRgba(colEstatus, 0.08)};">${trInner}</tr>`;
 
                 } catch(err) { 
                     console.error("Fila omitida por error:", vId, err); 
@@ -1448,7 +1433,7 @@ function filtrarTablaInteligente() {
     }
 }
 
-// INTELIGENCIA DE PARADAS (5 MIN), DESCONEXIÓN (10 MIN) Y SALIDAS
+// --- INTELIGENCIA DE PARADAS Y GPS ---
 function inyectarGPSenTabla() { 
     Object.keys(viajesActivos).forEach(vId => { 
         try { 
@@ -1462,8 +1447,6 @@ function inyectarGPSenTabla() {
             let isLost = !uData || (uData && !pos && !isExternal); 
             
             let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0; 
-            
-            // Lógica 1: Alerta Roja a los 10 minutos (600 segundos) de inactividad de señal
             let isStale = ageSecs > 600; 
             
             let row = document.getElementById("row_" + vId); 
@@ -1481,41 +1464,43 @@ function inyectarGPSenTabla() {
                 registrarLog(vId, "Alerta GPS", "Conexión recuperada");
             }
 
-            // LÓGICA EXPERTA: Detección Automática de Parada (+5 min)
-            if(!isExternal && !isLost && !isStale) {
-                if (speed < 4) { // Menos de 4 km/h se considera detenido
+            // LÓGICA EXPERTA: Detección Automática de Parada (+5 min) (Solo si ya salió - Punto 3 y 8)
+            if(!isExternal && !isLost && !isStale && v.t_salida) {
+                if (speed < 4) {
                     if (!v.t_parada_inicio) {
                         db.ref('viajes_activos/'+vId+'/t_parada_inicio').set(Date.now());
                     } else {
                         let minsDetenido = (Date.now() - v.t_parada_inicio) / 60000;
                         if (minsDetenido >= 5 && !v.alerta_detenida && v.estatus !== 's2' && v.estatus !== 's12') {
                             db.ref('viajes_activos/'+vId+'/alerta_detenida').set(true);
-                            db.ref('viajes_activos/'+vId+'/estatus').set('s2'); // Cambia a 1.1 PARADO
+                            db.ref('viajes_activos/'+vId+'/estatus').set('s2'); // Cambia a "1.1 PARADO"
                             registrarLog(vId, "Sistema Automático", "Unidad detenida por más de 5 minutos");
                             mostrarNotificacion(`⚠️ ¡ALERTA! La unidad ${uData.name} lleva 5 minutos detenida.`);
                         }
                     }
-                } else if (speed >= 4) { // Vehículo en movimiento
+                } else if (speed >= 4) { 
                     if (v.t_parada_inicio) db.ref('viajes_activos/'+vId+'/t_parada_inicio').set(null);
                     
-                    if (v.alerta_detenida) {
-                        db.ref('viajes_activos/'+vId+'/alerta_detenida').set(null);
-                        if(v.estatus === 's2') db.ref('viajes_activos/'+vId+'/estatus').set('s1'); // Vuelve a 1. Ruta
+                    // Si avanza y estaba marcada como parada, vuelve a estatus "1. Ruta" automáticamente,
+                    // pero la campana roja (alerta_detenida) se queda encendida hasta que justifiquen en el log.
+                    if (v.estatus === 's2') {
+                        db.ref('viajes_activos/'+vId+'/estatus').set('s1'); 
                         registrarLog(vId, "Sistema Automático", "Movimiento reanudado");
                         mostrarNotificacion(`✅ La unidad ${uData.name} retomó su ruta.`);
                     }
+                }
+            }
+
+            // PANEL FLOTANTE: Confirmación de salidas para unidades detenidas en origen (Punto 5)
+            if(!isExternal && !isLost && !isStale && !v.t_salida && !v.salida_notificada) {
+                if (speed >= 4) {
+                    let cOrigen = limpiarStr(v.origen);
+                    let zonaActual = limpiarStr(uData.zonaOficial || resolverGeocerca(pos.y, pos.x));
                     
-                    // PUNTO 5: Panel Inteligente de Salidas (Si avanza y no tiene hora de salida)
-                    if (!v.t_salida && !v.salida_notificada) {
-                        let cOrigen = limpiarStr(v.origen);
-                        let zonaActual = limpiarStr(uData.zonaOficial || resolverGeocerca(pos.y, pos.x));
-                        
-                        // Si está lejos del origen o simplemente va rápido
-                        if ((zonaActual && zonaActual !== cOrigen) || speed > 10) {
-                            salidasPendientes[vId] = { unidad: uData.name, origen: cOrigen || 'Base' };
-                            db.ref('viajes_activos/'+vId+'/salida_notificada').set(true);
-                            actualizarBotonFlotanteSalidas();
-                        }
+                    if ((zonaActual && zonaActual !== cOrigen) || speed > 10) {
+                        salidasPendientes[vId] = { unidad: uData.name, origen: cOrigen || 'Base' };
+                        db.ref('viajes_activos/'+vId+'/salida_notificada').set(true);
+                        actualizarBotonFlotanteSalidas();
                     }
                 }
             }
@@ -1868,7 +1853,7 @@ async function sincronizarFlotas() {
         estadoTokens = {}; 
         let tempUnits = {}; 
         let tempGeo = []; 
-        let tempChoferes = {}; // Almacén global temporal para operadores Wialon
+        let tempChoferes = {}; 
         let listUni = new Set(); 
         let conexionesExitosas = 0; 
         
@@ -1917,7 +1902,6 @@ async function sincronizarFlotas() {
                                 if(d.bu && d.bu > 0) { 
                                     diccChoferes[d.bu] = objC; 
                                 } 
-                                // PUNTO 2: Guardamos TODOS los choferes al DICCIONARIO GLOBAL
                                 tempChoferes[objC.nombre] = objC;
                             }); 
                         } 
@@ -1975,7 +1959,7 @@ async function sincronizarFlotas() {
         await Promise.all(promesas); 
         unidadesGlobales = tempUnits; 
         geocercasNativas = tempGeo; 
-        diccChoferesGlobal = tempChoferes; // Se actualiza la lista global de choferes para el modal
+        diccChoferesGlobal = tempChoferes; 
         
         document.getElementById("listaUnidadesTotales").innerHTML = Array.from(listUni).map(n => `<option value="${n}">`).join(''); 
         document.getElementById("listaGeocercas").innerHTML = tempGeo.map(z => `<option value="${limpiarStr(z.n)}">`).join(''); 
