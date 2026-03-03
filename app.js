@@ -1,3 +1,7 @@
+// ============================================================================
+// PARTE 1: CONFIGURACIÓN, VARIABLES GLOBALES Y UTILIDADES DE MAPA
+// ============================================================================
+
 const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -34,7 +38,9 @@ let motorArrancado = false;
 let isSyncingFlotas = false;
 let currentCaptureBlob = null; 
 
+// CHIPS ARRAYS (Para Modales)
 let edChipsArray = [];
+let edChipsContArray = []; // Nuevo array para contenedores
 
 // --- PRIORIDADES ESTRICTAS DE COLUMNAS ---
 const columnasDef = {
@@ -378,26 +384,36 @@ function actualizarMarcadoresMapa() {
     });
 }
 
+// CORRECCIÓN 7: Geocercas Resaltadas de Origen y Destino
 function pintarGeocercasEnMapa() {
     if(!lmap || !geofenceLayerGroup) return; 
     geofenceLayerGroup.clearLayers();
     
-    let geocercasActivasNombres = new Set();
+    let geocercasActivas = {};
     
     Object.values(viajesActivos).forEach(v => {
         if(typeof v !== 'object' || !v) return;
-        if(v.origen) geocercasActivasNombres.add(String(v.origen).toUpperCase());
+        if(v.origen) geocercasActivas[String(v.origen).toUpperCase()] = "origen";
         let arrDests = Array.isArray(v.destinos) ? v.destinos : (v.destino ? String(v.destino).split(/,|\n/).map(d => d.trim().toUpperCase()) : []);
-        arrDests.forEach(d => geocercasActivasNombres.add(d));
+        arrDests.forEach(d => geocercasActivas[d] = "destino");
     });
 
     geocercasNativas.forEach(z => {
-        if(geocercasActivasNombres.has(String(z.n).toUpperCase())) {
-            let colorHex = z.c ? `#${z.c.toString(16).padStart(6, '0')}` : '#3b82f6';
+        let uName = String(z.n).toUpperCase();
+        if(geocercasActivas[uName]) {
+            let isOrigen = geocercasActivas[uName] === "origen";
+            let colorHex = isOrigen ? '#15803d' : '#b91c1c'; // Verde = origen, Rojo = destino
+            let txtLabel = isOrigen ? `📍 ORIGEN: ${z.n}` : `🏁 DESTINO: ${z.n}`;
+            let cssClass = isOrigen ? 'geocerca-tooltip origen' : 'geocerca-tooltip destino';
+            
+            let shape;
             if(z.t === 3 && z.p && z.p[0]) {
-                L.circle([z.p[0].y, z.p[0].x], {radius: z.p[0].r, color: colorHex, weight: 2, fillOpacity: 0.15}).bindTooltip(z.n).addTo(geofenceLayerGroup);
+                shape = L.circle([z.p[0].y, z.p[0].x], {radius: z.p[0].r, color: colorHex, weight: 3, fillOpacity: 0.2});
             } else if((z.t === 1 || z.t === 2) && z.p) {
-                L.polygon(z.p.map(pt => [pt.y, pt.x]), {color: colorHex, weight: 2, fillOpacity: 0.15}).bindTooltip(z.n).addTo(geofenceLayerGroup);
+                shape = L.polygon(z.p.map(pt => [pt.y, pt.x]), {color: colorHex, weight: 3, fillOpacity: 0.2});
+            }
+            if(shape) {
+                shape.bindTooltip(txtLabel, { permanent: true, direction: 'top', className: cssClass }).addTo(geofenceLayerGroup);
             }
         }
     });
@@ -434,7 +450,6 @@ function cerrarSesion() {
     location.reload(); 
 }
 
-// NUEVA FUNCIÓN PARA ARCHIVAR VIAJES (CORRECCIÓN 3)
 function finalizarViaje(vId, nombre) {
     if(confirm(`¿Estás seguro de archivar el viaje de la unidad ${nombre}?`)) {
         db.ref('viajes_activos/' + vId).once('value').then(snap => {
@@ -505,8 +520,9 @@ function enviarWA(vId) {
     let cIdx = v.destino_idx || 0;
     let cOrigen = v.origen_actual || v.origen || "N/A";
     let cDestino = arrDests[cIdx] || v.destino || "N/A";
+    let contStr = Array.isArray(v.contenedores_arr) ? v.contenedores_arr.join(' / ') : (v.contenedores || 'N/A');
 
-    let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n🏢 *Cliente:* ${cliName}${subText}\n\n🚛 *Unidad:* ${nombreCamion}\n📦 *Contenedores:* ${v.contenedores||'N/A'}\n🛣️ *Ruta Actual:* ${cOrigen} ➔ ${cDestino}\n🚦 *Estatus:* ${estNombre}\n⏱️ *Vel:* ${speed} km/h${geoTextWA}\n📍 *Ubicación:* ${locLink}\n\n_Reporte C4_`;
+    let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n🏢 *Cliente:* ${cliName}${subText}\n\n🚛 *Unidad:* ${nombreCamion}\n📦 *Contenedores:* ${contStr}\n🛣️ *Ruta Actual:* ${cOrigen} ➔ ${cDestino}\n🚦 *Estatus:* ${estNombre}\n⏱️ *Vel:* ${speed} km/h${geoTextWA}\n📍 *Ubicación:* ${locLink}\n\n_Reporte C4_`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank'); 
 }
 
@@ -534,8 +550,9 @@ function generarReporteGrupal(cId, sId, titulo) {
         let cIdx = v.destino_idx || 0;
         let cOrigen = v.origen_actual || v.origen || "N/A";
         let cDestino = arrDests[cIdx] || v.destino || "N/A";
+        let contStr = Array.isArray(v.contenedores_arr) ? v.contenedores_arr.join(' / ') : (v.contenedores || 'N/A');
         
-        txt += `🚛 *Unidad:* ${name}\n📦 *Contenedores:* ${v.contenedores||'N/A'}\n⏱️ *Vel:* ${vel} km/h\n🚦 *Estatus:* ${est}\n🏁 *Ruta:* ${cOrigen} ➔ ${cDestino}${geoTextWA}\n📍 *Ubicación:* ${locLink}\n\n`;
+        txt += `🚛 *Unidad:* ${name}\n📦 *Contenedores:* ${contStr}\n⏱️ *Vel:* ${vel} km/h\n🚦 *Estatus:* ${est}\n🏁 *Ruta:* ${cOrigen} ➔ ${cDestino}${geoTextWA}\n📍 *Ubicación:* ${locLink}\n\n`;
     });
     txt += `_Reporte C4_`; 
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
@@ -642,6 +659,9 @@ window.borrarChip = function(e, containerId, index) {
     if(containerId === 'ed_chips_box') { 
         edChipsArray.splice(index, 1); 
         renderChips(containerId, edChipsArray); 
+    } else if(containerId === 'ed_chips_cont_box') {
+        edChipsContArray.splice(index, 1); 
+        renderChips(containerId, edChipsContArray); 
     } else {
         let filaCont = document.getElementById(containerId);
         if(filaCont && filaCont.chipData) {
@@ -703,6 +723,7 @@ function marcarSalida(vId, cIdx) {
     registrarLog(vId, 'Marcó SALIDA');
 }
 
+// CORRECCIÓN 3: Petición de OK al editar horarios
 function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColor, isTransit = false, onClickOverride = null) {
     let colorFinal = isTransit ? 'warning' : claseColor;
     let onClk = onClickOverride ? onClickOverride : `registrarLog('${vId}', 'Marcó ${textoVacio}'); db.ref('viajes_activos/${vId}/${dbField}').set(Date.now());`;
@@ -724,7 +745,7 @@ function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColo
                     <span class="bg-${colorFinal} text-white fw-bold text-center d-flex align-items-center justify-content-center" style="font-size:0.55rem; width:18px; height:100%;">${textoVacio.charAt(0)}</span>
                     <span class="fw-bold text-center w-100 text-${colorFinal}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span>
                 </div>
-                <input type="datetime-local" class="position-absolute top-0 start-0 w-100 h-100 cp" style="opacity: 0;" value="${getLocalISO(timestampStr)}" onclick="this.showPicker()" onchange="let d=new Date(this.value).getTime(); if(d){ db.ref('viajes_activos/${vId}/${dbField}').set(d); registrarLog('${vId}', 'Modificó horario de ${textoVacio}'); }">
+                <input type="datetime-local" class="position-absolute top-0 start-0 w-100 h-100 cp" style="opacity: 0;" value="${getLocalISO(timestampStr)}" onclick="this.showPicker()" onchange="let d=new Date(this.value).getTime(); if(d && confirm('¿Confirmas el cambio de horario para ${textoVacio}?')){ db.ref('viajes_activos/${vId}/${dbField}').set(d); registrarLog('${vId}', 'Modificó horario de ${textoVacio}'); } else { this.value = '${getLocalISO(timestampStr)}'; }">
             </div>`;
     }
 }
@@ -754,6 +775,10 @@ function prepararNuevoViaje() {
     document.getElementById("nv_cliente").value = ""; 
     document.getElementById("nv_subcliente").value = "";
     document.getElementById("nv_filas_container").innerHTML = "";
+    
+    // Por defecto dejar desactivado el modo externo (Punto 1)
+    document.getElementById("nv_externa").checked = false;
+    
     agregarFilaNV(); 
 }
 
@@ -764,11 +789,13 @@ function agregarFilaNV() {
     let div = document.createElement("div");
     div.className = "bg-white border rounded p-2 mb-2 nv-fila position-relative shadow-sm";
     let boxId = `nv_chip_box_${filaContador}`;
+    let contBoxId = `cont_${boxId}`;
     
+    // CORRECCIÓN 1, 2 Y 5: Teléfono Operador, Contenedores Cápsulas y Salida Programada
     div.innerHTML = `
         <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 px-2 py-0 rounded" onclick="this.parentElement.remove()" title="Quitar Unidad"><i class="fa-solid fa-xmark"></i></button>
         <div class="row gx-2 mt-1 align-items-end">
-            <div class="col-4">
+            <div class="col-3">
                 <label style="font-size:0.65rem;" class="fw-bold text-muted mb-1">UNIDAD GPS</label>
                 <input type="text" class="form-control form-control-sm border-primary fw-bold text-uppercase nv-unidad" list="listaUnidadesTotales" placeholder="Buscar unidad..." oninput="autofillOp(this)">
             </div>
@@ -776,28 +803,36 @@ function agregarFilaNV() {
                 <label style="font-size:0.65rem;" class="fw-bold text-muted mb-1">ORIGEN</label>
                 <input type="text" class="form-control form-control-sm text-uppercase nv-origen" list="listaGeocercas" placeholder="Escribir...">
             </div>
-            <div class="col-5">
+            <div class="col-4">
                 <label style="font-size:0.65rem;" class="fw-bold text-muted mb-1">DESTINO(S) <span class="fw-normal">(Da Enter)</span></label>
                 <div class="chips-container" id="${boxId}" onclick="this.querySelector('input').focus()">
-                    <input type="text" list="listaGeocercas" placeholder="Destino y Enter..." class="nv-destino-input" onkeydown="manejarChipInput(event, '${boxId}', document.getElementById('${boxId}').chipData)">
+                    <input type="text" list="listaGeocercas" placeholder="Destinos y Enter..." class="nv-destino-input" onkeydown="manejarChipInput(event, '${boxId}', document.getElementById('${boxId}').chipData)">
                 </div>
+            </div>
+            <div class="col-2">
+                <label style="font-size:0.65rem;" class="fw-bold text-info mb-1"><i class="fa-regular fa-clock"></i> SALIDA PROG.</label>
+                <input type="time" class="form-control form-control-sm nv-t-programada border-info bg-light" title="Opcional">
             </div>
         </div>
         <div class="row gx-2 mt-2 align-items-end">
-            <div class="col-6 nv-operador-row" style="display:${isExterna ? 'block' : 'none'};">
-                <input type="text" class="form-control form-control-sm text-uppercase nv-operador" list="listaConductores" placeholder="Nombre Operador">
+            <div class="col-6 nv-operador-row" style="display:${isExterna ? 'flex' : 'none'}; gap:10px;">
+                <input type="text" class="form-control form-control-sm text-uppercase nv-operador w-50" list="listaConductores" placeholder="Nombre Operador (Manual)">
+                <input type="text" class="form-control form-control-sm text-uppercase nv-operador-tel w-50 border-warning" placeholder="Teléfono Op. (Opcional)">
             </div>
-            <div class="col-6">
-                <input type="text" class="form-control form-control-sm text-uppercase nv-contenedores" placeholder="Contenedores / Caja (Opcional)">
+            <div class="col-6 ms-auto">
+                <div class="chips-container" id="${contBoxId}" onclick="this.querySelector('input').focus()">
+                    <input type="text" placeholder="CONTENEDORES / CAJAS (Da Enter)..." class="nv-contenedores-input" onkeydown="manejarChipInput(event, '${contBoxId}', document.getElementById('${contBoxId}').chipData)">
+                </div>
             </div>
         </div>
     `;
     document.getElementById("nv_filas_container").appendChild(div);
     document.getElementById(boxId).chipData = [];
+    document.getElementById(contBoxId).chipData = [];
 }
 
 document.getElementById('nv_externa').addEventListener('change', function() { 
-    document.querySelectorAll('.nv-operador-row').forEach(el => el.style.display = this.checked ? 'block' : 'none'); 
+    document.querySelectorAll('.nv-operador-row').forEach(el => el.style.display = this.checked ? 'flex' : 'none'); 
 });
 
 function autofillOp(inputEl) { 
@@ -844,12 +879,27 @@ function registrarViajesMultiples() {
         if(errorFound) return;
 
         let uInput = fila.querySelector(".nv-unidad").value.trim().toUpperCase(); 
-        let opInput = fila.querySelector(".nv-operador").value.trim().toUpperCase();
+        let opInputRaw = fila.querySelector(".nv-operador") ? fila.querySelector(".nv-operador").value.trim().toUpperCase() : "";
+        let opTelRaw = fila.querySelector(".nv-operador-tel") ? fila.querySelector(".nv-operador-tel").value.trim() : "";
         let origen = fila.querySelector(".nv-origen").value.trim().toUpperCase();
-        let contenedores = fila.querySelector(".nv-contenedores").value.trim().toUpperCase();
         
-        let boxId = fila.querySelector('.chips-container').id;
-        let destArr = document.getElementById(boxId).chipData || [];
+        let opInput = isExterna && opTelRaw ? `${opInputRaw} - TEL: ${opTelRaw}` : opInputRaw;
+        
+        let destBoxId = fila.querySelectorAll('.chips-container')[0].id;
+        let contBoxId = fila.querySelectorAll('.chips-container')[1].id;
+        
+        let destArr = document.getElementById(destBoxId).chipData || [];
+        let contArr = document.getElementById(contBoxId).chipData || [];
+        
+        // Calcular Hora de Salida Programada
+        let tProgRaw = fila.querySelector(".nv-t-programada").value;
+        let tProgTs = null;
+        if(tProgRaw) {
+            let d = new Date();
+            let parts = tProgRaw.split(':');
+            d.setHours(parts[0], parts[1], 0, 0);
+            tProgTs = d.getTime();
+        }
         
         if(destArr.length === 0) { 
             alert(`Añade al menos un destino (y da Enter) para la unidad ${uInput || 'vacía'}`); 
@@ -890,11 +940,13 @@ function registrarViajesMultiples() {
             destino_idx: 0, 
             estatus: "s1", 
             operador: opInput, 
-            contenedores: contenedores,
+            contenedores_arr: contArr,
+            t_programada: tProgTs,
             unidadFallback: uInput, 
             unidadN: uInput 
         }).then(() => {
             registrarLog(refPush.key, "REGISTRÓ VIAJE", isExterna ? "Unidad Externa" : "Unidad GPS");
+            if(tProgTs) registrarLog(refPush.key, "Hora de Salida Programada", tProgRaw);
         });
         batchPromises.push(p);
     });
@@ -913,7 +965,6 @@ function abrirEdicionViaje(uId, uName) {
     document.getElementById("edU_name").innerText = uName; 
     document.getElementById("ed_operador").value = v.operador || ""; 
     document.getElementById("ed_origen").value = v.origen || ""; 
-    document.getElementById("ed_contenedores").value = v.contenedores || ""; 
     
     let cName = (v.cliente && v.cliente !== "Sin_Cliente" && dataClientes[v.cliente]) ? dataClientes[v.cliente].nombre : "";
     let sName = (v.subcliente && v.subcliente !== "N/A" && dataClientes[v.cliente] && dataClientes[v.cliente].subclientes && dataClientes[v.cliente].subclientes[v.subcliente]) ? dataClientes[v.cliente].subclientes[v.subcliente].nombre : "";
@@ -922,6 +973,9 @@ function abrirEdicionViaje(uId, uName) {
     
     edChipsArray = Array.isArray(v.destinos) ? [...v.destinos] : (v.destino ? String(v.destino).split(/,|\n/).map(d => d.trim()).filter(d => d !== "") : []);
     renderChips('ed_chips_box', edChipsArray);
+
+    edChipsContArray = Array.isArray(v.contenedores_arr) ? [...v.contenedores_arr] : (v.contenedores ? [v.contenedores] : []);
+    renderChips('ed_chips_cont_box', edChipsContArray);
     
     new bootstrap.Modal(document.getElementById('modalEditarViaje')).show(); 
 }
@@ -938,13 +992,13 @@ function guardarEdicionViaje() {
     if(cliName === "") cId = "Sin_Cliente"; 
     if(subName === "") sId = "N/A";
 
-    registrarLog(uId, "Editó Datos", "Rutas/Cliente"); 
+    registrarLog(uId, "Editó Datos", "Rutas/Cliente/Contenedor"); 
     db.ref('viajes_activos/' + uId).update({ 
         cliente: cId, 
         subcliente: sId, 
         origen: document.getElementById("ed_origen").value.toUpperCase(), 
         destinos: edChipsArray, 
-        contenedores: document.getElementById("ed_contenedores").value.toUpperCase(),
+        contenedores_arr: edChipsContArray,
         operador: document.getElementById("ed_operador").value.toUpperCase() 
     }).then(() => { 
         try{bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide();}catch(e){} 
@@ -991,9 +1045,10 @@ function renderizarBitacora() {
         }
         if(!hasClientUnits) continue;
 
+        // CORRECCIÓN 4: Logos - Izquierda Grudicom, luego Cliente
         let logoHtml = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) 
-            ? `<img src="${dataClientes[cId].logo}" class="client-logo" title="${cliName}">` 
-            : `<span class="align-middle text-uppercase">${cliName}</span>`;
+            ? `<img src="${dataClientes[cId].logo}" class="client-logo" title="${cliName}"> <span class="align-middle text-uppercase fw-bold">${cliName}</span>` 
+            : `<span class="align-middle text-uppercase fw-bold">${cliName}</span>`;
         
         let clientActions = cId !== "Sin_Cliente" ? `
             <div class="dropdown position-absolute end-0 me-3">
@@ -1006,6 +1061,7 @@ function renderizarBitacora() {
         
         let clientTitleHtml = `
             <div class="d-flex align-items-center justify-content-center w-100 position-relative">
+                <img src="TIGPS HD2.png" class="grudicom-logo-header" title="Grudicom TI & GPS">
                 ${logoHtml}
                 ${clientActions}
             </div>
@@ -1069,8 +1125,6 @@ function renderizarBitacora() {
                             </div>
                         </div>` : `<div style="font-size:0.65rem; color:#94a3b8;">Sin eventos</div>`;
 
-                    let searchData = `${nombreCamion} ${v.origen||''} ${v.destino||''} ${v.contenedores||''} ${v.operador||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
-                    
                     let curEst = window.estatusData[v.estatus] || window.estatusData["s1"];
                     let optionsHtml = `
                         <div class="dropdown w-100">
@@ -1095,6 +1149,25 @@ function renderizarBitacora() {
                     if (isTripFullyFinished) {
                         cOrigen = v.origen || "";
                         cDestino = arrDests[totDests - 1] || v.destino || "";
+                    }
+
+                    // CORRECCIÓN 5: Semáforo de Horario Programado
+                    let semaforoHtml = '';
+                    if(v.t_programada) {
+                        let pTime = new Date(v.t_programada);
+                        let pTimeStr = pTime.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+                        let msRef = v.t_salida || Date.now();
+                        let diffMins = Math.floor((msRef - v.t_programada) / 60000);
+
+                        let sClass = "semaforo-verde";
+                        let sText = "A tiempo";
+                        let sIcon = "fa-circle-check";
+
+                        if (diffMins > 20) { sClass = "semaforo-rojo"; sText = `Retraso ${diffMins}m`; sIcon = "fa-circle-xmark"; }
+                        else if (diffMins > 10) { sClass = "semaforo-amarillo"; sText = `Retraso ${diffMins}m`; sIcon = "fa-triangle-exclamation"; }
+                        else if (diffMins < 0) { sText = `Adelantado ${Math.abs(diffMins)}m`; }
+
+                        semaforoHtml = `<div class="badge-semaforo ${sClass}" title="Hora Programada: ${pTimeStr}"><i class="fa-solid ${sIcon}"></i> ${pTimeStr} (${sText})</div>`;
                     }
 
                     let notaDests = totDests > 1 ? `<div style="font-size:0.65rem; color:#0284c7; font-weight:900; margin-top:4px;">Destino ${cIdx + 1} de ${totDests}</div>` : '';
@@ -1139,12 +1212,11 @@ function renderizarBitacora() {
 
                     let tds = {};
                     
-                    // =========================================================
-                    // NUEVO DISEÑO DE CONTENEDOR 
-                    // =========================================================
-                    let htmlContenedores = v.contenedores 
+                    // CORRECCIÓN 8 Y 2: Contenedores (chips unidos por diagonal e icono de trailer)
+                    let contArr = Array.isArray(v.contenedores_arr) ? v.contenedores_arr : (v.contenedores ? [v.contenedores] : []);
+                    let htmlContenedores = contArr.length > 0 
                         ? `<div class="mt-2 d-inline-flex justify-content-center align-items-center px-3 py-1 shadow-sm" style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; font-size:0.8rem; color:#0369a1; font-weight:800; line-height:1.2; word-break: break-word;">
-                                <i class="fa-solid fa-box text-primary me-2" style="font-size:0.9rem;"></i>${v.contenedores}
+                                <i class="fa-solid fa-trailer text-primary me-2" style="font-size:0.9rem;"></i>${contArr.join(' / ')}
                            </div>` 
                         : ``; 
 
@@ -1159,6 +1231,7 @@ function renderizarBitacora() {
                     
                     tds['col-ruta'] = `<td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}">
                         <div class="d-flex flex-column align-items-center justify-content-center w-100" title="Para editar ruta usa 'Editar Viaje' en menú derecho">
+                            ${semaforoHtml}
                             <div class="d-flex align-items-center justify-content-center gap-1 w-100">
                                 <input class="input-ghost text-center flex-grow-1 w-50" value="${cOrigen}" placeholder="ORIGEN" readonly style="cursor:default;">
                                 <i class="fa-solid fa-play" style="color:var(--grudicom-blue); font-size:0.65rem;"></i>
@@ -1206,6 +1279,7 @@ function renderizarBitacora() {
                         return tds[c].replace('class="', `style="width:${ancho}px; min-width:${ancho}px; max-width:${ancho}px;" class="`); 
                     }).join('');
                     
+                    let searchData = `${nombreCamion} ${v.origen||''} ${v.destino||''} ${contArr.join(' ')} ${v.operador||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
                     let trClass = isExternal ? 'external-connection-row data-row' : 'needs-gps-update data-row';
                     html += `<tr class="${trClass} client-group-${cId}" id="row_${vId}" data-search="${searchData}">${trInner}</tr>`;
 
@@ -1265,29 +1339,38 @@ function inyectarGPSenTabla() {
             let isLost = !uData || (uData && !pos && !isExternal); 
             
             let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0; 
-            let isStale = ageSecs > 14400; 
+            // CORRECCIÓN 6: Alerta Roja a los 10 minutos (600 segundos)
+            let isStale = ageSecs > 600; 
             
             let row = document.getElementById("row_" + vId); 
             if(row) { 
                 row.classList.remove("lost-connection-row", "stale-row"); 
                 if(isLost && !isExternal) row.classList.add("lost-connection-row"); 
-                else if (isStale && !isExternal) row.classList.add("stale-row"); 
+                else if (isStale && !isExternal) row.classList.add("lost-connection-row"); 
             } 
+            
+            // Autoguardado de evento en Log por desconexión
+            if (isStale && !isExternal && !v.alerta_desconexion) {
+                db.ref('viajes_activos/'+vId+'/alerta_desconexion').set(true);
+                registrarLog(vId, "Alerta GPS Sistema", "Pérdida de conexión (>10 min)");
+            } else if (!isStale && !isLost && v.alerta_desconexion) {
+                db.ref('viajes_activos/'+vId+'/alerta_desconexion').set(null);
+                registrarLog(vId, "Alerta GPS Sistema", "Conexión recuperada");
+            }
             
             let elGpsCell = document.getElementById("gps_cell_" + vId); 
             if(elGpsCell) { 
                 if (isExternal) { 
                     elGpsCell.innerHTML = `<div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center border-bottom border-light pb-1 mb-1"><div class="d-flex align-items-center"><i class="fa-solid fa-globe text-info me-1 fs-6"></i> <span class="speed-badge bg-secondary m-0">-- km/h</span></div><div style="font-size:0.65rem; color:#64748b; font-weight:800;">Externa</div></div><div class="d-flex align-items-center gap-2 text-start"><span class="text-info fw-bold" style="font-size:0.65rem;">GPS EXTERNO</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar" onclick="editarUbicacionManual('${vId}')"></i><div class="addr-container flex-grow-1">${v.ubicacion_manual||'--'}</div></div></div>`; 
-                } else if (isLost) { 
+                } else if (isLost || isStale) { 
                     elGpsCell.innerHTML = `<div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center border-bottom border-danger pb-1 mb-1"><div class="d-flex align-items-center"><i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i> <span class="speed-badge bg-secondary m-0">${speed} km/h</span></div><div style="font-size:0.65rem; color:#ef4444; font-weight:800;">Modo Offline</div></div><div class="d-flex align-items-center gap-2 text-start"><span class="text-danger fw-bold" style="font-size:0.65rem;">SIN SEÑAL</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar" onclick="editarUbicacionManual('${vId}')"></i><div class="addr-container flex-grow-1">${v.ubicacion_manual||'--'}</div></div></div>`; 
                 } else { 
                     let speedBg = "#64748b"; 
                     if(speed > 0 && speed < 100) speedBg = "#10b981"; 
                     if(speed >= 100) speedBg = "#ef4444"; 
-                    if(isStale) speedBg = "#ef4444"; 
                     
                     let icon = speed > 0 ? `<i class="fa-solid fa-truck-fast text-success me-1 fs-6"></i>` : `<i class="fa-solid fa-truck text-secondary me-1 fs-6"></i>`; 
-                    let timeColor = isStale ? 'text-danger' : 'text-primary'; 
+                    let timeColor = 'text-primary'; 
                     let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`; 
                     let zonaGeo = (uData && uData.zonaOficial) ? uData.zonaOficial : resolverGeocerca(pos.y, pos.x); 
                     
@@ -1404,7 +1487,6 @@ function procesarFilaDirecciones() {
         .finally(() => { isGeocoding = false; });
 }
 
-// --- FUNCIONES DE ADMINISTRADOR ---
 function vincularOperador() { 
     let u = document.getElementById("op_unidad").value.toUpperCase(); 
     let n = document.getElementById("op_nombre").value.toUpperCase(); 
@@ -1490,13 +1572,12 @@ function agregarToken() {
 }
 
 function actualizarListaTokensAdmin(tks) { 
-    const lista = document.getElementById("listaTokensActivos"); 
+    const lista = document.getElementById("listaStatusTokens"); 
     if(lista) { 
         lista.innerHTML = Object.keys(tks || {}).map(id => `<li class="list-group-item d-flex justify-content-between p-1 fs-8"><b>${tks[id].nombre}</b> <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Token?')) { db.ref('sistema/tokens/${id}').remove().then(()=>location.reload()); }"></i></li>`).join(''); 
     } 
 }
 
-// --- INICIALIZACIÓN Y WIALON CORE ---
 window.onload = function () {
     aplicarAnchosGuardados(); 
     inicializarMenuColumnas();
