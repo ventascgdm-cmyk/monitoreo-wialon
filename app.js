@@ -12,12 +12,12 @@ function mostrarNotificacion(msg) {
     new bootstrap.Toast(document.getElementById('sysToast')).show();
 }
 
-// --- CONTROL DE PARPADEOS EN UI ---
+// --- CONTROL DE PARPADEOS EN UI (PUNTO 6) ---
 let UI_PAUSED = false;
 document.addEventListener('show.bs.dropdown', () => { UI_PAUSED = true; });
-document.addEventListener('hide.bs.dropdown', () => { UI_PAUSED = false; setTimeout(renderizarBitacora, 100); });
+document.addEventListener('hide.bs.dropdown', () => { UI_PAUSED = false; setTimeout(renderizarBitacora, 200); });
 document.addEventListener('focusin', (e) => { if(['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) UI_PAUSED = true; });
-document.addEventListener('focusout', (e) => { if(['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) { UI_PAUSED = false; setTimeout(renderizarBitacora, 100); } });
+document.addEventListener('focusout', (e) => { if(['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) { UI_PAUSED = false; setTimeout(renderizarBitacora, 200); } });
 
 // --- VARIABLES GLOBALES ---
 let currentUser = null;
@@ -39,6 +39,7 @@ let estadoTokens = {};
 let datosAgrupadosGlobal = {}; 
 let mapaMarcadores = {}; 
 let salidasPendientes = {}; 
+let finalizacionesPendientes = {}; // PUNTO 1: Arribos que volvieron a moverse
 
 let geocodeCache = JSON.parse(localStorage.getItem('tms_geoCache')) || {}; 
 let geoQueue = []; 
@@ -403,7 +404,7 @@ function actualizarMarcadoresMapa() {
             let est = window.estatusData[v.estatus]?.nombre || "En Trayecto";
             let operador = v.operador || (uData.choferObj && uData.choferObj.nombre !== "Sin asignar" ? uData.choferObj.nombre : "Sin Operador");
 
-            // Hover en Mapa (Punto 8)
+            // PUNTO 8: Hover dinámico en Mapa
             let hoverText = isMoving ? `En movimiento a ${vel} km/h (hace ${timeAgo(uData.pos.t)})` : `Unidad detenida (hace ${timeAgo(uData.pos.t)})`;
 
             let popupContent = `
@@ -521,7 +522,7 @@ function guardarLogManual() {
     if(!txt) return; 
     registrarLog(uId, "Agregó Nota", txt); 
     
-    // PUNTO 3: Si la unidad estaba detenida (+5 min) y el monitorista agrega nota, "justifica" la parada y apaga la alarma roja
+    // Si la unidad estaba detenida (+5 min) y el monitorista agrega nota, "justifica" la parada
     let v = viajesActivos[uId];
     if (v && v.alerta_detenida) {
         db.ref('viajes_activos/'+uId+'/alerta_detenida').set(null);
@@ -602,7 +603,7 @@ function generarReporteGrupal(cId, sId, titulo) {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
 }
 
-// --- CAPTURA DE PANTALLA INTELIGENTE ---
+// --- CAPTURA DE PANTALLA INTELIGENTE (PUNTO 4: Limpieza Total) ---
 async function generarCapturaCliente(cId, cliName) {
     let tableWrap = document.getElementById('scrollContainer');
     let allRows = document.querySelectorAll('#units-body tr');
@@ -613,6 +614,11 @@ async function generarCapturaCliente(cId, cliName) {
             hiddenRows.push({el: r, display: r.style.display});
             r.style.display = 'none';
         }
+    });
+    
+    // Ocultar columnas y botones no deseados para la foto
+    document.querySelectorAll('.col-operador, .col-alertas, .col-accion, .dropdown-toggle, .btn-dots, .dropdown').forEach(el => {
+        el.classList.add('oculto-en-captura');
     });
     
     let oldHeight = tableWrap.style.height; 
@@ -646,6 +652,8 @@ async function generarCapturaCliente(cId, cliName) {
         tableWrap.style.overflow = oldOverflow;
         document.getElementById("mainTable").style.width = oldW;
         hiddenRows.forEach(item => item.el.style.display = item.display);
+        // Regresar las columnas a la normalidad
+        document.querySelectorAll('.oculto-en-captura').forEach(el => el.classList.remove('oculto-en-captura'));
     }
 }
 
@@ -723,15 +731,14 @@ function expandirRuta(vId) {
     }
 }
 
-// --- PANEL FLOTANTE DE SALIDAS (PUNTO 5) ---
+// --- PANELES FLOTANTES: SALIDAS Y FINALIZACIONES (PUNTO 1 Y 5) ---
 function abrirModalSalidasPendientes() {
     let container = document.getElementById('listaSalidasContainer');
     container.innerHTML = "";
-    
     Object.keys(salidasPendientes).forEach(vId => {
         let info = salidasPendientes[vId];
         container.innerHTML += `
-            <div class="d-flex justify-content-between align-items-center bg-white p-2 rounded shadow-sm border border-danger" id="salida_pend_${vId}">
+            <div class="d-flex justify-content-between align-items-center bg-white p-2 rounded shadow-sm border border-danger mb-2" id="salida_pend_${vId}">
                 <div>
                     <div class="fw-bold text-dark" style="font-size:0.85rem;">${info.unidad}</div>
                     <div class="text-muted" style="font-size:0.7rem;"><i class="fa-solid fa-location-dot"></i> Origen: ${info.origen}</div>
@@ -742,7 +749,6 @@ function abrirModalSalidasPendientes() {
             </div>
         `;
     });
-    
     new bootstrap.Modal(document.getElementById('modalSalidasPendientes')).show();
 }
 
@@ -750,10 +756,8 @@ window.confirmarSalidaPendiente = function(vId, nombre) {
     db.ref('viajes_activos/' + vId + '/t_salida').set(Date.now());
     registrarLog(vId, 'Marcó SALIDA', 'Confirmada desde Panel Inteligente');
     mostrarNotificacion(`Salida de ${nombre} confirmada.`);
-    
     let el = document.getElementById('salida_pend_' + vId);
     if(el) el.remove();
-    
     delete salidasPendientes[vId];
     actualizarBotonFlotanteSalidas();
 };
@@ -762,13 +766,48 @@ function actualizarBotonFlotanteSalidas() {
     let count = Object.keys(salidasPendientes).length;
     let btn = document.getElementById('btnFloatingDepartures');
     let lbl = document.getElementById('lblCountSalidas');
-    if(count > 0) {
-        lbl.innerText = count;
-        btn.classList.remove('d-none');
-    } else {
-        btn.classList.add('d-none');
-        try{ bootstrap.Modal.getInstance(document.getElementById('modalSalidasPendientes')).hide(); }catch(e){}
-    }
+    if(count > 0) { lbl.innerText = count; btn.classList.remove('d-none'); } 
+    else { btn.classList.add('d-none'); try{ bootstrap.Modal.getInstance(document.getElementById('modalSalidasPendientes')).hide(); }catch(e){} }
+}
+
+// NUEVO: Finalizaciones Pendientes
+function abrirModalFinalizacionesPendientes() {
+    let container = document.getElementById('listaFinalizacionesContainer');
+    container.innerHTML = "";
+    Object.keys(finalizacionesPendientes).forEach(vId => {
+        let info = finalizacionesPendientes[vId];
+        container.innerHTML += `
+            <div class="d-flex justify-content-between align-items-center bg-white p-2 rounded shadow-sm border border-success mb-2" id="fin_pend_${vId}">
+                <div>
+                    <div class="fw-bold text-dark" style="font-size:0.85rem;">${info.unidad}</div>
+                    <div class="text-muted" style="font-size:0.7rem;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Salió de su destino</div>
+                </div>
+                <button class="btn btn-sm btn-success fw-bold px-3 py-1 rounded-pill shadow-sm" onclick="confirmarFinalizacionPendiente('${vId}', '${info.unidad}')">
+                    <i class="fa-solid fa-flag-checkered me-1"></i> Finalizar Viaje
+                </button>
+            </div>
+        `;
+    });
+    new bootstrap.Modal(document.getElementById('modalFinalizacionesPendientes')).show();
+}
+
+window.confirmarFinalizacionPendiente = function(vId, nombre) {
+    db.ref('viajes_activos/' + vId + '/t_fin').set(Date.now());
+    db.ref('viajes_activos/' + vId + '/estatus').set('s12'); // Cambia a 8. Finalizado
+    registrarLog(vId, 'Marcó FINALIZADO', 'Confirmado desde Panel Inteligente');
+    mostrarNotificacion(`Viaje de ${nombre} finalizado con éxito.`);
+    let el = document.getElementById('fin_pend_' + vId);
+    if(el) el.remove();
+    delete finalizacionesPendientes[vId];
+    actualizarBotonFlotanteFinalizaciones();
+};
+
+function actualizarBotonFlotanteFinalizaciones() {
+    let count = Object.keys(finalizacionesPendientes).length;
+    let btn = document.getElementById('btnFloatingFinalizations');
+    let lbl = document.getElementById('lblCountFinalizations');
+    if(count > 0) { lbl.innerText = count; btn.classList.remove('d-none'); } 
+    else { btn.classList.add('d-none'); try{ bootstrap.Modal.getInstance(document.getElementById('modalFinalizacionesPendientes')).hide(); }catch(e){} }
 }
 
 // --- MULTI DESTINOS CORE Y HORARIOS ---
@@ -789,12 +828,7 @@ window.avanzarMultiDestino = function(vId) {
             registrarLog(vId, `Terminó Destino ${currentIdx + 1}`, arrDests[currentIdx]);
             
             let tramoRef = `historial_tramos/${currentIdx}`;
-            updates[tramoRef] = { 
-                destino: arrDests[currentIdx], 
-                t_salida: v.t_salida || null, 
-                t_arribo: v.t_arribo || null, 
-                t_fin: now 
-            };
+            updates[tramoRef] = { destino: arrDests[currentIdx], t_salida: v.t_salida || null, t_arribo: v.t_arribo || null, t_fin: now };
             
             updates['destino_idx'] = currentIdx + 1;
             updates['origen_actual'] = arrDests[currentIdx]; 
@@ -822,11 +856,8 @@ function abrirModalEdicionHora(vId, field, titulo, actualTs) {
     document.getElementById('eh_txtVacio').value = titulo;
     document.getElementById('eh_title').innerText = titulo;
     
-    if(actualTs && actualTs !== 'null') {
-        document.getElementById('eh_input').value = getLocalISO(Number(actualTs));
-    } else {
-        document.getElementById('eh_input').value = getLocalISO(Date.now());
-    }
+    if(actualTs && actualTs !== 'null') { document.getElementById('eh_input').value = getLocalISO(Number(actualTs)); } 
+    else { document.getElementById('eh_input').value = getLocalISO(Date.now()); }
     new bootstrap.Modal(document.getElementById('modalEditHora')).show();
 }
 
@@ -835,9 +866,7 @@ function guardarHorarioModal() {
     let field = document.getElementById('eh_field').value;
     let titulo = document.getElementById('eh_txtVacio').value;
     let val = document.getElementById('eh_input').value;
-    
     if(!val) return mostrarNotificacion("Selecciona una fecha válida.");
-    
     let d = new Date(val).getTime();
     if(d) {
         db.ref('viajes_activos/'+vId+'/'+field).set(d);
@@ -851,28 +880,17 @@ function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColo
     let colorFinal = isTransit ? 'warning' : claseColor;
     let onClk = onClickOverride ? onClickOverride : `abrirModalEdicionHora('${vId}', '${dbField}', '${textoVacio}', '${timestampStr || 'null'}')`;
     
-    if (dbField === 't_salida' && !timestampStr && !onClickOverride) { 
-        onClk = `marcarSalida('${vId}', ${viajesActivos[vId]?.destino_idx || 0})`; 
-    }
+    if (dbField === 't_salida' && !timestampStr && !onClickOverride) { onClk = `marcarSalida('${vId}', ${viajesActivos[vId]?.destino_idx || 0})`; }
 
     if(!timestampStr) {
-        return `
-            <button class="btn btn-sm w-100 bg-white text-${colorFinal} shadow-sm" style="font-size:0.6rem; font-weight:800; padding:2px 0; margin-bottom:2px; border: 1px dashed var(--bs-${colorFinal});" onclick="${onClk}">
-                ${textoVacio}
-            </button>`;
+        return `<button class="btn btn-sm w-100 bg-white text-${colorFinal} shadow-sm" style="font-size:0.6rem; font-weight:800; padding:2px 0; margin-bottom:2px; border: 1px dashed var(--bs-${colorFinal});" onclick="${onClk}">${textoVacio}</button>`;
     } else {
         let displayDate = formatearFechaElegante(timestampStr);
-        return `
-            <div class="position-relative w-100 cp" style="margin-bottom:2px;" title="Clic para editar" onclick="${onClk}">
-                <div class="d-flex align-items-center rounded shadow-sm border border-${colorFinal}" style="overflow: hidden; height:18px; background: rgba(255,255,255,0.5);">
-                    <span class="bg-${colorFinal} text-white fw-bold text-center d-flex align-items-center justify-content-center" style="font-size:0.55rem; width:18px; height:100%;">${textoVacio.charAt(0)}</span>
-                    <span class="fw-bold text-center w-100 text-${colorFinal}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span>
-                </div>
-            </div>`;
+        return `<div class="position-relative w-100 cp" style="margin-bottom:2px;" title="Clic para editar" onclick="${onClk}"><div class="d-flex align-items-center rounded shadow-sm border border-${colorFinal}" style="overflow: hidden; height:18px; background: rgba(255,255,255,0.5);"><span class="bg-${colorFinal} text-white fw-bold text-center d-flex align-items-center justify-content-center" style="font-size:0.55rem; width:18px; height:100%;">${textoVacio.charAt(0)}</span><span class="fw-bold text-center w-100 text-${colorFinal}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span></div></div>`;
     }
 }
 
-// --- NUEVO SISTEMA BATCH Y CLIENTES (PUNTO 4 Y 5) ---
+// --- NUEVO SISTEMA BATCH Y CLIENTES (PUNTOS 4 Y 5) ---
 window.promptNuevoCliente = function() {
     let n = prompt("Nombre del Nuevo Cliente (Aparecerá en el sistema general):");
     if(n) { 
@@ -903,13 +921,10 @@ window.cargarSubclientesNuevoViaje = function() {
 
 function prepararNuevoViaje() { 
     let selCli = document.getElementById("nv_cliente");
-    selCli.innerHTML = '<option value="">-- SELECCIONE CLIENTE --</option>' + 
-                       Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join('');
-    
+    selCli.innerHTML = '<option value="">-- SELECCIONE CLIENTE --</option>' + Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join('');
     document.getElementById("nv_subcliente").innerHTML = '<option value="">-- SIN SUBCLIENTE --</option>';
     document.getElementById("nv_filas_container").innerHTML = "";
     document.getElementById("nv_externa").checked = false; 
-    
     agregarFilaNV(); 
 }
 
@@ -998,21 +1013,14 @@ function registrarViajesMultiples() {
         
         let destBoxId = fila.querySelectorAll('.chips-container')[0].id;
         let contBoxId = fila.querySelectorAll('.chips-container')[1].id;
-        
         let destArr = document.getElementById(destBoxId).chipData || [];
         let contArr = document.getElementById(contBoxId).chipData || [];
         
         let tProgRaw = fila.querySelector(".nv-t-programada").value;
         let tProgTs = tProgRaw ? new Date(tProgRaw).getTime() : null;
         
-        if(destArr.length === 0) { 
-            alert(`Añade al menos un destino (y da Enter) para la unidad ${uInput || 'vacía'}`); 
-            errorFound = true; return; 
-        }
-        if(!uInput) { 
-            alert("El nombre de la unidad no puede estar vacío"); 
-            errorFound = true; return; 
-        }
+        if(destArr.length === 0) { alert(`Añade al menos un destino (y da Enter) para la unidad ${uInput || 'vacía'}`); errorFound = true; return; }
+        if(!uInput) { alert("El nombre de la unidad no puede estar vacío"); errorFound = true; return; }
         
         let wId = "EXTERNO";
         if (!isExterna) { 
@@ -1020,34 +1028,17 @@ function registrarViajesMultiples() {
             let foundWialon = false;
             for(let k in unidadesGlobales){ 
                 if(limpiarStr(unidadesGlobales[k].name).replace(/[\s\-]/g, "") === nNorm) { 
-                    wId = k; 
-                    uInput = unidadesGlobales[k].name; 
-                    foundWialon = true;
-                    break; 
+                    wId = k; uInput = unidadesGlobales[k].name; foundWialon = true; break; 
                 } 
             } 
-            if(!foundWialon) {
-                alert(`ERROR: La unidad "${uInput}" no existe en tus plataformas Wialon.\n\nRevisa el nombre de la lista, o si es externa, activa el interruptor "MODO EXTERNO" arriba.`);
-                errorFound = true;
-                return;
-            }
+            if(!foundWialon) { alert(`ERROR: La unidad "${uInput}" no existe en tus plataformas Wialon.`); errorFound = true; return; }
         }
         
         let refPush = db.ref('viajes_activos').push();
         let p = refPush.set({ 
-            id: refPush.key, 
-            wialonId: wId, 
-            cliente: cId, 
-            subcliente: sId, 
-            origen: origen, 
-            destinos: destArr, 
-            destino_idx: 0, 
-            estatus: "s1", 
-            operador: opInput, 
-            contenedores_arr: contArr,
-            t_programada: tProgTs,
-            unidadFallback: uInput, 
-            unidadN: uInput 
+            id: refPush.key, wialonId: wId, cliente: cId, subcliente: sId, origen: origen, 
+            destinos: destArr, destino_idx: 0, estatus: "s1", operador: opInput, 
+            contenedores_arr: contArr, t_programada: tProgTs, unidadFallback: uInput, unidadN: uInput 
         }).then(() => {
             registrarLog(refPush.key, "REGISTRÓ VIAJE", isExterna ? "Unidad Externa" : "Unidad GPS");
             if(tProgTs) registrarLog(refPush.key, "Hora de Salida Programada", tProgRaw.replace('T', ' '));
@@ -1056,7 +1047,6 @@ function registrarViajesMultiples() {
     });
     
     if(errorFound) return;
-
     Promise.all(batchPromises).then(() => { 
         mostrarNotificacion("¡Viajes registrados con éxito!");
         try{ bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); }catch(e){} 
@@ -1071,7 +1061,7 @@ function abrirEdicionViaje(uId, uName) {
     document.getElementById("ed_origen").value = v.origen || ""; 
     document.getElementById("ed_t_programada").value = v.t_programada ? getLocalISO(v.t_programada) : "";
     
-    // PUNTO 2: Lógica de Operador Blindado según el Tipo de Unidad
+    // PUNTO 2: Lógica de Operador Blindado según el Tipo de Unidad (Solo lista de Wialon si aplica)
     let isExt = (v.wialonId === "EXTERNO");
     document.getElementById("ed_operador_wialon_wrapper").style.display = isExt ? 'none' : 'block';
     document.getElementById("ed_operador_manual_wrapper").style.display = isExt ? 'block' : 'none';
@@ -1084,8 +1074,9 @@ function abrirEdicionViaje(uId, uName) {
         let opName = limpiarStr(chofer.nombre);
         if(opName && opName !== "SIN ASIGNAR" && !wialonSet.has(opName)) {
             wialonSet.add(opName);
-            let isSel = (limpiarStr(v.operador) === opName) ? 'selected' : '';
-            opSelect.innerHTML += `<option value="${opName}" ${isSel}>${opName}</option>`;
+            let combinedText = chofer.tel ? `${opName} - TEL: ${chofer.tel}` : opName;
+            let isSel = (limpiarStr(v.operador) === combinedText || limpiarStr(v.operador) === opName) ? 'selected' : '';
+            opSelect.innerHTML += `<option value="${combinedText}" ${isSel}>${combinedText}</option>`;
         }
     });
 
@@ -1116,7 +1107,7 @@ function guardarEdicionViaje() {
     let isExt = (v.wialonId === "EXTERNO");
     let opWialon = document.getElementById("ed_operador_wialon").value;
     let opManual = document.getElementById("ed_operador").value;
-    let finalOp = isExt ? limpiarStr(opManual) : limpiarStr(opWialon);
+    let finalOp = isExt ? limpiarStr(opManual) : limpiarStr(opWialon); // Se respeta ciegamente lo que diga Wialon
 
     registrarLog(uId, "Editó Datos", "Rutas/Contenedor/Hora"); 
     db.ref('viajes_activos/' + uId).update({ 
@@ -1126,7 +1117,7 @@ function guardarEdicionViaje() {
         operador: finalOp,
         t_programada: tProgTs
     }).then(() => { 
-        mostrarNotificacion("Cambios guardados correctamente.");
+        mostrarNotificacion("Cambios guardados. Chofer ligado correctamente.");
         try{bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide();}catch(e){} 
     }); 
 }
@@ -1134,7 +1125,6 @@ function guardarEdicionViaje() {
 // PARTE 3: RENDERIZADO DE TABLA, GPS Y FUNCIONES ADMINISTRATIVAS
 // ============================================================================
 
-// --- RENDERIZADO PRINCIPAL (CORE) ---
 function renderizarBitacora() {
     if (UI_PAUSED) return; 
     
@@ -1184,7 +1174,6 @@ function renderizarBitacora() {
                 </ul>
             </div>` : '';
         
-        // PUNTO 6: Logos Grudicom y Cliente hermanados
         let clientTitleHtml = `
             <div class="d-flex align-items-center justify-content-center w-100 position-relative">
                 <img src="TIGPS HD2.png" class="grudicom-logo-header" title="Grudicom TI & GPS" onerror="this.style.display='none'">
@@ -1209,6 +1198,7 @@ function renderizarBitacora() {
                     <button class="btn btn-sm text-dark" type="button" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical fs-6"></i></button>
                     <ul class="dropdown-menu shadow-lg border-0 rounded-3">
                         <li><a class="dropdown-item fw-bold text-success cp" onclick="generarReporteGrupal('${cId}', '${sId}', '${cliName} -> ${subName}')"><i class="fa-brands fa-whatsapp me-2"></i> Reporte Subcliente</a></li>
+                        <li><a class="dropdown-item fw-bold text-dark cp" onclick="generarCapturaCliente('${cId}', '${subName}')"><i class="fa-solid fa-camera me-2 text-primary"></i> Captura de Subcliente</a></li>
                     </ul>
                 </div>` : '';
             
@@ -1244,7 +1234,6 @@ function renderizarBitacora() {
 
                     let logsObj = v.log || {}; 
                     let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
-                    
                     let lastLog = logsArr.length > 0 ? 
                         `<div class="text-start w-100 d-flex flex-column h-100 justify-content-center">
                             <div style="font-size:0.6rem; color:#64748b; font-weight:800; margin-bottom:2px;">
@@ -1257,7 +1246,7 @@ function renderizarBitacora() {
                             </div>
                         </div>` : `<div style="font-size:0.65rem; color:#94a3b8;">Sin eventos</div>`;
 
-                    // PUNTO 3: Campana de Alerta en lugar de Log normal si requiere justificación
+                    // Alarma de Justificación de Parada
                     let htmlCajaLog = v.alerta_detenida 
                         ? `<div class="log-alert-container shadow-sm" onclick="abrirModalLog('${vId}', '${nombreCamion}')" title="Dale clic para escribir qué pasó">
                                 <i class="fa-solid fa-bell log-alert-icon"></i>
@@ -1289,7 +1278,9 @@ function renderizarBitacora() {
                     let semaforoHtml = '';
                     if(v.t_programada) {
                         let pTime = new Date(v.t_programada);
-                        let pTimeStr = pTime.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+                        let dateStr = pTime.toLocaleDateString('es-MX', {day:'2-digit', month:'short'});
+                        let timeStr = pTime.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+                        let pTimeStr = `${dateStr} ${timeStr}`;
                         let msRef = v.t_salida || Date.now();
                         let diffMins = Math.floor((msRef - v.t_programada) / 60000);
 
@@ -1376,8 +1367,6 @@ function renderizarBitacora() {
                     </td>`;
                     
                     tds['col-alertas'] = `<td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}" id="alertas_${vId}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.85rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>'}</td>`;
-                    
-                    // Asignar el HTML de la campana si es necesario
                     tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}">${htmlCajaLog}</td>`;
                     
                     tds['col-accion'] = `<td class="col-accion align-middle ${hiddenCols['col-accion'] ? 'd-none' : ''}" style="overflow: visible !important;">
@@ -1401,10 +1390,8 @@ function renderizarBitacora() {
                     }).join('');
                     
                     let searchData = `${nombreCamion} ${v.origen||''} ${v.destino||''} ${contArr.join(' ')} ${v.operador||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
-                    
                     let classAlerts = isExternal ? 'external-connection-row ' : 'needs-gps-update ';
                     
-                    // PUNTO 7: Tinte de fila según estatus. Se inyecta la variable CSS --row-bg
                     html += `<tr class="data-row client-group-${cId} ${classAlerts}" id="row_${vId}" data-search="${searchData}" style="--row-bg: ${hexToRgba(colEstatus, 0.08)};">${trInner}</tr>`;
 
                 } catch(err) { 
@@ -1445,7 +1432,6 @@ function inyectarGPSenTabla() {
             let pos = uData ? uData.pos : null; 
             let speed = pos ? pos.s : 0; 
             let isLost = !uData || (uData && !pos && !isExternal); 
-            
             let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0; 
             let isStale = ageSecs > 600; 
             
@@ -1464,43 +1450,59 @@ function inyectarGPSenTabla() {
                 registrarLog(vId, "Alerta GPS", "Conexión recuperada");
             }
 
-            // LÓGICA EXPERTA: Detección Automática de Parada (+5 min) (Solo si ya salió - Punto 3 y 8)
-            if(!isExternal && !isLost && !isStale && v.t_salida) {
-                if (speed < 4) {
-                    if (!v.t_parada_inicio) {
-                        db.ref('viajes_activos/'+vId+'/t_parada_inicio').set(Date.now());
-                    } else {
-                        let minsDetenido = (Date.now() - v.t_parada_inicio) / 60000;
-                        if (minsDetenido >= 5 && !v.alerta_detenida && v.estatus !== 's2' && v.estatus !== 's12') {
-                            db.ref('viajes_activos/'+vId+'/alerta_detenida').set(true);
-                            db.ref('viajes_activos/'+vId+'/estatus').set('s2'); // Cambia a "1.1 PARADO"
-                            registrarLog(vId, "Sistema Automático", "Unidad detenida por más de 5 minutos");
-                            mostrarNotificacion(`⚠️ ¡ALERTA! La unidad ${uData.name} lleva 5 minutos detenida.`);
+            // LÓGICA EXPERTA DE PARADAS Y MOVIMIENTO
+            if(!isExternal && !isLost && !isStale) {
+                
+                // CONDICIÓN: Si YA salió pero AÚN NO HA ARRIBADO (Punto 1 y 3)
+                if(v.t_salida && !v.t_arribo) {
+                    if (speed < 4) { // Detenido
+                        if (!v.t_parada_inicio) {
+                            db.ref('viajes_activos/'+vId+'/t_parada_inicio').set(Date.now());
+                        } else {
+                            let minsDetenido = (Date.now() - v.t_parada_inicio) / 60000;
+                            // Si pasan 5 min, detona la alerta
+                            if (minsDetenido >= 5 && !v.alerta_detenida && v.estatus !== 's2' && v.estatus !== 's12') {
+                                db.ref('viajes_activos/'+vId+'/alerta_detenida').set(true);
+                                db.ref('viajes_activos/'+vId+'/estatus').set('s2'); // Estatus: PARADO
+                                registrarLog(vId, "Sistema Automático", "Unidad detenida por más de 5 minutos");
+                                mostrarNotificacion(`⚠️ ¡ALERTA! La unidad ${uData.name} lleva 5 minutos detenida.`);
+                            }
+                        }
+                    } else { // En Movimiento
+                        if (v.t_parada_inicio) db.ref('viajes_activos/'+vId+'/t_parada_inicio').set(null);
+                        
+                        // Solo cambia a Ruta si estaba en Parado, pero la campana (alerta_detenida) se mantiene 
+                        // encendida hasta que el monitorista la justifique manualmente.
+                        if (v.estatus === 's2') {
+                            db.ref('viajes_activos/'+vId+'/estatus').set('s1'); 
+                            registrarLog(vId, "Sistema Automático", "Movimiento reanudado");
+                            mostrarNotificacion(`✅ La unidad ${uData.name} retomó su ruta.`);
                         }
                     }
-                } else if (speed >= 4) { 
-                    if (v.t_parada_inicio) db.ref('viajes_activos/'+vId+'/t_parada_inicio').set(null);
-                    
-                    // Si avanza y estaba marcada como parada, vuelve a estatus "1. Ruta" automáticamente,
-                    // pero la campana roja (alerta_detenida) se queda encendida hasta que justifiquen en el log.
-                    if (v.estatus === 's2') {
-                        db.ref('viajes_activos/'+vId+'/estatus').set('s1'); 
-                        registrarLog(vId, "Sistema Automático", "Movimiento reanudado");
-                        mostrarNotificacion(`✅ La unidad ${uData.name} retomó su ruta.`);
-                    }
                 }
-            }
-
-            // PANEL FLOTANTE: Confirmación de salidas para unidades detenidas en origen (Punto 5)
-            if(!isExternal && !isLost && !isStale && !v.t_salida && !v.salida_notificada) {
-                if (speed >= 4) {
+                
+                // PUNTO 5: Panel Salidas (Si avanza, está fuera de origen y no tiene hora de salida)
+                if (!v.t_salida && !v.salida_notificada && speed >= 4) {
                     let cOrigen = limpiarStr(v.origen);
                     let zonaActual = limpiarStr(uData.zonaOficial || resolverGeocerca(pos.y, pos.x));
-                    
                     if ((zonaActual && zonaActual !== cOrigen) || speed > 10) {
                         salidasPendientes[vId] = { unidad: uData.name, origen: cOrigen || 'Base' };
                         db.ref('viajes_activos/'+vId+'/salida_notificada').set(true);
                         actualizarBotonFlotanteSalidas();
+                    }
+                }
+
+                // PUNTO 1: Panel Finalizaciones (Si avanza, YA ARRIBÓ y no ha finalizado)
+                if (v.t_arribo && !v.t_fin && !v.fin_notificado && speed >= 10) {
+                    let arrDests = Array.isArray(v.destinos) ? v.destinos : (v.destino ? String(v.destino).split(/,|\n/).map(d => limpiarStr(d)) : []);
+                    let targetDest = arrDests[v.destino_idx || 0] || v.destino;
+                    let zonaActual = limpiarStr(uData.zonaOficial || resolverGeocerca(pos.y, pos.x));
+                    
+                    // Se mueve rápido o salió de la geocerca de destino
+                    if (!zonaActual || !zonaActual.includes(targetDest)) {
+                        finalizacionesPendientes[vId] = { unidad: uData.name };
+                        db.ref('viajes_activos/'+vId+'/fin_notificado').set(true);
+                        actualizarBotonFlotanteFinalizaciones();
                     }
                 }
             }
@@ -1593,7 +1595,6 @@ function desencadenarGeocoding() {
         if(uData && uData.pos) {
             let zonaGeo = limpiarStr(uData.zonaOficial || resolverGeocerca(uData.pos.y, uData.pos.x));
             
-            // PUNTO 4: Guardar el arribo con el nombre de la geocerca exacta
             if(zonaGeo && targetDest && !v.t_arribo && zonaGeo.includes(targetDest)) {
                 db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); 
                 registrarLog(vId, 'Arribo Automático', `Geocerca: ${zonaGeo}`);
@@ -1897,7 +1898,7 @@ async function sincronizarFlotas() {
                             let drivers = r.drvrs || r.drv; 
                             Object.values(drivers).forEach(d => { 
                                 let telStr = d.p ? String(d.p) : ""; 
-                                let objC = { nombre: limpiarStr(d.n), tel: telStr, cod: d.c || "---", rid: rId };
+                                let objC = { nombre: limpiarStr(d.n), tel: telStr, cod: d.c || "---", rid: rId, id: d.id }; // Added ID for API update
                                 
                                 if(d.bu && d.bu > 0) { 
                                     diccChoferes[d.bu] = objC; 
@@ -1945,7 +1946,7 @@ async function sincronizarFlotas() {
                             } 
                         } 
                         
-                        tempUnits[u.id] = { id: u.id, name: n, pos: u.pos, loginUrl: autoLoginUrl, choferObj: chofer, zonaOficial: miZona }; 
+                        tempUnits[u.id] = { id: u.id, name: n, pos: u.pos, loginUrl: autoLoginUrl, choferObj: chofer, zonaOficial: miZona, tkNombre: tk.nombre }; 
                         listUni.add(n); 
                     }); 
                 } else { 
