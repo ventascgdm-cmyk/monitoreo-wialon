@@ -40,30 +40,22 @@ body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter'
 .resizer:hover, .resizing { background: rgba(0, 51, 102, 0.2); border-right: 2px solid var(--grudicom-blue); }
 
 /* CELDAS LIBERADAS Y TINTE DINÁMICO (PUNTO 7) */
-/* La variable --row-bg vendrá desde Javascript según el color del estatus */
 .data-row td { background-color: var(--row-bg, #ffffff) !important; padding: 6px 8px; vertical-align: middle; border-bottom: 1px solid var(--border-col); transition: all 0.2s ease; }
 .data-row td:first-child { border-left: 1px solid var(--border-col); border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
 .data-row td:last-child { border-right: 1px solid var(--border-col); border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
-.data-row:hover td { filter: brightness(0.96); } /* Oscurece un 4% al hacer hover para respetar el tinte */
+.data-row:hover td { filter: brightness(0.96); }
 
-/* ALERTA NARANJA: 5 MINUTOS DETENIDA (LÓGICA AUTOMÁTICA) */
-@keyframes blinkOrange { 
-    0% { background-color: #fff7ed !important; } 
-    50% { background-color: #fed7aa !important; } 
-    100% { background-color: #fff7ed !important; } 
-}
-.stop-warning-row td { animation: blinkOrange 2s infinite; border-bottom: 2px dashed #f97316 !important; }
-
-/* ALERTA ROJA: MÁS DE 10 MINUTOS SIN CONEXIÓN */
+/* ALERTA ROJA (MÁS DE 10 MINUTOS SIN CONEXIÓN) */
 .lost-connection-row td { background-color: #fee2e2 !important; border-bottom: 2px dashed #ef4444 !important; }
 .external-gps-cell { background-color: rgba(14, 165, 233, 0.05) !important; border: 1px dashed #0ea5e9 !important; border-radius: 6px; }
 
-/* ENCABEZADOS CLIENTE (LOGOS HD Y ESQUINAS REDONDEADAS) */
+/* ENCABEZADOS CLIENTE (LOGOS HD Y ESQUINAS REDONDEADAS - PUNTO 6) */
 .header-cliente td { background: var(--grudicom-blue) !important; color: #ffffff !important; padding: 12px 15px !important; border: none !important; border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; }
 .header-subcliente td { background: #e2e8f0 !important; color: var(--grudicom-blue) !important; font-size: 0.95rem; font-weight: 800; padding: 6px 10px !important; border: none !important; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 4px; }
 
+/* LOGOS HOMOLOGADOS */
 .client-logo { height: 50px; max-width: 200px; object-fit: contain; vertical-align: middle; border-radius: 12px; background: white; padding: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 0 15px; }
-.grudicom-logo-header { height: 50px; object-fit: contain; vertical-align: middle; border-radius: 12px; margin-right: 15px; border-right: 2px solid rgba(255,255,255,0.3); padding-right: 15px; }
+.grudicom-logo-header { height: 50px; max-width: 200px; object-fit: contain; vertical-align: middle; border-radius: 12px; background: white; padding: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-right: 15px; }
 .client-logo-sub { height: 25px; max-width: 100px; object-fit: contain; vertical-align: middle; margin-right: 10px; border-radius: 4px; background: white; padding: 2px; }
 
 /* TEXTO DE RUTA DINÁMICO */
@@ -124,4 +116,31 @@ body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter'
     0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
     70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); }
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+/* ANIMACIÓN DE HISTORIAL ROJO CON CAMPANA (PUNTO 3) */
+@keyframes alertBlinkBorder {
+    0% { border-color: #fca5a5; box-shadow: 0 0 5px rgba(239,68,68,0.5); }
+    50% { border-color: #b91c1c; box-shadow: 0 0 15px rgba(239,68,68,1); }
+    100% { border-color: #fca5a5; box-shadow: 0 0 5px rgba(239,68,68,0.5); }
+}
+.log-alert-container {
+    animation: alertBlinkBorder 1.5s infinite;
+    background-color: #fef2f2 !important;
+    border: 2px solid #ef4444 !important;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.log-alert-container:hover { transform: scale(1.02); }
+.log-alert-text { color: #b91c1c; font-weight: 900; font-size: 0.75rem; margin-top: 4px; }
+.log-alert-icon { color: #ef4444; font-size: 1.5rem; animation: ringBell 1s infinite; }
+@keyframes ringBell {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(15deg); }
+    40% { transform: rotate(-15deg); }
+    60% { transform: rotate(10deg); }
+    80% { transform: rotate(-10deg); }
 }
