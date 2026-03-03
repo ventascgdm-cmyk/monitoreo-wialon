@@ -154,3 +154,13 @@ body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter'
 
 /* CLASE DINÁMICA PARA OCULTAR ELEMENTOS DURANTE LA CAPTURA DE PANTALLA (PUNTO 4) */
 .oculto-en-captura { display: none !important; }
+
+/* FIX PARA EVITAR QUE LOS MENÚS SE ENCIMEN CON OTRAS FILAS */
+tr.dropdown-active {
+    position: relative !important;
+    z-index: 99999 !important;
+}
+tr.dropdown-active td {
+    position: relative !important;
+    z-index: 99999 !important;
+}
