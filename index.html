@@ -378,7 +378,6 @@
 <datalist id="listaGeocercas"></datalist>
 <datalist id="listaConductores"></datalist>
 <datalist id="listaUnidadesTotales"></datalist>
-
 <script type="text/javascript">
     const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -520,9 +519,10 @@
         return `${String(d.getDate()).padStart(2, '0')} ${meses[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
     
-    function formatTimeFriendly(unixSecs) { 
-        if(!unixSecs) return "--:--"; 
-        let d = new Date(unixSecs * 1000); 
+    // CORRECCIÓN 1: Fechas locas arregladas (ya no multiplicamos por 1000)
+    function formatTimeFriendly(unixMillis) { 
+        if(!unixMillis) return "--:--"; 
+        let d = new Date(unixMillis); 
         let today = new Date();
         let timeStr = d.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
         if(d.toDateString() === today.toDateString()) return timeStr;
@@ -813,6 +813,21 @@
     function cerrarSesion() { 
         localStorage.clear(); 
         location.reload(); 
+    }
+
+    // CORRECCIÓN 3: Función de archivar viaje añadida
+    function finalizarViaje(vId, nombre) {
+        if(confirm(`¿Estás seguro de archivar el viaje de la unidad ${nombre}?`)) {
+            db.ref('viajes_activos/' + vId).once('value').then(snap => {
+                let data = snap.val();
+                if(data) {
+                    data.fecha_archivado = Date.now(); 
+                    db.ref('viajes_archivados/' + vId).set(data).then(() => {
+                        db.ref('viajes_activos/' + vId).remove();
+                    });
+                }
+            }).catch(err => alert("Error al archivar: " + err.message));
+        }
     }
     
     function abrirModalLog(uId, uName) { 
@@ -1323,7 +1338,6 @@
             try{bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide();}catch(e){} 
         }); 
     }
-
     // --- RENDERIZADO PRINCIPAL (CORE) ---
     function renderizarBitacora() {
         if (UI_PAUSED) return; 
@@ -1516,11 +1530,15 @@
 
                         let tds = {};
                         
-                        // CONTENEDORES INYECTADO DENTRO DE COL-UNIDAD
+                        // CORRECCIÓN 4: CONTENEDORES CONDICIONALES
+                        let htmlContenedores = v.contenedores 
+                            ? `<div class="mt-1 px-2 py-1 text-center w-100 shadow-sm" style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; font-size:0.65rem; color:#0369a1; font-weight:800; line-height:1.2; word-break: break-word;"><i class="fa-solid fa-box-open me-1"></i>${v.contenedores}</div>` 
+                            : ``; 
+
                         tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}">
                             <div class="d-flex flex-column align-items-center justify-content-center w-100">
                                 <span class="unit-name" id="name_btn_${vId}" onclick="${mapClick}">${nombreCamion}</span>
-                                <input class="input-ghost text-center mt-1 w-100" style="font-size:0.6rem; color:#64748b; border-bottom:1px dashed #cbd5e1;" value="${v.contenedores||''}" placeholder="CONTENEDORES" title="Editar contenedores" onblur="db.ref('viajes_activos/${vId}/contenedores').set(this.value.toUpperCase())">
+                                ${htmlContenedores}
                             </div>
                         </td>`;
                         
@@ -1657,9 +1675,17 @@
                         let timeColor = isStale ? 'text-danger' : 'text-primary'; 
                         let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`; 
                         let zonaGeo = (uData && uData.zonaOficial) ? uData.zonaOficial : resolverGeocerca(pos.y, pos.x); 
-                        let addrText = `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`; 
                         
-                        if(geocodeCache[geoKey]) addrText = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${geocodeCache[geoKey]}`; 
+                        // CORRECCIÓN 2: LÓGICA INTELIGENTE PARA NO QUITAR DIRECCIONES PREVIAS
+                        let elOldAddr = document.getElementById("addr_" + vId);
+                        let addrText = (elOldAddr && !elOldAddr.innerText.includes("Buscando...")) 
+                            ? elOldAddr.innerHTML 
+                            : `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`; 
+                        
+                        // Si ya está en la memoria caché, lo reemplazamos por el valor real
+                        if(geocodeCache[geoKey]) {
+                            addrText = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${geocodeCache[geoKey]}`; 
+                        }
                         
                         let geoHtml = zonaGeo ? `<span class="badge-geo text-truncate ms-2" style="max-width:150px;" title="${zonaGeo}"><i class="fa-solid fa-draw-polygon me-1"></i>${zonaGeo}</span>` : ''; 
                         let timeHover = formatTimeFriendly(pos.t); 
