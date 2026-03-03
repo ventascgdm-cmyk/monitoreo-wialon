@@ -61,7 +61,7 @@
         </div>
 
         <div class="btn-action-group d-flex align-items-center">
-            <div class="dropdown d-inline-block me-2">
+            <div class="dropdown d-inline-block me-2" onmouseenter="UI_PAUSED=true" onmouseleave="setTimeout(()=>UI_PAUSED=false, 400)">
                 <button class="btn btn-light fw-bold dropdown-toggle border shadow-sm rounded-pill px-4 py-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
                     <i class="fa-solid fa-gear text-primary me-1"></i> Panel
                 </button>
@@ -95,8 +95,12 @@
     </div>
 </div>
 
-<button id="btnFloatingDepartures" class="btn btn-danger shadow-lg rounded-pill px-4 py-3 fw-bold d-none" style="position: fixed; bottom: 30px; left: 30px; z-index: 9999; animation: pulse 2s infinite;" onclick="abrirModalSalidasPendientes()">
+<button id="btnFloatingDepartures" class="btn btn-danger shadow-lg rounded-pill px-4 py-3 fw-bold d-none" style="position: fixed; bottom: 30px; left: 30px; z-index: 9999; animation: pulseRed 2s infinite;" onclick="abrirModalSalidasPendientes()">
     <i class="fa-solid fa-rocket me-2"></i> <span id="lblCountSalidas">0</span> Salidas Detectadas
+</button>
+
+<button id="btnFloatingFinalizations" class="btn btn-success shadow-lg rounded-pill px-4 py-3 fw-bold d-none" style="position: fixed; bottom: 30px; right: 30px; z-index: 9999; animation: pulseGreen 2s infinite;" onclick="abrirModalFinalizacionesPendientes()">
+    <i class="fa-solid fa-flag-checkered me-2"></i> <span id="lblCountFinalizations">0</span> Posibles Finalizaciones
 </button>
 
 <div class="modal fade" id="modalSalidasPendientes" tabindex="-1">
@@ -109,6 +113,21 @@
             <div class="modal-body bg-light p-3">
                 <p class="text-muted fw-bold mb-3" style="font-size:0.8rem;">El sistema detectó que las siguientes unidades salieron de su origen. Confirma su salida para registrar el horario.</p>
                 <div id="listaSalidasContainer" class="d-flex flex-column gap-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalFinalizacionesPendientes" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-flag-checkered me-2"></i> CONFIRMAR FINALIZACIÓN</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light p-3">
+                <p class="text-muted fw-bold mb-3" style="font-size:0.8rem;">Estas unidades ya habían arribado a su destino, pero volvieron a moverse. ¿Ya terminaron su viaje?</p>
+                <div id="listaFinalizacionesContainer" class="d-flex flex-column gap-2"></div>
             </div>
         </div>
     </div>
@@ -247,7 +266,7 @@
                         </div>
                     </div>
 
-                    <button onclick="guardarEdicionViaje()" class="btn btn-success w-100 fw-bold py-2 rounded-pill shadow-sm"><i class="fa-solid fa-floppy-disk me-1"></i> GUARDAR CAMBIOS</button>
+                    <button onclick="guardarEdicionViaje()" class="btn btn-success w-100 fw-bold py-2 rounded-pill shadow-sm"><i class="fa-solid fa-floppy-disk me-1"></i> GUARDAR CAMBIOS Y LIGAR</button>
                 </div>
             </div>
         </div>
