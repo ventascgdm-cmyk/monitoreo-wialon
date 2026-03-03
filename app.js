@@ -1,10 +1,16 @@
 // ============================================================================
-// PARTE 1: CONFIGURACIÓN, VARIABLES GLOBALES Y UTILIDADES DE MAPA
+// PARTE 1: CONFIGURACIÓN, VARIABLES GLOBALES Y UTILIDADES
 // ============================================================================
 
 const firebaseConfig = { databaseURL: "https://monitoreo-logistica-default-rtdb.firebaseio.com/" };
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+
+// --- NOTIFICACIONES DEL SISTEMA ---
+function mostrarNotificacion(msg) {
+    document.getElementById('sysToastBody').innerText = msg;
+    new bootstrap.Toast(document.getElementById('sysToast')).show();
+}
 
 // --- CONTROL DE PARPADEOS EN UI ---
 let UI_PAUSED = false;
@@ -13,6 +19,7 @@ document.addEventListener('hide.bs.dropdown', () => { UI_PAUSED = false; setTime
 document.addEventListener('focusin', (e) => { if(['INPUT', 'TEXTAREA'].includes(e.target.tagName)) UI_PAUSED = true; });
 document.addEventListener('focusout', (e) => { if(['INPUT', 'TEXTAREA'].includes(e.target.tagName)) { UI_PAUSED = false; setTimeout(renderizarBitacora, 100); } });
 
+// --- VARIABLES GLOBALES ---
 let currentUser = null;
 let configSistema = { tokens: [] };
 let dataClientes = {};
@@ -38,17 +45,29 @@ let motorArrancado = false;
 let isSyncingFlotas = false;
 let currentCaptureBlob = null; 
 
-// CHIPS ARRAYS (Para Modales)
 let edChipsArray = [];
-let edChipsContArray = []; // Nuevo array para contenedores
+let edChipsContArray = []; 
 
-// --- PRIORIDADES ESTRICTAS DE COLUMNAS ---
+// ORDENAMIENTO MANUAL (Punto 4)
+let sortState = { column: null, direction: 'asc' };
+
+function cambiarOrden(col) {
+    if (sortState.column === col) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortState.column = col;
+        sortState.direction = 'asc';
+    }
+    renderizarBitacora();
+}
+
+// --- PRIORIDADES ESTRICTAS DE COLUMNAS (Con iconos de orden) ---
 const columnasDef = {
-    'col-unidad': { titulo: 'UNIDAD', ancho: '140' },
+    'col-unidad': { titulo: 'UNIDAD <i class="fa-solid fa-sort sort-icon" title="Ordenar por Unidad" onclick="cambiarOrden(\'unidad\')"></i>', ancho: '140' },
     'col-operador': { titulo: 'OPERADOR GPS', ancho: '150' },
-    'col-ruta': { titulo: 'RUTA (O ➔ D)', ancho: '190' },
+    'col-ruta': { titulo: 'RUTA (O ➔ D) <i class="fa-solid fa-sort sort-icon" title="Ordenar por Origen" onclick="cambiarOrden(\'ruta\')"></i>', ancho: '190' },
     'col-horarios': { titulo: 'HORARIOS', ancho: '95' }, 
-    'col-estatus': { titulo: 'ESTATUS', ancho: '120' },
+    'col-estatus': { titulo: 'ESTATUS <i class="fa-solid fa-sort sort-icon" title="Ordenar por Estatus" onclick="cambiarOrden(\'estatus\')"></i>', ancho: '120' },
     'col-gps': { titulo: 'UBICACIÓN Y GEOCERCA', ancho: '420' }, 
     'col-alertas': { titulo: 'ALERTAS', ancho: '90' },
     'col-historial': { titulo: 'HISTORIAL LOG', ancho: '240' }, 
@@ -180,11 +199,14 @@ function inicializarMenuColumnas() {
             ? `<i class="fa-solid fa-arrow-down mx-1 text-primary cp fs-6" title="Mover Derecha" onclick="moverColumna(${index}, 1)"></i>` 
             : `<i class="fa-solid fa-arrow-down mx-1 text-muted fs-6" style="opacity:0.2"></i>`;
         
+        // No mostrar la etiqueta de HTML de los iconos en la lista del panel
+        let tituloLimpio = columnasDef[k].titulo.replace(/<[^>]*>?/gm, '');
+
         menuHtml += `
             <li class="dropdown-item d-flex justify-content-between align-items-center py-1 px-3 border-bottom">
                 <label class="cp mb-0 flex-grow-1">
                     <input type="checkbox" class="form-check-input me-2" onchange="toggleCol('${k}', this.checked)" ${checked}> 
-                    <span style="font-size:0.7rem; font-weight:bold;">${columnasDef[k].titulo}</span>
+                    <span style="font-size:0.7rem; font-weight:bold;">${tituloLimpio}</span>
                 </label>
                 <div class="d-flex bg-white rounded border px-2 py-1 shadow-sm">${btnUp}${btnDown}</div>
             </li>`;
@@ -290,15 +312,21 @@ function getHeadersRow(cId) {
     colOrder.forEach((c) => {
         let titulo = columnasDef[c].titulo; 
         let display = hiddenCols[c] ? 'd-none' : ''; 
+        
+        // Activar icono visualmente si está ordenado por esa columna
+        let tituloModificado = titulo;
+        if(c === 'col-unidad' && sortState.column === 'unidad') tituloModificado = titulo.replace('sort-icon', 'sort-icon active');
+        if(c === 'col-ruta' && sortState.column === 'ruta') tituloModificado = titulo.replace('sort-icon', 'sort-icon active');
+        if(c === 'col-estatus' && sortState.column === 'estatus') tituloModificado = titulo.replace('sort-icon', 'sort-icon active');
+
         html += `
             <th class="${c} ${display} position-relative">
-                <div class="d-flex justify-content-center align-items-center h-100 px-1"><span class="text-center">${titulo}</span></div>
+                <div class="d-flex justify-content-center align-items-center h-100 px-1"><span class="text-center">${tituloModificado}</span></div>
                 <div class="resizer" title="Arrastrar para cambiar tamaño"></div>
             </th>`;
     });
     return html + `</tr>`;
 }
-
 // --- MAPA FLUIDO Y MARCADORES CON POPUP ---
 function initMap() { 
     lmap = L.map('map').setView([23.6, -102.5], 5); 
@@ -369,6 +397,9 @@ function actualizarMarcadoresMapa() {
             let est = window.estatusData[v.estatus]?.nombre || "En Trayecto";
             let operador = v.operador || (uData.choferObj && uData.choferObj.nombre !== "Sin asignar" ? uData.choferObj.nombre : "Sin Operador");
 
+            // PUNTO 8: Hover en el mapa indicando si está en movimiento y a qué velocidad
+            let hoverText = isMoving ? `En movimiento a ${vel} km/h` : `Unidad detenida`;
+
             let popupContent = `
                 <div style="text-align:center; min-width: 160px; font-family: 'Inter', sans-serif;">
                     <b style="font-size:15px; color:#0f172a; text-transform:uppercase;">${uData.name}</b><br>
@@ -378,13 +409,16 @@ function actualizarMarcadoresMapa() {
                     <span style="color:#94a3b8; font-size:10px;">Act: hace ${timeAgo(uData.pos.t)}</span>
                 </div>
             `;
-            let marker = L.marker([uData.pos.y, uData.pos.x], {icon: customIcon}).bindPopup(popupContent, {className: 'custom-popup'}).addTo(mapLayerGroup);
+            let marker = L.marker([uData.pos.y, uData.pos.x], {icon: customIcon})
+                          .bindTooltip(hoverText, {direction: 'top', className: 'fw-bold'})
+                          .bindPopup(popupContent, {className: 'custom-popup'})
+                          .addTo(mapLayerGroup);
             mapaMarcadores[vId] = marker;
         }
     });
 }
 
-// CORRECCIÓN 7: Geocercas Resaltadas de Origen y Destino
+// CORRECCIÓN 7: Geocercas Resaltadas en Mapa
 function pintarGeocercasEnMapa() {
     if(!lmap || !geofenceLayerGroup) return; 
     geofenceLayerGroup.clearLayers();
@@ -402,7 +436,7 @@ function pintarGeocercasEnMapa() {
         let uName = String(z.n).toUpperCase();
         if(geocercasActivas[uName]) {
             let isOrigen = geocercasActivas[uName] === "origen";
-            let colorHex = isOrigen ? '#15803d' : '#b91c1c'; // Verde = origen, Rojo = destino
+            let colorHex = isOrigen ? '#15803d' : '#b91c1c';
             let txtLabel = isOrigen ? `📍 ORIGEN: ${z.n}` : `🏁 DESTINO: ${z.n}`;
             let cssClass = isOrigen ? 'geocerca-tooltip origen' : 'geocerca-tooltip destino';
             
@@ -418,9 +452,6 @@ function pintarGeocercasEnMapa() {
         }
     });
 }
-// ============================================================================
-// PARTE 2: ACCIONES DE UI, REPORTES, CAPTURAS Y GESTIÓN DE VIAJES
-// ============================================================================
 
 // --- ACCIONES SECUNDARIAS ---
 function cambiarEstatus(val, vId) { 
@@ -458,6 +489,7 @@ function finalizarViaje(vId, nombre) {
                 data.fecha_archivado = Date.now(); 
                 db.ref('viajes_archivados/' + vId).set(data).then(() => {
                     db.ref('viajes_activos/' + vId).remove();
+                    mostrarNotificacion(`Viaje de ${nombre} archivado exitosamente.`);
                 });
             }
         }).catch(err => alert("Error al archivar: " + err.message));
@@ -485,6 +517,7 @@ function guardarLogManual() {
     if(!txt) return; 
     registrarLog(uId, "Agregó Nota", txt); 
     try { bootstrap.Modal.getInstance(document.getElementById('modalLog')).hide(); } catch(e){} 
+    mostrarNotificacion("Nota guardada en el historial.");
 }
 
 // --- REPORTE DE WHATSAPP CON MULTI-DESTINO ---
@@ -723,12 +756,47 @@ function marcarSalida(vId, cIdx) {
     registrarLog(vId, 'Marcó SALIDA');
 }
 
-// CORRECCIÓN 3: Petición de OK al editar horarios
+// CORRECCIÓN 3: Edición de Horarios Inteligente y Amigable
+function abrirModalEdicionHora(vId, field, titulo, actualTs) {
+    document.getElementById('eh_vId').value = vId;
+    document.getElementById('eh_field').value = field;
+    document.getElementById('eh_txtVacio').value = titulo;
+    document.getElementById('eh_title').innerText = titulo;
+    
+    if(actualTs && actualTs !== 'null') {
+        document.getElementById('eh_input').value = getLocalISO(Number(actualTs));
+    } else {
+        document.getElementById('eh_input').value = getLocalISO(Date.now());
+    }
+    new bootstrap.Modal(document.getElementById('modalEditHora')).show();
+}
+
+function guardarHorarioModal() {
+    let vId = document.getElementById('eh_vId').value;
+    let field = document.getElementById('eh_field').value;
+    let titulo = document.getElementById('eh_txtVacio').value;
+    let val = document.getElementById('eh_input').value;
+    
+    if(!val) return mostrarNotificacion("Selecciona una fecha válida.");
+    
+    let d = new Date(val).getTime();
+    if(d) {
+        db.ref('viajes_activos/'+vId+'/'+field).set(d);
+        registrarLog(vId, 'Modificó horario de ' + titulo);
+        mostrarNotificacion("Horario de " + titulo + " actualizado.");
+        bootstrap.Modal.getInstance(document.getElementById('modalEditHora')).show(); // Cierra el modal automáticamente
+        document.getElementById('modalEditHora').classList.remove('show');
+        document.querySelector('.modal-backdrop').remove();
+    }
+}
+
 function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColor, isTransit = false, onClickOverride = null) {
     let colorFinal = isTransit ? 'warning' : claseColor;
-    let onClk = onClickOverride ? onClickOverride : `registrarLog('${vId}', 'Marcó ${textoVacio}'); db.ref('viajes_activos/${vId}/${dbField}').set(Date.now());`;
     
-    if (dbField === 't_salida' && !onClickOverride) { 
+    // Ahora abren la nueva ventana modal para evitar errores accidentales
+    let onClk = onClickOverride ? onClickOverride : `abrirModalEdicionHora('${vId}', '${dbField}', '${textoVacio}', '${timestampStr || 'null'}')`;
+    
+    if (dbField === 't_salida' && !timestampStr && !onClickOverride) { 
         onClk = `marcarSalida('${vId}', ${viajesActivos[vId]?.destino_idx || 0})`; 
     }
 
@@ -740,12 +808,11 @@ function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColo
     } else {
         let displayDate = formatearFechaElegante(timestampStr);
         return `
-            <div class="position-relative w-100 cp" style="margin-bottom:2px;" title="Clic para editar">
+            <div class="position-relative w-100 cp" style="margin-bottom:2px;" title="Clic para editar" onclick="${onClk}">
                 <div class="d-flex align-items-center rounded shadow-sm border border-${colorFinal}" style="overflow: hidden; height:18px; background: rgba(255,255,255,0.5);">
                     <span class="bg-${colorFinal} text-white fw-bold text-center d-flex align-items-center justify-content-center" style="font-size:0.55rem; width:18px; height:100%;">${textoVacio.charAt(0)}</span>
                     <span class="fw-bold text-center w-100 text-${colorFinal}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span>
                 </div>
-                <input type="datetime-local" class="position-absolute top-0 start-0 w-100 h-100 cp" style="opacity: 0;" value="${getLocalISO(timestampStr)}" onclick="this.showPicker()" onchange="let d=new Date(this.value).getTime(); if(d && confirm('¿Confirmas el cambio de horario para ${textoVacio}?')){ db.ref('viajes_activos/${vId}/${dbField}').set(d); registrarLog('${vId}', 'Modificó horario de ${textoVacio}'); } else { this.value = '${getLocalISO(timestampStr)}'; }">
             </div>`;
     }
 }
@@ -775,9 +842,7 @@ function prepararNuevoViaje() {
     document.getElementById("nv_cliente").value = ""; 
     document.getElementById("nv_subcliente").value = "";
     document.getElementById("nv_filas_container").innerHTML = "";
-    
-    // Por defecto dejar desactivado el modo externo (Punto 1)
-    document.getElementById("nv_externa").checked = false;
+    document.getElementById("nv_externa").checked = false; // PUNTO 1: Siempre apagado por default
     
     agregarFilaNV(); 
 }
@@ -791,7 +856,6 @@ function agregarFilaNV() {
     let boxId = `nv_chip_box_${filaContador}`;
     let contBoxId = `cont_${boxId}`;
     
-    // CORRECCIÓN 1, 2 Y 5: Teléfono Operador, Contenedores Cápsulas y Salida Programada
     div.innerHTML = `
         <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 px-2 py-0 rounded" onclick="this.parentElement.remove()" title="Quitar Unidad"><i class="fa-solid fa-xmark"></i></button>
         <div class="row gx-2 mt-1 align-items-end">
@@ -816,8 +880,8 @@ function agregarFilaNV() {
         </div>
         <div class="row gx-2 mt-2 align-items-end">
             <div class="col-6 nv-operador-row" style="display:${isExterna ? 'flex' : 'none'}; gap:10px;">
-                <input type="text" class="form-control form-control-sm text-uppercase nv-operador w-50" list="listaConductores" placeholder="Nombre Operador (Manual)">
-                <input type="text" class="form-control form-control-sm text-uppercase nv-operador-tel w-50 border-warning" placeholder="Teléfono Op. (Opcional)">
+                <input type="text" class="form-control form-control-sm text-uppercase nv-operador w-50" list="listaConductores" placeholder="Nombre Operador">
+                <input type="text" class="form-control form-control-sm text-uppercase nv-operador-tel w-50 border-warning" placeholder="Teléfono (Opcional)">
             </div>
             <div class="col-6 ms-auto">
                 <div class="chips-container" id="${contBoxId}" onclick="this.querySelector('input').focus()">
@@ -883,6 +947,7 @@ function registrarViajesMultiples() {
         let opTelRaw = fila.querySelector(".nv-operador-tel") ? fila.querySelector(".nv-operador-tel").value.trim() : "";
         let origen = fila.querySelector(".nv-origen").value.trim().toUpperCase();
         
+        // Unir nombre y teléfono para mostrarlo visualmente
         let opInput = isExterna && opTelRaw ? `${opInputRaw} - TEL: ${opTelRaw}` : opInputRaw;
         
         let destBoxId = fila.querySelectorAll('.chips-container')[0].id;
@@ -954,6 +1019,7 @@ function registrarViajesMultiples() {
     if(errorFound) return;
 
     Promise.all(batchPromises).then(() => { 
+        mostrarNotificacion("¡Viajes registrados con éxito!");
         try{ bootstrap.Modal.getInstance(document.getElementById('modalNuevoViaje')).hide(); }catch(e){} 
     });
 }
@@ -965,6 +1031,9 @@ function abrirEdicionViaje(uId, uName) {
     document.getElementById("edU_name").innerText = uName; 
     document.getElementById("ed_operador").value = v.operador || ""; 
     document.getElementById("ed_origen").value = v.origen || ""; 
+    
+    // PUNTO 1: Poder editar la Salida Programada
+    document.getElementById("ed_t_programada").value = v.t_programada ? getLocalISO(v.t_programada).slice(11,16) : "";
     
     let cName = (v.cliente && v.cliente !== "Sin_Cliente" && dataClientes[v.cliente]) ? dataClientes[v.cliente].nombre : "";
     let sName = (v.subcliente && v.subcliente !== "N/A" && dataClientes[v.cliente] && dataClientes[v.cliente].subclientes && dataClientes[v.cliente].subclientes[v.subcliente]) ? dataClientes[v.cliente].subclientes[v.subcliente].nombre : "";
@@ -992,15 +1061,26 @@ function guardarEdicionViaje() {
     if(cliName === "") cId = "Sin_Cliente"; 
     if(subName === "") sId = "N/A";
 
-    registrarLog(uId, "Editó Datos", "Rutas/Cliente/Contenedor"); 
+    let tProgRaw = document.getElementById("ed_t_programada").value;
+    let tProgTs = null;
+    if(tProgRaw) {
+        let d = new Date();
+        let parts = tProgRaw.split(':');
+        d.setHours(parts[0], parts[1], 0, 0);
+        tProgTs = d.getTime();
+    }
+
+    registrarLog(uId, "Editó Datos", "Rutas/Cliente/Contenedor/Hora"); 
     db.ref('viajes_activos/' + uId).update({ 
         cliente: cId, 
         subcliente: sId, 
         origen: document.getElementById("ed_origen").value.toUpperCase(), 
         destinos: edChipsArray, 
         contenedores_arr: edChipsContArray,
-        operador: document.getElementById("ed_operador").value.toUpperCase() 
+        operador: document.getElementById("ed_operador").value.toUpperCase(),
+        t_programada: tProgTs
     }).then(() => { 
+        mostrarNotificacion("Cambios guardados correctamente.");
         try{bootstrap.Modal.getInstance(document.getElementById('modalEditarViaje')).hide();}catch(e){} 
     }); 
 }
@@ -1045,10 +1125,10 @@ function renderizarBitacora() {
         }
         if(!hasClientUnits) continue;
 
-        // CORRECCIÓN 4: Logos - Izquierda Grudicom, luego Cliente
+        // PUNTO 4 y 6: Logo Grudicom redondeado + Logo Cliente + Nombre Cliente al mismo tamaño
         let logoHtml = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) 
-            ? `<img src="${dataClientes[cId].logo}" class="client-logo" title="${cliName}"> <span class="align-middle text-uppercase fw-bold">${cliName}</span>` 
-            : `<span class="align-middle text-uppercase fw-bold">${cliName}</span>`;
+            ? `<img src="${dataClientes[cId].logo}" class="client-logo" title="${cliName}">` 
+            : ``;
         
         let clientActions = cId !== "Sin_Cliente" ? `
             <div class="dropdown position-absolute end-0 me-3">
@@ -1061,8 +1141,9 @@ function renderizarBitacora() {
         
         let clientTitleHtml = `
             <div class="d-flex align-items-center justify-content-center w-100 position-relative">
-                <img src="TIGPS HD2.png" class="grudicom-logo-header" title="Grudicom TI & GPS">
+                <img src="TIGPS HD2.png" class="grudicom-logo-header" title="Grudicom TI & GPS" onerror="this.style.display='none'">
                 ${logoHtml}
+                <span class="align-middle text-uppercase fw-bold ms-2" style="font-size: 1.2rem; letter-spacing: 0.5px;">${cliName}</span>
                 ${clientActions}
             </div>
         `;
@@ -1099,10 +1180,27 @@ function renderizarBitacora() {
             
             html += getHeadersRow(cId);
 
+            // PUNTO 4: LÓGICA DE ORDENAMIENTO MANUAL
             tree[cId][sId].sort((a, b) => { 
-                let estA = String(a.v.estatus || ""); 
-                let estB = String(b.v.estatus || ""); 
-                return estA.localeCompare(estB); 
+                let valA = "", valB = "";
+                
+                if (sortState.column === 'unidad') {
+                    valA = String(a.v.unidadN || a.v.unidadFallback || "");
+                    valB = String(b.v.unidadN || b.v.unidadFallback || "");
+                } else if (sortState.column === 'ruta') {
+                    valA = String(a.v.origen || "");
+                    valB = String(b.v.origen || "");
+                } else if (sortState.column === 'estatus') {
+                    valA = String(a.v.estatus || "");
+                    valB = String(b.v.estatus || "");
+                } else {
+                    // Orden por defecto: por estatus
+                    valA = String(a.v.estatus || "");
+                    valB = String(b.v.estatus || "");
+                }
+                
+                let cmp = valA.localeCompare(valB);
+                return sortState.direction === 'asc' ? cmp : -cmp;
             });
 
             tree[cId][sId].forEach(({vId, v}) => {
@@ -1151,7 +1249,7 @@ function renderizarBitacora() {
                         cDestino = arrDests[totDests - 1] || v.destino || "";
                     }
 
-                    // CORRECCIÓN 5: Semáforo de Horario Programado
+                    // PUNTO 5: Semáforo de Horario Programado
                     let semaforoHtml = '';
                     if(v.t_programada) {
                         let pTime = new Date(v.t_programada);
@@ -1212,31 +1310,28 @@ function renderizarBitacora() {
 
                     let tds = {};
                     
-                    // CORRECCIÓN 8 Y 2: Contenedores (chips unidos por diagonal e icono de trailer)
+                    // PUNTO 2 y 8: Contenedores apilados con salto de línea e ícono de Tráiler
                     let contArr = Array.isArray(v.contenedores_arr) ? v.contenedores_arr : (v.contenedores ? [v.contenedores] : []);
-                    let htmlContenedores = contArr.length > 0 
-                        ? `<div class="mt-2 d-inline-flex justify-content-center align-items-center px-3 py-1 shadow-sm" style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; font-size:0.8rem; color:#0369a1; font-weight:800; line-height:1.2; word-break: break-word;">
-                                <i class="fa-solid fa-trailer text-primary me-2" style="font-size:0.9rem;"></i>${contArr.join(' / ')}
-                           </div>` 
-                        : ``; 
+                    let htmlContenedores = contArr.map(c => `<div class="contenedor-capsula"><i class="fa-solid fa-trailer me-2 text-primary" style="font-size:0.9rem;"></i>${c}</div>`).join('');
 
                     tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}">
                         <div class="d-flex flex-column align-items-center justify-content-center w-100">
                             <span class="unit-name" id="name_btn_${vId}" onclick="${mapClick}" style="font-size: 1.2rem;">${nombreCamion}</span>
-                            ${htmlContenedores}
+                            <div class="w-100 d-flex flex-column align-items-center">${htmlContenedores}</div>
                         </div>
                     </td>`;
                     
                     tds['col-operador'] = `<td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}"><div id="op_wialon_${vId}"><span class="badge bg-secondary w-100 mt-1" style="font-size:0.6rem;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</span></div></td>`;
                     
+                    // PUNTO 3: Ruta visible completa (divs en lugar de inputs fijos)
                     tds['col-ruta'] = `<td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}">
                         <div class="d-flex flex-column align-items-center justify-content-center w-100" title="Para editar ruta usa 'Editar Viaje' en menú derecho">
                             ${semaforoHtml}
-                            <div class="d-flex align-items-center justify-content-center gap-1 w-100">
-                                <input class="input-ghost text-center flex-grow-1 w-50" value="${cOrigen}" placeholder="ORIGEN" readonly style="cursor:default;">
-                                <i class="fa-solid fa-play" style="color:var(--grudicom-blue); font-size:0.65rem;"></i>
-                                <input class="input-ghost text-center flex-grow-1 w-50" value="${cDestino}" placeholder="DESTINO" readonly style="cursor:default;">
-                                ${totDests > 1 ? `<button class="btn btn-sm text-primary p-0 ms-1 shadow-sm rounded-circle bg-white" style="width:20px; height:20px; line-height:10px;" onclick="expandirRuta('${vId}')"><i class="fa-solid fa-list" style="font-size:0.6rem;"></i></button>` : ''}
+                            <div class="d-flex flex-column align-items-center justify-content-center w-100 mt-1">
+                                <div class="route-text">${cOrigen}</div>
+                                <i class="fa-solid fa-caret-down my-1 text-muted" style="font-size:0.8rem;"></i>
+                                <div class="route-text">${cDestino}</div>
+                                ${totDests > 1 ? `<button class="btn btn-sm text-primary p-0 mt-2 shadow-sm rounded-circle bg-white" style="width:24px; height:24px; line-height:12px;" onclick="expandirRuta('${vId}')"><i class="fa-solid fa-list" style="font-size:0.7rem;"></i></button>` : ''}
                             </div>
                             ${notaDests}
                             ${tramosHtml}
@@ -1339,17 +1434,18 @@ function inyectarGPSenTabla() {
             let isLost = !uData || (uData && !pos && !isExternal); 
             
             let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0; 
-            // CORRECCIÓN 6: Alerta Roja a los 10 minutos (600 segundos)
+            
+            // PUNTO 6: Alerta Roja a los 10 minutos (600 segundos) y Log automático
             let isStale = ageSecs > 600; 
             
             let row = document.getElementById("row_" + vId); 
             if(row) { 
                 row.classList.remove("lost-connection-row", "stale-row"); 
                 if(isLost && !isExternal) row.classList.add("lost-connection-row"); 
-                else if (isStale && !isExternal) row.classList.add("lost-connection-row"); 
+                else if (isStale && !isExternal) row.classList.add("lost-connection-row"); // Se pinta de rojo fuerte
             } 
             
-            // Autoguardado de evento en Log por desconexión
+            // Inyección automática al historial
             if (isStale && !isExternal && !v.alerta_desconexion) {
                 db.ref('viajes_activos/'+vId+'/alerta_desconexion').set(true);
                 registrarLog(vId, "Alerta GPS Sistema", "Pérdida de conexión (>10 min)");
@@ -1494,6 +1590,7 @@ function vincularOperador() {
         db.ref(`operadores/${u}`).set(n); 
         document.getElementById("op_unidad").value = ""; 
         document.getElementById("op_nombre").value = ""; 
+        mostrarNotificacion("Operador vinculado con éxito.");
     } 
 }
 
@@ -1508,18 +1605,21 @@ function crearCliente() {
             db.ref('clientes').push({nombre: nom, logo: e.target.result}); 
             document.getElementById("cli_nombre").value = ""; 
             fileInput.value = ""; 
+            mostrarNotificacion("Cliente creado exitosamente.");
         }; 
         reader.readAsDataURL(fileInput.files[0]); 
     } else { 
         db.ref('clientes').push({nombre: nom, logo: ""}); 
         document.getElementById("cli_nombre").value = ""; 
         if(fileInput) fileInput.value = ""; 
+        mostrarNotificacion("Cliente creado exitosamente.");
     } 
 }
 
 function crearSubcliente() { 
     db.ref(`clientes/${document.getElementById("sub_clientePadre").value}/subclientes`).push({nombre: document.getElementById("sub_nombre").value.toUpperCase()}); 
     document.getElementById("sub_nombre").value = ""; 
+    mostrarNotificacion("Subcliente creado.");
 }
 
 function crearUsuario() { 
@@ -1531,6 +1631,7 @@ function crearUsuario() {
         document.getElementById("usr_id").value=""; 
         document.getElementById("usr_nom").value=""; 
         document.getElementById("usr_pass").value=""; 
+        mostrarNotificacion("Usuario Monitorista creado.");
     } 
 }
 
@@ -1542,7 +1643,7 @@ function actualizarListasAdmin() {
         let c = dataClientes[k]; 
         let logoText = c.logo ? `<i class="fa-solid fa-image text-success ms-1" title="Logo"></i>` : ''; 
         let safeNom = (c.nombre || '').replace(/'/g, "\\'"); 
-        return `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8"><span class="text-truncate" style="max-width:60%;">${c.nombre} ${logoText}</span><div class="text-nowrap"><i class="fa-solid fa-pencil text-primary cp me-2" onclick="let n=prompt('Editar:', '${safeNom}'); if(n){ db.ref('clientes/${k}').update({nombre: n.toUpperCase()}); }"></i><i class="fa-solid fa-camera text-success cp me-2" onclick="window.currentEditCli='${k}'; document.getElementById('edit_cli_logo_file').click();"></i><i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Cliente?')) db.ref('clientes/${k}').remove()"></i></div></li>`; 
+        return `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8"><span class="text-truncate" style="max-width:60%;">${c.nombre} ${logoText}</span><div class="text-nowrap"><i class="fa-solid fa-pencil text-primary cp me-2" onclick="let n=prompt('Editar:', '${safeNom}'); if(n){ db.ref('clientes/${k}').update({nombre: n.toUpperCase()}); }"></i><i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Cliente?')) db.ref('clientes/${k}').remove()"></i></div></li>`; 
     }).join(''); 
     
     let subHtml = ""; 
@@ -1569,6 +1670,7 @@ function agregarToken() {
     }); 
     document.getElementById("tk_nom").value=""; 
     document.getElementById("tk_val").value=""; 
+    mostrarNotificacion("Nuevo Token añadido.");
 }
 
 function actualizarListaTokensAdmin(tks) { 
