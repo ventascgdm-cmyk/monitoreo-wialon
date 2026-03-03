@@ -65,7 +65,7 @@
         .data-row td { background: #ffffff !important; padding: 6px 8px; vertical-align: middle; border-bottom: 1px solid var(--border-col); transition: all 0.2s ease; }
         .data-row td:first-child { border-left: 1px solid var(--border-col); border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
         .data-row td:last-child { border-right: 1px solid var(--border-col); border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
-        .data-row:hover td { background: #f0f7ff !important; } /* Eliminado el transform para que los menús no fallen */
+        .data-row:hover td { background: #f0f7ff !important; }
         
         .lost-connection-row { outline: 1px dashed #ef4444; outline-offset: -1px; border-radius: 6px;}
         .external-gps-cell { background-color: rgba(14, 165, 233, 0.05) !important; border: 1px dashed #0ea5e9 !important; border-radius: 6px; }
@@ -117,19 +117,19 @@
 
 <div id="loginOverlay" class="login-bg">
     <div class="login-card text-center">
-        <img src="TIGPS HD2.png" alt="Logo" style="height: 100px; margin-bottom: 20px;">
+        <img src="TIGPS HD2.png" alt="Logo" style="height: 100px; margin-bottom: 20px;" onerror="this.style.display='none'">
         <h5 class="fw-bold mb-4" style="color: var(--grudicom-blue);">GRUDICOM TI & GPS</h5>
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light border-0" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light border-0" placeholder="Contraseña">
         <button onclick="autenticarUsuario()" class="btn w-100 fw-bold py-2 shadow-sm rounded-pill text-white" style="background: var(--grudicom-blue);"><i class="fa-solid fa-right-to-bracket"></i> INGRESAR</button>
-        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Master v36.3 (GPS & UI Fixed)</div>
+        <div id="status" class="mt-3 small fw-bold text-secondary">Motor C4 Master v36.4 (Multi-Destino)</div>
     </div>
 </div>
 
 <div id="dashboard" style="display:none;">
     <div class="header-bar">
         <div class="d-flex align-items-center">
-            <img src="TIGPS HD2.png" alt="Logo" style="height: 60px;" class="me-3">
+            <img src="TIGPS HD2.png" alt="Logo" style="height: 60px;" class="me-3" onerror="this.style.display='none'">
             <div class="d-none d-md-block">
                 <h3 class="fw-bold m-0" style="letter-spacing:-0.5px; font-size: 1.8rem; color: var(--grudicom-blue);">GRUDICOM TI & GPS <span class="text-secondary opacity-50" style="font-size: 1.3rem;">| C4</span></h3>
                 <div class="text-muted fw-bold mt-1" id="lblUsuarioActivo" style="font-size: 0.85rem;"><i class="fa-solid fa-user-shield me-1"></i> Monitor: </div>
@@ -244,8 +244,8 @@
                         <div class="col-6"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Subcliente:</label><input type="text" id="ed_subcliente" class="form-control form-control-sm bg-light fw-bold text-uppercase" list="list_subclientes"></div>
                     </div>
                     <div class="row mb-3">
-                        <div class="col-12 mb-2"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Origen:</label><input type="text" id="ed_origen" class="form-control form-control-sm bg-light text-uppercase" list="listaGeocercas"></div>
-                        <div class="col-12"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Destino(s):</label><textarea id="ed_destino" class="form-control form-control-sm bg-light text-uppercase" rows="3" placeholder="Múltiples destinos permitidos"></textarea></div>
+                        <div class="col-12 mb-2"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Origen (Inicial):</label><input type="text" id="ed_origen" class="form-control form-control-sm bg-light text-uppercase" list="listaGeocercas"></div>
+                        <div class="col-12"><label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Destino(s):</label><textarea id="ed_destino" class="form-control form-control-sm bg-light text-uppercase" rows="3" placeholder="Múltiples destinos separados por comas"></textarea></div>
                     </div>
                     <label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Operador Manual (Opcional):</label><input type="text" id="ed_operador" class="form-control form-control-sm mb-3 bg-light text-uppercase" list="listaConductores">
                     <button onclick="guardarEdicionViaje()" class="btn btn-success w-100 fw-bold py-2 rounded-pill shadow-sm">GUARDAR CAMBIOS</button>
@@ -514,15 +514,12 @@
                 let colorIcon = isMoving ? '#10b981' : '#0284c7';
                 let course = uData.pos.c || 0;
                 
-                // CORRECCIÓN DE ROTACIÓN: Restamos 45 grados porque el fa-location-arrow apunta al Noreste por defecto
                 let rotation = course - 45;
                 
-                // CORRECCIÓN DE CENTRADO Y ROTACIÓN:
                 let markerHtml = isMoving 
                     ? `<div style="transform: rotate(${rotation}deg); color: ${colorIcon}; font-size: 22px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;"><i class="fa-solid fa-location-arrow"></i></div>` 
                     : `<div style="color: ${colorIcon}; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;"><i class="fa-solid fa-location-dot"></i></div>`;
                 
-                // CORRECCIÓN DE GLOBO POPUP: popupAnchor lo mueve arriba para no tapar la flecha
                 let customIcon = L.divIcon({ html: markerHtml, className: '', iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14] });
                 
                 let vel = uData.pos.s;
@@ -577,11 +574,16 @@
             let domAddr = document.getElementById("addr_" + vId);
             if(domAddr && domAddr.innerText !== "Buscando...") { addrText = domAddr.innerText.trim(); } else { addrText = "Ubicación GPS"; }
             
-            // CORRECCIÓN DE ENLACE GOOGLE MAPS
             locLink = `${addrText} \nhttps://www.google.com/maps/search/?api=1&query=${pos.y},${pos.x}`;
         }
+        
+        // Logica para Multidestinos en WA
+        let arrDests = v.destino ? String(v.destino).split(/,|\n/).map(d => d.trim()).filter(d => d !== "") : [];
+        let cIdx = v.destino_idx || 0;
+        let cOrigen = v.origen_actual || v.origen || "N/A";
+        let cDestino = arrDests[cIdx] || v.destino || "N/A";
 
-        let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n🏢 *Cliente:* ${cliName}${subText}\n\n🚛 *Unidad:* ${nombreCamion}\n📦 *Contenedores:* ${v.contenedores||'N/A'}\n🛣️ *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}\n🚦 *Estatus:* ${estNombre}\n⏱️ *Vel:* ${speed} km/h${geoTextWA}\n📍 *Ubicación:* ${locLink}\n\n_Reporte C4_`;
+        let text = `*GRUDICOM TI & GPS - REPORTE DE UNIDAD*\n\n🏢 *Cliente:* ${cliName}${subText}\n\n🚛 *Unidad:* ${nombreCamion}\n📦 *Contenedores:* ${v.contenedores||'N/A'}\n🛣️ *Ruta:* ${cOrigen} ➔ ${cDestino}\n🚦 *Estatus:* ${estNombre}\n⏱️ *Vel:* ${speed} km/h${geoTextWA}\n📍 *Ubicación:* ${locLink}\n\n_Reporte C4_`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank'); 
     }
 
@@ -596,11 +598,15 @@
             if (pos) {
                 let zonaGeo = (uData && uData.zonaOficial) ? uData.zonaOficial : resolverGeocerca(pos.y, pos.x);
                 if(zonaGeo) geoTextWA = `\n📍 *Geocerca:* ${zonaGeo}`;
-                
-                // CORRECCIÓN DE ENLACE GOOGLE MAPS
                 locLink = `https://www.google.com/maps/search/?api=1&query=${pos.y},${pos.x}`;
             }
-            txt += `🚛 *Unidad:* ${name}\n📦 *Contenedores:* ${v.contenedores||'N/A'}\n⏱️ *Vel:* ${vel} km/h\n🚦 *Estatus:* ${est}\n🏁 *Ruta:* ${v.origen||'N/A'} ➔ ${v.destino||'N/A'}${geoTextWA}\n📍 *Ubicación:* ${locLink}\n\n`;
+            
+            let arrDests = v.destino ? String(v.destino).split(/,|\n/).map(d => d.trim()).filter(d => d !== "") : [];
+            let cIdx = v.destino_idx || 0;
+            let cOrigen = v.origen_actual || v.origen || "N/A";
+            let cDestino = arrDests[cIdx] || v.destino || "N/A";
+            
+            txt += `🚛 *Unidad:* ${name}\n📦 *Contenedores:* ${v.contenedores||'N/A'}\n⏱️ *Vel:* ${vel} km/h\n🚦 *Estatus:* ${est}\n🏁 *Ruta:* ${cOrigen} ➔ ${cDestino}${geoTextWA}\n📍 *Ubicación:* ${locLink}\n\n`;
         });
         txt += `_Reporte C4_`; window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
     }
@@ -834,7 +840,6 @@
                         let geoHtml = zonaGeo ? `<span class="badge-geo text-truncate ms-2" style="max-width:150px;" title="${zonaGeo}"><i class="fa-solid fa-draw-polygon me-1"></i>${zonaGeo}</span>` : '';
                         let timeHover = formatTimeFriendly(pos.t);
                         
-                        // CORRECCIÓN DE ENLACE GOOGLE MAPS
                         elGpsCell.innerHTML = `
                             <div class="d-flex flex-column px-1 w-100">
                                 <div class="d-flex justify-content-between align-items-center border-bottom border-light pb-1 mb-1">
@@ -887,14 +892,18 @@
     function desencadenarGeocoding() {
         Object.keys(viajesActivos).forEach(vId => {
             let v = viajesActivos[vId]; if(typeof v !== 'object' || !v) return; let uData = encontrarUnidad(v, vId); 
+            
+            let destinosArr = v.destino ? String(v.destino).split(/,|\n/).map(d=>d.trim()).filter(d=>d!=="") : [];
+            let targetDest = destinosArr[v.destino_idx || 0] || v.destino;
+
             if(uData && uData.pos) {
                 let zonaGeo = (uData && uData.zonaOficial) ? uData.zonaOficial : resolverGeocerca(uData.pos.y, uData.pos.x);
-                if(zonaGeo && v.destino && !v.t_arribo && zonaGeo.toUpperCase().includes(String(v.destino).toUpperCase())) {
+                if(zonaGeo && targetDest && !v.t_arribo && zonaGeo.toUpperCase().includes(String(targetDest).toUpperCase())) {
                     db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); registrarLog(vId, 'Arribo Automático (Geocerca)');
                 }
                 let geoKey = `${uData.pos.y.toFixed(4)}_${uData.pos.x.toFixed(4)}`;
-                if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) { geoQueue.push({ key: geoKey, y: uData.pos.y, x: uData.pos.x, vId: vId, dest: v.destino }); } 
-                else if(geocodeCache[geoKey] && v.destino && !v.t_arribo && geocodeCache[geoKey].toUpperCase().includes(String(v.destino).toUpperCase())) {
+                if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) { geoQueue.push({ key: geoKey, y: uData.pos.y, x: uData.pos.x, vId: vId, dest: targetDest }); } 
+                else if(geocodeCache[geoKey] && targetDest && !v.t_arribo && geocodeCache[geoKey].toUpperCase().includes(String(targetDest).toUpperCase())) {
                     db.ref('viajes_activos/'+vId+'/t_arribo').set(Date.now()); registrarLog(vId, 'Arribo Automático (Caché GPS)');
                 }
             }
@@ -912,15 +921,43 @@
         }).catch(e => console.log("Geo Err")).finally(() => { isGeocoding = false; });
     }
 
-    function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColor) {
+    // MULTI DESTINOS LOGICA CENTRAL
+    window.avanzarMultiDestino = function(vId) {
+        let v = viajesActivos[vId];
+        if (!v) return;
+        
+        let destinosArray = v.destino ? String(v.destino).split(/,|\n/).map(d => d.trim()).filter(d => d !== "") : [];
+        let totalDests = destinosArray.length || 1;
+        let currentIdx = v.destino_idx || 0;
+        let now = Date.now();
+        
+        if (currentIdx < totalDests - 1) {
+            let updates = {};
+            registrarLog(vId, `Terminó Destino ${currentIdx + 1}`, destinosArray[currentIdx]);
+            
+            updates['destino_idx'] = currentIdx + 1;
+            updates['origen_actual'] = destinosArray[currentIdx]; // El nuevo origen es donde acaba de terminar
+            updates['t_salida'] = now; // Auto-inicia la siguiente etapa
+            updates['t_arribo'] = null; // Limpia para la siguiente etapa
+            updates['t_fin'] = null; // Limpia para la siguiente etapa
+            updates['is_transit'] = true; // Flag visual para el color naranja
+            
+            db.ref(`viajes_activos/${vId}`).update(updates);
+        }
+    };
+
+    function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColor, isTransit = false, onClickOverride = null) {
+        let colorFinal = isTransit ? 'warning' : claseColor;
+        let onClk = onClickOverride ? onClickOverride : `registrarLog('${vId}', 'Marcó ${textoVacio}'); db.ref('viajes_activos/${vId}/${dbField}').set(Date.now());`;
+
         if(!timestampStr) {
-            return `<button class="btn btn-sm w-100 bg-white text-${claseColor} shadow-sm" style="font-size:0.6rem; font-weight:800; padding:2px 0; margin-bottom:2px; border: 1px dashed var(--bs-${claseColor});" onclick="registrarLog('${vId}', 'Marcó ${textoVacio}'); db.ref('viajes_activos/${vId}/${dbField}').set(Date.now());">${textoVacio}</button>`;
+            return `<button class="btn btn-sm w-100 bg-white text-${colorFinal} shadow-sm" style="font-size:0.6rem; font-weight:800; padding:2px 0; margin-bottom:2px; border: 1px dashed var(--bs-${colorFinal});" onclick="${onClk}">${textoVacio}</button>`;
         } else {
             let displayDate = formatearFechaElegante(timestampStr);
             return `<div class="position-relative w-100 cp" style="margin-bottom:2px;" title="Clic para editar">
-                        <div class="d-flex align-items-center rounded shadow-sm border border-${claseColor}" style="overflow: hidden; height:18px; background: rgba(255,255,255,0.5);">
-                            <span class="bg-${claseColor} text-white fw-bold text-center d-flex align-items-center justify-content-center" style="font-size:0.55rem; width:18px; height:100%;">${textoVacio.charAt(0)}</span>
-                            <span class="fw-bold text-center w-100 text-${claseColor}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span>
+                        <div class="d-flex align-items-center rounded shadow-sm border border-${colorFinal}" style="overflow: hidden; height:18px; background: rgba(255,255,255,0.5);">
+                            <span class="bg-${colorFinal} text-white fw-bold text-center d-flex align-items-center justify-content-center" style="font-size:0.55rem; width:18px; height:100%;">${textoVacio.charAt(0)}</span>
+                            <span class="fw-bold text-center w-100 text-${colorFinal}" style="font-size:0.6rem; line-height:18px;">${displayDate}</span>
                         </div>
                         <input type="datetime-local" class="position-absolute top-0 start-0 w-100 h-100 cp" style="opacity: 0;" value="${getLocalISO(timestampStr)}" onclick="this.showPicker()" onchange="let d=new Date(this.value).getTime(); if(d){ db.ref('viajes_activos/${vId}/${dbField}').set(d); registrarLog('${vId}', 'Modificó horario de ${textoVacio}'); }">
                     </div>`;
@@ -928,7 +965,7 @@
     }
 
     function renderizarBitacora() {
-        if (UI_PAUSED) return; // <--- BLOQUEO ANTI-PARPADEO
+        if (UI_PAUSED) return; 
         
         const tbody = document.getElementById('units-body'); let html = "";
         let tree = { "Sin_Cliente": { "N/A": [] } };
@@ -1025,9 +1062,22 @@
                             </ul>
                         </div>`;
 
-                        let btnSalida = construirBotonHorario(vId, v.t_salida, 't_salida', 'SALIDA', 'success');
+                        // LOGICA DE MULTI-DESTINOS
+                        let arrDests = v.destino ? String(v.destino).split(/,|\n/).map(d => d.trim()).filter(d => d !== "") : [];
+                        let totDests = arrDests.length || 1;
+                        let cIdx = v.destino_idx || 0;
+                        let cOrigen = v.origen_actual || v.origen || "";
+                        let cDestino = arrDests[cIdx] || v.destino || "";
+
+                        let notaDests = totDests > 1 ? `<div style="font-size:0.65rem; color:#0284c7; font-weight:900; margin-top:4px;">Destino ${cIdx + 1} de ${totDests}</div>` : '';
+
+                        let overrideFin = null;
+                        if (cIdx < totDests - 1 && !v.t_fin) overrideFin = `avanzarMultiDestino('${vId}')`;
+
+                        let isTransit = v.is_transit && cIdx > 0;
+                        let btnSalida = construirBotonHorario(vId, v.t_salida, 't_salida', 'SALIDA', 'success', isTransit);
                         let btnArribo = v.t_salida ? construirBotonHorario(vId, v.t_arribo, 't_arribo', 'ARRIBO', 'primary') : '';
-                        let btnFin = v.t_arribo ? construirBotonHorario(vId, v.t_fin, 't_fin', 'FINALIZADO', 'dark') : '';
+                        let btnFin = v.t_arribo ? construirBotonHorario(vId, v.t_fin, 't_fin', 'FINALIZADO', 'dark', false, overrideFin) : '';
 
                         let mapClick = `clickMapaUnidad('${vId}')`;
 
@@ -1035,12 +1085,15 @@
                         tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}"><div class="d-flex align-items-center justify-content-center"><span class="unit-name" id="name_btn_${vId}" onclick="${mapClick}">${nombreCamion}</span></div></td>`;
                         tds['col-operador'] = `<td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}"><div id="op_wialon_${vId}"><span class="badge bg-secondary w-100 mt-1" style="font-size:0.6rem;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</span></div></td>`;
                         
-                        // EL TRIANGULITO ALINEADO (Flexbox)
+                        // EL TRIANGULITO ALINEADO PARA MULTI-DESTINO
                         tds['col-ruta'] = `<td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}">
-                            <div class="d-flex align-items-center justify-content-center gap-1 w-100">
-                                <input class="input-ghost text-center flex-grow-1 w-50" value="${v.origen||''}" placeholder="ORIGEN" onblur="db.ref('viajes_activos/${vId}/origen').set(this.value.toUpperCase())">
-                                <i class="fa-solid fa-play" style="color:var(--grudicom-blue); font-size:0.65rem;"></i>
-                                <input class="input-ghost text-center flex-grow-1 w-50" value="${v.destino||''}" placeholder="DESTINO" onblur="db.ref('viajes_activos/${vId}/destino').set(this.value.toUpperCase())">
+                            <div class="d-flex flex-column align-items-center justify-content-center w-100" title="Para editar ruta usa 'Editar Viaje' en menú derecho">
+                                <div class="d-flex align-items-center justify-content-center gap-1 w-100">
+                                    <input class="input-ghost text-center flex-grow-1 w-50" value="${cOrigen}" placeholder="ORIGEN" readonly style="cursor:default;">
+                                    <i class="fa-solid fa-play" style="color:var(--grudicom-blue); font-size:0.65rem;"></i>
+                                    <input class="input-ghost text-center flex-grow-1 w-50" value="${cDestino}" placeholder="DESTINO" readonly style="cursor:default;">
+                                </div>
+                                ${notaDests}
                             </div>
                         </td>`;
                         
@@ -1055,7 +1108,7 @@
                         tds['col-accion'] = `<td class="col-accion align-middle ${hiddenCols['col-accion'] ? 'd-none' : ''}" style="overflow: visible !important;">
                             <div class="d-flex align-items-center justify-content-center h-100">
                                 <div class="dropdown">
-                                    <button class="btn-dots cp" type="button" data-bs-toggle="dropdown" data-bs-boundary="window" title="Más Opciones"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                                    <button class="btn-dots cp bg-transparent border-0" type="button" data-bs-toggle="dropdown" data-bs-boundary="window" title="Más Opciones"><i class="fa-solid fa-ellipsis-vertical fs-5 text-muted"></i></button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 dropdown-menu-custom" style="z-index:9999 !important;">
                                         <li><a class="dropdown-item dropdown-item-custom text-success cp" onclick="enviarWA('${vId}')"><i class="fa-brands fa-whatsapp me-2 fs-5 align-middle"></i> Enviar WhatsApp</a></li>
                                         <li><a class="dropdown-item dropdown-item-custom text-primary cp" onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')"><i class="fa-solid fa-pencil me-2 fs-5 align-middle"></i> Editar Viaje</a></li>
@@ -1137,7 +1190,7 @@
             <div class="row gx-2 mt-1">
                 <div class="col-4"><label style="font-size:0.65rem;" class="fw-bold text-muted mb-1">UNIDAD GPS</label><input type="text" class="form-control form-control-sm border-primary fw-bold text-uppercase nv-unidad" list="listaUnidadesTotales" placeholder="Buscar unidad..." oninput="autofillOp(this)"></div>
                 <div class="col-4"><label style="font-size:0.65rem;" class="fw-bold text-muted mb-1">ORIGEN</label><input type="text" class="form-control form-control-sm text-uppercase nv-origen" list="listaGeocercas" placeholder="Escribir o elegir..."></div>
-                <div class="col-4"><label style="font-size:0.65rem;" class="fw-bold text-muted mb-1">DESTINO(S)</label><input type="text" class="form-control form-control-sm text-uppercase nv-destino" list="listaGeocercas" placeholder="Ej. Laredo, MTY, GDL..."></div>
+                <div class="col-4"><label style="font-size:0.65rem;" class="fw-bold text-muted mb-1">DESTINO(S)</label><input type="text" class="form-control form-control-sm text-uppercase nv-destino" placeholder="Ej. Laredo, MTY, GDL..."></div>
             </div>
             <div class="row gx-2 mt-2 nv-operador-row" style="display:${isExterna ? 'flex' : 'none'};">
                 <div class="col-12"><input type="text" class="form-control form-control-sm text-uppercase nv-operador" list="listaConductores" placeholder="Nombre de Operador (Requerido para manuales)"></div>
@@ -1197,7 +1250,7 @@
     }
 
     function finalizarViaje(id, n) { 
-        if(confirm(`¿Archivar viaje de la unidad ${n}?`)) { 
+        if(confirm(`¿Archivar viaje de la unidad ${n} de forma permanente?`)) { 
             let v = viajesActivos[id];
             if(v && !v.t_fin) { db.ref('viajes_activos/'+id+'/t_fin').set(Date.now()); registrarLog(id, "Marcó FINALIZADO", "Automático"); }
             registrarLog(id, "FINALIZÓ VIAJE", "Se archiva registro"); 
