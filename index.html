@@ -25,7 +25,7 @@
 
 <div id="loginOverlay" class="login-bg">
     <div class="login-card text-center">
-        <img src="TIGPS HD2.png" alt="Logo" style="height: 100px; margin-bottom: 20px;" onerror="this.style.display='none'">
+        <img src="TIGPS HD2.png" alt="Logo" style="height: 100px; margin-bottom: 20px;" onerror="this.style.display='none'" class="rounded-3">
         <h5 class="fw-bold mb-4" style="color: var(--grudicom-blue);">GRUDICOM TI & GPS</h5>
         <input type="text" id="logUser" class="form-control mb-3 text-center bg-light border-0" placeholder="Usuario">
         <input type="password" id="logPass" class="form-control mb-4 text-center bg-light border-0" placeholder="Contraseña">
@@ -34,10 +34,19 @@
     </div>
 </div>
 
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
+  <div id="sysToast" class="toast align-items-center text-white border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body fw-bold" id="sysToastBody" style="font-size: 0.85rem;"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
 <div id="dashboard" style="display:none;">
     <div class="header-bar">
         <div class="d-flex align-items-center">
-            <img src="TIGPS HD2.png" alt="Logo" style="height: 60px;" class="me-3" onerror="this.style.display='none'">
+            <img src="TIGPS HD2.png" alt="Logo" style="height: 60px;" class="me-3 rounded-3" onerror="this.style.display='none'">
             <div class="d-none d-md-block">
                 <h3 class="fw-bold m-0" style="letter-spacing:-0.5px; font-size: 1.8rem; color: var(--grudicom-blue);">GRUDICOM TI & GPS <span class="text-secondary opacity-50" style="font-size: 1.3rem;">| C4</span></h3>
                 <div class="text-muted fw-bold mt-1" id="lblUsuarioActivo" style="font-size: 0.85rem;"><i class="fa-solid fa-user-shield me-1"></i> Monitor: </div>
@@ -81,6 +90,25 @@
                 <table class="table-custom text-center" id="mainTable">
                     <tbody id="units-body"></tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditHora" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white border-0 py-2">
+                <h6 class="modal-title fw-bold m-0"><i class="fa-solid fa-clock"></i> MODIFICAR <span id="eh_title"></span></h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-light text-center rounded-bottom-4">
+                <input type="hidden" id="eh_vId">
+                <input type="hidden" id="eh_field">
+                <input type="hidden" id="eh_txtVacio">
+                <label class="fw-bold text-secondary mb-2" style="font-size:0.75rem;">Selecciona la fecha y hora correcta:</label>
+                <input type="datetime-local" id="eh_input" class="form-control form-control-lg fw-bold text-center border-primary shadow-sm mb-3" style="font-size:0.9rem;">
+                <button class="btn btn-success w-100 fw-bold rounded-pill shadow" onclick="guardarHorarioModal()"><i class="fa-solid fa-check-circle me-1"></i> CONFIRMAR CAMBIO</button>
             </div>
         </div>
     </div>
@@ -173,16 +201,26 @@
                                 <input type="text" id="ed_destino_input" list="listaGeocercas" placeholder="Escribe destino y da Enter..." onkeydown="manejarChipInput(event, 'ed_chips_box', edChipsArray)">
                             </div>
                         </div>
-                        <div class="col-12">
-                            <label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Contenedores / Cajas: <span class="text-muted fw-normal" style="font-size:0.65rem;">(Presiona Enter para agregar)</span></label>
+                        <div class="col-8">
+                            <label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Contenedores / Cajas: <span class="text-muted fw-normal" style="font-size:0.65rem;">(Presiona Enter)</span></label>
                             <div class="chips-container" id="ed_chips_cont_box" onclick="document.getElementById('ed_cont_input').focus()">
-                                <input type="text" id="ed_cont_input" placeholder="Escribe contenedor y da Enter..." onkeydown="manejarChipInput(event, 'ed_chips_cont_box', edChipsContArray)">
+                                <input type="text" id="ed_cont_input" placeholder="Escribe contenedor..." onkeydown="manejarChipInput(event, 'ed_chips_cont_box', edChipsContArray)">
                             </div>
                         </div>
+                        <div class="col-4">
+                            <label class="fw-bold text-info mb-1" style="font-size:0.75rem;"><i class="fa-regular fa-clock"></i> Hora Programada:</label>
+                            <input type="time" id="ed_t_programada" class="form-control form-control-sm border-info bg-light">
+                        </div>
                     </div>
-                    <label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Operador Manual (Opcional):</label>
-                    <input type="text" id="ed_operador" class="form-control form-control-sm mb-3 bg-light text-uppercase" list="listaConductores">
-                    <button onclick="guardarEdicionViaje()" class="btn btn-success w-100 fw-bold py-2 rounded-pill shadow-sm">GUARDAR CAMBIOS</button>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="fw-bold text-secondary mb-1" style="font-size:0.75rem;">Operador Manual (Opcional):</label>
+                            <input type="text" id="ed_operador" class="form-control form-control-sm bg-light text-uppercase" list="listaConductores">
+                        </div>
+                    </div>
+
+                    <button onclick="guardarEdicionViaje()" class="btn btn-success w-100 fw-bold py-2 rounded-pill shadow-sm"><i class="fa-solid fa-floppy-disk me-1"></i> GUARDAR CAMBIOS</button>
                 </div>
             </div>
         </div>
