@@ -683,15 +683,16 @@ function renderizarBitacora() {
         if(!hasClientUnits) continue;
 
         let logoHtml = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo" title="${cliName}">` : ``;
-        let clientActions = cId !== "Sin_Cliente" ? `<div class="dropdown position-absolute end-0 me-3"><button class="btn btn-sm text-white" type="button" data-bs-toggle="dropdown" title="Acciones de Cliente"><i class="fa-solid fa-ellipsis-vertical fs-5"></i></button><ul class="dropdown-menu shadow-lg border-0 rounded-3"><li><a class="dropdown-item fw-bold text-dark cp" onclick="generarCapturaCliente('${cId}', '${cliName}')"><i class="fa-solid fa-camera me-2 text-primary"></i> Captura Estatus</a></li><li><a class="dropdown-item fw-bold text-success cp" onclick="generarReporteGrupal('${cId}', 'N/A', '${cliName}')"><i class="fa-brands fa-whatsapp me-2"></i> Reporte WhatsApp</a></li></ul></div>` : '';
+        let clientActions = cId !== "Sin_Cliente" ? `<div class="dropdown position-absolute end-0 me-3"><button class="btn btn-sm text-white" type="button" data-bs-toggle="dropdown" data-bs-boundary="window" title="Acciones de Cliente"><i class="fa-solid fa-ellipsis-vertical fs-5"></i></button><ul class="dropdown-menu shadow-lg border-0 rounded-3"><li><a class="dropdown-item fw-bold text-dark cp" onclick="generarCapturaCliente('${cId}', '${cliName}')"><i class="fa-solid fa-camera me-2 text-primary"></i> Captura Estatus</a></li><li><a class="dropdown-item fw-bold text-success cp" onclick="generarReporteGrupal('${cId}', 'N/A', '${cliName}')"><i class="fa-brands fa-whatsapp me-2"></i> Reporte WhatsApp</a></li></ul></div>` : '';
         let clientTitleHtml = `<div class="d-flex align-items-center justify-content-center w-100 position-relative"><img src="TIGPS HD2.png" class="grudicom-logo-header" title="Grudicom TI & GPS" onerror="this.style.display='none'">${logoHtml}<span class="align-middle text-uppercase fw-bold ms-2" style="font-size: 1.3rem; letter-spacing: 0.5px;">${cliName}</span>${clientActions}</div>`;
+        
         html += `<tr class="header-cliente shadow-sm client-group-${cId}" data-client="${cId}"><td colspan="${colOrder.length}">${clientTitleHtml}</td></tr>`;
 
         for(let sId in tree[cId]) {
             if(tree[cId][sId].length === 0) continue;
             let subName = ""; if (sId !== "N/A" && dataClientes[cId] && dataClientes[cId].subclientes && dataClientes[cId].subclientes[sId]) { subName = dataClientes[cId].subclientes[sId].nombre || ""; }
             let logoHtmlSub = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo-sub" title="${cliName}">` : '';
-            let subclientActions = sId !== "N/A" ? `<div class="dropdown position-absolute end-0 me-3"><button class="btn btn-sm text-dark" type="button" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical fs-6"></i></button><ul class="dropdown-menu shadow-lg border-0 rounded-3"><li><a class="dropdown-item fw-bold text-success cp" onclick="generarReporteGrupal('${cId}', '${sId}', '${cliName} -> ${subName}')"><i class="fa-brands fa-whatsapp me-2"></i> Reporte Subcliente</a></li><li><a class="dropdown-item fw-bold text-dark cp" onclick="generarCapturaCliente('${cId}', '${subName}')"><i class="fa-solid fa-camera me-2 text-primary"></i> Captura de Subcliente</a></li></ul></div>` : '';
+            let subclientActions = sId !== "N/A" ? `<div class="dropdown position-absolute end-0 me-3"><button class="btn btn-sm text-dark" type="button" data-bs-toggle="dropdown" data-bs-boundary="window"><i class="fa-solid fa-ellipsis-vertical fs-6"></i></button><ul class="dropdown-menu shadow-lg border-0 rounded-3"><li><a class="dropdown-item fw-bold text-success cp" onclick="generarReporteGrupal('${cId}', '${sId}', '${cliName} -> ${subName}')"><i class="fa-brands fa-whatsapp me-2"></i> Reporte Subcliente</a></li><li><a class="dropdown-item fw-bold text-dark cp" onclick="generarCapturaCliente('${cId}', '${subName}')"><i class="fa-solid fa-camera me-2 text-primary"></i> Captura de Subcliente</a></li></ul></div>` : '';
             
             if(sId !== "N/A" && subName !== "") { html += `<tr class="header-subcliente client-group-${cId}"><td colspan="${colOrder.length}"><div class="d-flex justify-content-center align-items-center position-relative w-100"><div class="d-flex align-items-center text-uppercase">↳ ${logoHtmlSub} SUBCLIENTE: ${subName}</div>${subclientActions}</div></td></tr>`; }
             html += getHeadersRow(cId);
@@ -715,9 +716,7 @@ function renderizarBitacora() {
                     let lastLog = logsArr.length > 0 ? `<div class="text-start w-100 d-flex flex-column h-100 justify-content-center"><div style="font-size:0.6rem; color:#64748b; font-weight:800; margin-bottom:2px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(logsArr[0].t)} <i class="fa-solid fa-magnifying-glass-plus ms-1 text-primary cp" title="Ver Historial Completo" onclick="abrirModalLog('${vId}', '${nombreCamion}')"></i></div><div class="bg-white border rounded shadow-sm p-1" style="border-left: 3px solid var(--accent) !important; font-size:0.65rem; line-height:1.2;"><b class="text-primary">${String(logsArr[0].usr)}:</b> <span class="text-dark fw-bold">${String(logsArr[0].act)}</span><div class="text-muted text-truncate mt-1" style="max-width:100%;" title="${String(logsArr[0].det||'')}">${String(logsArr[0].det||'')}</div></div></div>` : `<div style="font-size:0.65rem; color:#94a3b8;">Sin eventos</div>`;
 
                     let curEst = window.estatusData[v.estatus] || window.estatusData["s1"];
-                    
-                    // MENÚ DE ESTATUS LIMPIO Y SIN BARRAS DE SCROLL
-                    let optionsHtml = `<div class="dropdown w-100"><button class="btn btn-sm w-100 fw-bold dropdown-toggle shadow-sm" style="background:white; color:${curEst.col}; border:1.5px solid ${curEst.col}; font-size:0.65rem; border-radius:12px; padding:2px 6px;" type="button" data-bs-toggle="dropdown" data-bs-boundary="body" aria-expanded="false">${curEst.nombre}</button><ul class="dropdown-menu shadow-lg border-0 rounded-3 dropdown-menu-custom">${Object.keys(window.estatusData).map(k=>`<li><a class="dropdown-item dropdown-item-custom cp py-1" style="color:${window.estatusData[k].col};" onclick="cambiarEstatus('${k}', '${vId}')">${window.estatusData[k].nombre}</a></li>`).join('')}</ul></div>`;
+                    let optionsHtml = `<div class="dropdown w-100"><button class="btn btn-sm w-100 fw-bold dropdown-toggle shadow-sm" style="background:white; color:${curEst.col}; border:1.5px solid ${curEst.col}; font-size:0.65rem; border-radius:12px; padding:2px 6px;" type="button" data-bs-toggle="dropdown" data-bs-boundary="window" aria-expanded="false">${curEst.nombre}</button><ul class="dropdown-menu shadow-lg border-0 rounded-3 dropdown-menu-custom" style="font-size:0.75rem; max-height:250px; overflow-y:auto;">${Object.keys(window.estatusData).map(k=>`<li><a class="dropdown-item dropdown-item-custom cp py-1" style="color:${window.estatusData[k].col};" onclick="cambiarEstatus('${k}', '${vId}')">${window.estatusData[k].nombre}</a></li>`).join('')}</ul></div>`;
 
                     let arrDests = Array.isArray(v.destinos) ? v.destinos : (v.destino ? String(v.destino).split(/,|\n/).map(d => limpiarStr(d)) : []);
                     let totDests = arrDests.length || 1; let cIdx = v.destino_idx || 0; let isLastDest = (cIdx >= totDests - 1); let isTripFullyFinished = (isLastDest && v.t_fin);
@@ -754,6 +753,7 @@ function renderizarBitacora() {
                         }); tramosHtml += `</div>`;
                     }
 
+                    let overrideFin = null; if (!isLastDest && !v.t_fin) overrideFin = `avanzarMultiDestino('${vId}')`;
                     let isTransit = v.is_transit && cIdx > 0;
                     let timestampSalidaVisual = (isLastDest && v.t_salida_origen && cIdx > 0) ? v.t_salida_origen : v.t_salida;
                     
@@ -773,6 +773,8 @@ function renderizarBitacora() {
                     tds['col-gps'] = `<td class="col-gps align-middle ${hiddenCols['col-gps'] ? 'd-none' : ''}" id="gps_cell_${vId}"><div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center border-bottom border-light pb-1 mb-1"><div class="d-flex align-items-center"><span id="icon_${vId}"><i class="fa-solid fa-spinner fa-spin text-muted me-1 fs-6"></i></span><span id="speed_${vId}"><span class="speed-badge bg-secondary m-0">-- km/h</span></span></div><div id="time_${vId}" style="font-size:0.65rem; color:#64748b; font-weight:800;">--</div></div><div class="w-100 text-center" id="addr_control_${vId}"><div style="font-size:0.75rem; color:#64748b; font-weight:800;">Sincronizando...</div></div></div></td>`;
                     tds['col-alertas'] = `<td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}" id="alertas_${vId}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.85rem;">'+v.alerta.txt+'</span>':'<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>'}</td>`;
                     tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}">${lastLog}</td>`;
+                    
+                    // REPARACIÓN COMPLETA DEL BOTÓN DE ACCIONES
                     tds['col-accion'] = `<td class="col-accion align-middle ${hiddenCols['col-accion'] ? 'd-none' : ''}" style="overflow: visible !important;"><div class="d-flex align-items-center justify-content-center h-100"><div class="dropdown"><button class="btn-dots cp bg-transparent border-0" type="button" data-bs-toggle="dropdown" data-bs-boundary="window" title="Más Opciones"><i class="fa-solid fa-ellipsis-vertical fs-5 text-muted"></i></button><ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 dropdown-menu-custom"><li><a class="dropdown-item dropdown-item-custom text-success cp" onclick="enviarWA('${vId}')"><i class="fa-brands fa-whatsapp me-2 fs-5 align-middle"></i> Enviar WhatsApp</a></li><li><a class="dropdown-item dropdown-item-custom text-primary cp" onclick="abrirEdicionViaje('${vId}', '${nombreCamion}')"><i class="fa-solid fa-pencil me-2 fs-5 align-middle"></i> Editar Viaje</a></li><li><hr class="dropdown-divider"></li><li><a class="dropdown-item dropdown-item-custom text-danger cp" onclick="finalizarViaje('${vId}', '${nombreCamion}')"><i class="fa-solid fa-trash me-2 fs-5 align-middle"></i> Archivar Viaje</a></li></ul></div></div></td>`;
 
                     let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
@@ -789,7 +791,6 @@ function renderizarBitacora() {
     
     tbody.innerHTML = html || `<tr><td colspan="${colOrder.length}" class="p-5 text-muted fs-6 text-center"><i class="fa-solid fa-folder-open mb-2 fs-3 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>`;
     filtrarTablaInteligente(); 
-    if (motorArrancado) inyectarGPSenTabla(); // Este ya no llama al redibujo pesado, solo inyecta
 }
 
 function filtrarTablaInteligente() {
@@ -1024,6 +1025,7 @@ async function sincronizarFlotas() {
         
     } catch(errSync) { console.error("Error Global:", errSync); } finally { isSyncingFlotas = false; }
 }
+
 
 
 
