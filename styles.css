@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 
-/* PALETA DE COLORES CLEAN & BLUE */
 :root { 
     --bg-main: #f1f5f9; 
     --bg-card: #ffffff; 
@@ -31,11 +30,9 @@ body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter'
 
 /* ENCABEZADOS DE COLUMNAS */
 .header-columnas th { background: #f8fafc; color: var(--grudicom-blue); font-size: 0.65rem; font-weight: 800; text-align: center; vertical-align: middle; padding: 8px 4px; text-transform: uppercase; letter-spacing: 0.05em; position: sticky; top: 0; z-index: 50; border-bottom: 2px solid var(--grudicom-blue); white-space: nowrap; user-select: none; }
-
 .sort-icon { cursor: pointer; opacity: 0.4; transition: 0.2s; font-size: 0.8rem; margin-left: 5px; padding: 2px 4px; border-radius: 4px; }
 .sort-icon:hover { opacity: 1; background: rgba(0, 51, 102, 0.1); }
 .sort-icon.active { opacity: 1; color: var(--accent); }
-
 .resizer { position: absolute; right: 0; top: 0; width: 6px; height: 100%; cursor: col-resize; z-index: 100; background: transparent; transition: 0.2s; }
 .resizer:hover, .resizing { background: rgba(0, 51, 102, 0.2); border-right: 2px solid var(--grudicom-blue); }
 
@@ -45,16 +42,15 @@ body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter'
 .data-row td:last-child { border-right: 1px solid var(--border-col); border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
 .data-row:hover td { filter: brightness(0.96); }
 
-/* FIX SUPREMO PARA MENÚS ENCIMADOS (Z-INDEX LIMPIO) */
+/* FIX SUPREMO DE Z-INDEX PARA QUE LOS MENÚS FLOTEN LIMPIOS */
 tr { position: relative; }
 tr.dropdown-active { z-index: 999999 !important; }
 tr.dropdown-active td, tr.dropdown-active th { z-index: 999999 !important; position: relative; }
-/* Cuando un menú se abre, el body apaga el escudo de las cabeceras */
 body.dropdown-open .header-columnas th { z-index: 1 !important; }
 body.dropdown-open .header-cliente td { z-index: 0 !important; }
 body.dropdown-open .header-subcliente td { z-index: 0 !important; }
 
-/* MENÚS FLOTANTES CUSTOM (SIN POSITION: FIXED PARA QUE NO BRINQUEN) */
+/* MENÚS FLOTANTES CUSTOM (SIN LIMITES) */
 .dropdown-menu { z-index: 999999 !important; }
 .dropdown-menu-custom { border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid var(--border-col); padding: 8px; min-width: 200px; }
 .dropdown-item-custom { border-radius: 8px; padding: 8px 12px; font-weight: 700; transition: 0.2s; font-size: 0.75rem; margin-bottom: 4px; }
@@ -114,7 +110,6 @@ body.dropdown-open .header-subcliente td { z-index: 0 !important; }
 .color-warning .time-capsule-input { color: #d97706; }
 .color-warning .time-btn-dashed { border-color: #d97706; color: #d97706; }
 
-/* OTROS ESTILOS BÁSICOS */
 .unit-name { cursor: pointer; color: var(--grudicom-blue); font-weight: 900; font-size: 1.2rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
 .unit-name:hover { color: #001a33; text-decoration: underline; }
 
