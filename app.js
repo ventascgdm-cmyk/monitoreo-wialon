@@ -578,3 +578,123 @@ async function sincronizarFlotas() {
         renderStatusTokens(); inyectarGPSenTabla(); solicitarRenderizado();
     } catch(errSync) { console.error("Error Global:", errSync); } finally { isSyncingFlotas = false; }
 }
+
+// ============================================================================
+// PARTE 3: ADMINISTRACIÓN, LOGIN Y MOTOR WIALON (EL CÓDIGO FALTANTE)
+// ============================================================================
+
+window.vincularOperador = function() { let u = limpiarStr(document.getElementById("op_unidad").value); let n = limpiarStr(document.getElementById("op_nombre").value); if(u && n) { db.ref(`operadores/${u}`).set(n); document.getElementById("op_unidad").value = ""; document.getElementById("op_nombre").value = ""; mostrarNotificacion("Operador vinculado."); } };
+window.crearCliente = function() { let nom = limpiarStr(document.getElementById("cli_nombre").value); let fileInput = document.getElementById("cli_logo_file"); if(!nom) return; if (fileInput && fileInput.files && fileInput.files[0]) { let reader = new FileReader(); reader.onload = function(e) { db.ref('clientes').push({nombre: nom, logo: e.target.result}); document.getElementById("cli_nombre").value = ""; fileInput.value = ""; mostrarNotificacion("Cliente creado."); }; reader.readAsDataURL(fileInput.files[0]); } else { db.ref('clientes').push({nombre: nom, logo: ""}); document.getElementById("cli_nombre").value = ""; if(fileInput) fileInput.value = ""; mostrarNotificacion("Cliente creado."); } };
+window.crearSubcliente = function() { db.ref(`clientes/${document.getElementById("sub_clientePadre").value}/subclientes`).push({nombre: limpiarStr(document.getElementById("sub_nombre").value)}); document.getElementById("sub_nombre").value = ""; mostrarNotificacion("Subcliente creado."); };
+window.crearUsuario = function() { let id = document.getElementById("usr_id").value.trim().toLowerCase(); let nom = document.getElementById("usr_nom").value.trim(); let pass = document.getElementById("usr_pass").value.trim(); if(id && nom && pass) { db.ref(`sistema/usuarios/${id}`).set({nom: nom, pass: pass, rol: "monitor"}); document.getElementById("usr_id").value=""; document.getElementById("usr_nom").value=""; document.getElementById("usr_pass").value=""; mostrarNotificacion("Usuario creado."); } };
+
+window.actualizarListasAdmin = function() { 
+    let s = document.getElementById("sub_clientePadre"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); 
+    document.getElementById("listaClientesAdmin").innerHTML = Object.keys(dataClientes).map(k => { let c = dataClientes[k]; let logoText = c.logo ? `<i class="fa-solid fa-image text-success ms-1" title="Logo"></i>` : ''; let safeNom = (c.nombre || '').replace(/'/g, "\\'"); return `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8"><span class="text-truncate" style="max-width:60%;">${c.nombre} ${logoText}</span><div class="text-nowrap"><i class="fa-solid fa-pencil text-primary cp me-2" onclick="let n=prompt('Editar:', '${safeNom}'); if(n){ db.ref('clientes/${k}').update({nombre: limpiarStr(n)}); }"></i><i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Cliente?')) db.ref('clientes/${k}').remove()"></i></div></li>`; }).join(''); 
+    let subHtml = ""; Object.keys(dataClientes).forEach(cId => { if(dataClientes[cId].subclientes) { Object.keys(dataClientes[cId].subclientes).forEach(sId => { subHtml += `<li class="list-group-item d-flex justify-content-between p-1 fs-8"><b>${dataClientes[cId].nombre}</b> - ${dataClientes[cId].subclientes[sId].nombre} <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar?')) db.ref('clientes/${cId}/subclientes/${sId}').remove()"></i></li>`; }); } }); document.getElementById("listaSubclientesAdmin").innerHTML = subHtml; 
+    db.ref('sistema/usuarios').once('value', snap => { let usrs = snap.val() || {}; document.getElementById("listaUsuariosAdmin").innerHTML = Object.keys(usrs).map(k => k === 'admin' ? `<li class="list-group-item p-1 fs-8"><b>admin</b> (Maestro)</li>` : `<li class="list-group-item d-flex justify-content-between p-1 fs-8"><b>${k}</b> <span class="ps-1">${usrs[k].nom}</span> <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar?')) db.ref('sistema/usuarios/${k}').remove()"></i></li>`).join(''); }); 
+};
+window.agregarToken = function() { db.ref('sistema/tokens').push({ nombre: limpiarStr(document.getElementById("tk_nom").value), token: document.getElementById("tk_val").value, url: document.getElementById("tk_url").value }); document.getElementById("tk_nom").value=""; document.getElementById("tk_val").value=""; mostrarNotificacion("Nuevo Token."); };
+window.actualizarListaTokensAdmin = function(tks) { const lista = document.getElementById("listaStatusTokens"); if(lista) { lista.innerHTML = Object.keys(tks || {}).map(id => `<li class="list-group-item d-flex justify-content-between p-1 fs-8"><b>${tks[id].nombre}</b> <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Token?')) { db.ref('sistema/tokens/${id}').remove().then(()=>location.reload()); }"></i></li>`).join(''); } };
+
+// --- LOGIN Y ARRANQUE AUTOMÁTICO ---
+window.autenticarUsuario = function(aU, aP) {
+    let strU = (typeof aU === 'string') ? aU : document.getElementById("logUser").value.trim();
+    let strP = (typeof aP === 'string') ? aP : document.getElementById("logPass").value.trim();
+    if(!strU || !strP) return;
+    document.getElementById("status").innerText = "Conectando..."; document.getElementById("status").className = "mt-3 small fw-bold text-primary";
+    db.ref(`sistema/usuarios/${strU}`).once('value').then(s => { let user = s.val(); if(!user && strU === "admin" && strP === "admin123") { user = { pass: "admin123", rol: "admin", nom: "Administrador Maestro" }; } if(user && user.pass === strP) { currentUser = user; localStorage.setItem("tms_user", strU); localStorage.setItem("tms_pass", strP); document.getElementById("loginOverlay").style.display = "none"; document.getElementById("dashboard").style.display = "flex"; document.getElementById("lblUsuarioActivo").innerHTML = "<i class='fa-solid fa-user-shield me-1'></i> Monitor: " + currentUser.nom; if(currentUser.rol === "admin") document.getElementById("btnAdminMenu").style.display = "block"; if(!motorArrancado) arranqueMotor(); } else { document.getElementById("status").innerText = "Credenciales Incorrectas"; document.getElementById("status").className = "mt-3 small fw-bold text-danger"; } }).catch(err => { document.getElementById("status").innerText = "Error de red."; document.getElementById("status").className = "mt-3 small fw-bold text-danger"; });
+};
+
+window.onload = function () {
+    aplicarAnchosGuardados(); inicializarMenuColumnas();
+    db.ref('clientes').on('value', s => { dataClientes = s.val() || {}; actualizarListasAdmin(); solicitarRenderizado(); });
+    db.ref('viajes_activos').on('value', s => { viajesActivos = s.val() || {}; solicitarRenderizado(); });
+    db.ref('sistema/tokens').on('value', s => { let tks = s.val() || {}; configSistema.tokens = Object.values(tks); actualizarListaTokensAdmin(tks); if(currentUser && !motorArrancado) arranqueMotor(); });
+    document.getElementById("logPass").addEventListener("keyup", e => e.key === "Enter" && autenticarUsuario(null, null));
+    let sU = localStorage.getItem("tms_user"); let sP = localStorage.getItem("tms_pass"); if(sU && sP) autenticarUsuario(sU, sP);
+    setInterval(procesarFilaDirecciones, 1100); 
+};
+
+// --- SINCRONIZACIÓN CON LA API DE WIALON ---
+window.peticionWialon = function(url, svc, params, sid=null) { 
+    return new Promise(resolve => { 
+        let script = document.createElement("script"); let cb = "wialon_cb_" + Date.now() + Math.floor(Math.random()*1000); 
+        let timeout = setTimeout(() => { delete window[cb]; script.remove(); resolve(null); }, 8000); 
+        window[cb] = d => { clearTimeout(timeout); delete window[cb]; script.remove(); resolve(d); }; 
+        script.onerror = () => { clearTimeout(timeout); delete window[cb]; script.remove(); resolve(null); }; 
+        script.src = `${url.replace(/\/$/, '')}/wialon/ajax.html?svc=${svc}&params=${encodeURIComponent(JSON.stringify(params))}&callback=${cb}${sid?'&sid='+sid:''}`; 
+        document.head.appendChild(script); 
+    }); 
+};
+
+window.arranqueMotor = async function() { if(pollingInterval) clearInterval(pollingInterval); motorArrancado = true; await sincronizarFlotas(); pollingInterval = setInterval(sincronizarFlotas, 20000); };
+window.renderStatusTokens = function() { const lista = document.getElementById("listaStatusTokens"); let html = ""; for(let tk in estadoTokens) { let stat = estadoTokens[tk]; let badge = stat.status === 'OK' ? '<span class="badge bg-success shadow-sm">ONLINE</span>' : '<span class="badge bg-danger shadow-sm">OFFLINE</span>'; html += `<li class="list-group-item d-flex justify-content-between align-items-center p-2"><div class="fw-bold" style="font-size:0.8rem;">${tk}</div> <div><span class="badge bg-secondary me-2 shadow-sm">${stat.count} Unidades</span> ${badge}</div></li>`; } lista.innerHTML = html || '<li class="list-group-item text-center">No hay tokens</li>'; };
+
+window.sincronizarFlotas = async function() {
+    if(isSyncingFlotas) return; isSyncingFlotas = true;
+    try { 
+        let indMenu = document.getElementById("menuSyncIndicator"); if(indMenu) indMenu.innerHTML = `<i class="fa-solid fa-satellite-dish text-warning"></i> Sincronizando...`; 
+        estadoTokens = {}; let tempUnits = {}; let tempGeo = []; let tempChoferes = {}; let listUni = new Set(); let conexionesExitosas = 0; 
+        
+        let promesas = configSistema.tokens.map(async (tk) => { 
+            try { 
+                if(!tk.url || !tk.token) return; 
+                if(!activeSIDs[tk.token]) { let l = await peticionWialon(tk.url, "token/login", {token: tk.token}); if(l && l.eid) activeSIDs[tk.token] = { sid: l.eid }; } 
+                let auth = activeSIDs[tk.token]; if(!auth || !auth.sid) { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; return; } 
+                let autoLoginUrl = `${tk.url.includes("hst-api") ? "https://hosting.wialon.com" : tk.url}/login.html?token=${tk.token}`; 
+                
+                let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1 + 256 + 4096, from: 0, to: 4294967295 }, auth.sid); 
+                let diccChoferes = {}; let diccZonasReq = {}; let diccZonasNombres = {}; 
+                
+                if(reqR && reqR.items) { 
+                    reqR.items.forEach(r => { 
+                        let rId = r.id; diccZonasReq[rId] = []; diccZonasNombres[rId] = {}; 
+                        if(r.zl) { Object.values(r.zl).forEach(z => { diccZonasReq[rId].push(z.id); diccZonasNombres[rId][z.id] = z.n; tempGeo.push(z); }); } 
+                        if(r.drvrs || r.drv) { 
+                            let drivers = r.drvrs || r.drv; 
+                            Object.values(drivers).forEach(d => { 
+                                let telStr = d.p ? String(d.p) : ""; let objC = { nombre: limpiarStr(d.n), tel: telStr, cod: d.c || "---", rid: rId, id: d.id };
+                                if(d.bu && d.bu > 0) { diccChoferes[d.bu] = objC; } 
+                                tempChoferes[objC.nombre] = objC;
+                            }); 
+                        } 
+                    }); 
+                } 
+                
+                let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1 + 1024, from: 0, to: 4294967295 }, auth.sid); 
+                
+                if(reqU && reqU.items) { 
+                    conexionesExitosas++; estadoTokens[tk.nombre] = { status: 'OK', count: reqU.items.length }; 
+                    let uIds = reqU.items.map(u => u.id); let checkGeo = {}; 
+                    if(uIds.length > 0) { checkGeo = await peticionWialon(tk.url, "resource/get_zones_by_unit", { spec: { zoneId: diccZonasReq, units: uIds, time: 0 } }, auth.sid); }
+                    
+                    reqU.items.forEach(u => { 
+                        let n = limpiarStr(u.nm || "Desconocida"); let chofer = diccChoferes[u.id] || { nombre: "Sin asignar", tel: "", cod: "---", rid: null }; 
+                        let miZona = null; let recursoDueño = chofer.rid ? chofer.rid : u.bact; 
+                        
+                        if (recursoDueño && checkGeo && checkGeo[recursoDueño]) { 
+                            for (let zId in checkGeo[recursoDueño]) { if (checkGeo[recursoDueño][zId].includes(u.id)) { miZona = diccZonasNombres[recursoDueño][zId]; break; } } 
+                        } else if (checkGeo) { 
+                            for (let rId in checkGeo) { for (let zId in checkGeo[rId]) { if (checkGeo[rId][zId].includes(u.id)) { miZona = diccZonasNombres[rId][zId]; break; } } if (miZona) break; } 
+                        } 
+                        tempUnits[u.id] = { id: u.id, name: n, pos: u.pos, loginUrl: autoLoginUrl, choferObj: chofer, zonaOficial: miZona, tkNombre: tk.nombre }; 
+                        listUni.add(n); 
+                    }); 
+                } else { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; } 
+            } catch(errTk) { console.error("Token Falló:", tk.nombre); } 
+        }); 
+        
+        await Promise.all(promesas); 
+        unidadesGlobales = tempUnits; geocercasNativas = tempGeo; diccChoferesGlobal = tempChoferes; 
+        document.getElementById("listaUnidadesTotales").innerHTML = Array.from(listUni).map(n => `<option value="${n}">`).join(''); 
+        document.getElementById("listaGeocercas").innerHTML = tempGeo.map(z => `<option value="${limpiarStr(z.n)}">`).join(''); 
+        
+        if(indMenu) { 
+            if(conexionesExitosas > 0) indMenu.innerHTML = `<span class="badge bg-success shadow-sm rounded-pill py-1 px-2">${Object.keys(unidadesGlobales).length} Camiones Live</span>`; 
+            else indMenu.innerHTML = `<span class="badge bg-danger shadow-sm rounded-pill py-1 px-2">Error GPS - Offline</span>`; 
+        } 
+        
+        renderStatusTokens(); inyectarGPSenTabla(); solicitarRenderizado();
+    } catch(errSync) { console.error("Error Global:", errSync); } finally { isSyncingFlotas = false; }
+};
