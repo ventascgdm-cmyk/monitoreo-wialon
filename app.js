@@ -298,3 +298,283 @@ function construirBotonHorario(vId, timestampStr, dbField, textoVacio, claseColo
     else { let displayDate = formatearFechaElegante(ts); let onClk = `abrirModalEdicionHora('${vId}', '${dbField}', '${textoVacio}', '${ts}')`; return `<div class="time-wrapper color-${claseColor}" title="Clic para modificar"><div class="time-capsule cp" onclick="${onClk}"><div class="time-capsule-icon">${textoVacio.charAt(0)}</div><div class="time-capsule-input">${displayDate}</div></div></div>`; }
 }
 window.avanzarMultiDestino = function(vId) { let v = viajesActivos[vId]; if (!v) return; let arrDests = Array.isArray(v.destinos) ? v.destinos : (v.destino ? String(v.destino).split(/,|\n/).map(d => limpiarStr(d)) : []); let totalDests = arrDests.length || 1; let currentIdx = v.destino_idx || 0; let now = Date.now(); db.ref(`viajes_activos/${vId}/t_fin`).set(now); setTimeout(() => { if (currentIdx < totalDests - 1) { let updates = {}; registrarLog(vId, `Terminó Destino ${currentIdx + 1}`, arrDests[currentIdx]); let tramoRef = `historial_tramos/${currentIdx}`; updates[tramoRef] = { destino: arrDests[currentIdx], t_salida: v.t_salida || null, t_arribo: v.t_arribo || null, t_fin: now }; updates['destino_idx'] = currentIdx + 1; updates['origen_actual'] = arrDests[currentIdx]; updates['t_salida'] = now; updates['t_arribo'] = null; updates['t_fin'] = null; updates['is_transit'] = true; db.ref(`viajes_activos/${vId}`).update(updates); } }, 300); };
+
+// --- RENDERIZADO MAESTRO DE TABLA ---
+function renderizarBitacora() {
+    if (UI_PAUSED) return; 
+    const tbody = document.getElementById('units-body'); let html = ""; let tree = { "Sin_Cliente": { "N/A": [] } };
+    Object.keys(dataClientes).forEach(cId => { tree[cId] = { "N/A": [] }; if(dataClientes[cId].subclientes) { Object.keys(dataClientes[cId].subclientes).forEach(sId => tree[cId][sId] = []); } });
+    Object.keys(viajesActivos).forEach(vId => { let v = viajesActivos[vId]; if(typeof v !== 'object' || !v) return; let cId = String(v.cliente || "Sin_Cliente"); let sId = String(v.subcliente || "N/A"); if(!tree[cId]) tree[cId] = { "N/A": [] }; if(!tree[cId][sId]) tree[cId][sId] = []; tree[cId][sId].push({vId, v}); });
+    datosAgrupadosGlobal = tree; 
+
+    for(let cId in tree) {
+        let cliName = "SIN CLIENTE"; if (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].nombre) cliName = dataClientes[cId].nombre;
+        let hasClientUnits = false; for(let sId in tree[cId]) { if(tree[cId][sId].length > 0) { hasClientUnits = true; break; } }
+        if(!hasClientUnits) continue;
+
+        let safeCliName = escapeSafe(cliName);
+        let logoHtml = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo" title="${safeCliName}">` : ``;
+        let clientActions = cId !== "Sin_Cliente" ? `<div class="dropdown position-absolute end-0 me-3"><button class="btn btn-sm text-white" type="button" data-bs-toggle="dropdown" title="Acciones de Cliente"><i class="fa-solid fa-ellipsis-vertical fs-5"></i></button><ul class="dropdown-menu shadow-lg border-0 rounded-3"><li><a class="dropdown-item fw-bold text-dark cp" onclick="generarCapturaCliente('${cId}', '${safeCliName}')"><i class="fa-solid fa-camera me-2 text-primary"></i> Captura Estatus</a></li><li><a class="dropdown-item fw-bold text-success cp" onclick="generarReporteGrupal('${cId}', 'N/A', '${safeCliName}')"><i class="fa-brands fa-whatsapp me-2"></i> Reporte WhatsApp</a></li></ul></div>` : '';
+        let clientTitleHtml = `<div class="d-flex align-items-center justify-content-center w-100 position-relative"><img src="TIGPS HD2.png" class="grudicom-logo-header" title="Grudicom TI & GPS" onerror="this.style.display='none'">${logoHtml}<span class="align-middle text-uppercase fw-bold ms-2" style="font-size: 1.3rem; letter-spacing: 0.5px;">${safeCliName}</span>${clientActions}</div>`;
+        html += `<tr class="header-cliente shadow-sm client-group-${cId}" data-client="${cId}"><td colspan="${colOrder.length}">${clientTitleHtml}</td></tr>`;
+
+        for(let sId in tree[cId]) {
+            if(tree[cId][sId].length === 0) continue;
+            let subName = ""; if (sId !== "N/A" && dataClientes[cId] && dataClientes[cId].subclientes && dataClientes[cId].subclientes[sId]) { subName = dataClientes[cId].subclientes[sId].nombre || ""; }
+            let safeSubName = escapeSafe(subName);
+            let logoHtmlSub = (cId !== "Sin_Cliente" && dataClientes[cId] && dataClientes[cId].logo) ? `<img src="${dataClientes[cId].logo}" class="client-logo-sub" title="${safeCliName}">` : '';
+            let subclientActions = sId !== "N/A" ? `<div class="dropdown position-absolute end-0 me-3"><button class="btn btn-sm text-dark" type="button" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical fs-6"></i></button><ul class="dropdown-menu shadow-lg border-0 rounded-3"><li><a class="dropdown-item fw-bold text-success cp" onclick="generarReporteGrupal('${cId}', '${sId}', '${safeCliName} -> ${safeSubName}')"><i class="fa-brands fa-whatsapp me-2"></i> Reporte Subcliente</a></li><li><a class="dropdown-item fw-bold text-dark cp" onclick="generarCapturaCliente('${cId}', '${safeSubName}')"><i class="fa-solid fa-camera me-2 text-primary"></i> Captura de Subcliente</a></li></ul></div>` : '';
+            if(sId !== "N/A" && subName !== "") { html += `<tr class="header-subcliente client-group-${cId}"><td colspan="${colOrder.length}"><div class="d-flex justify-content-center align-items-center position-relative w-100"><div class="d-flex align-items-center text-uppercase">↳ ${logoHtmlSub} SUBCLIENTE: ${safeSubName}</div>${subclientActions}</div></td></tr>`; }
+            html += getHeadersRow(cId);
+
+            tree[cId][sId].sort((a, b) => { let valA = "", valB = ""; if (sortState.column === 'unidad') { valA = String(a.v.unidadN || a.v.unidadFallback || ""); valB = String(b.v.unidadN || b.v.unidadFallback || ""); } else if (sortState.column === 'ruta') { valA = String(a.v.origen || ""); valB = String(b.v.origen || ""); } else if (sortState.column === 'estatus') { valA = String(a.v.estatus || ""); valB = String(b.v.estatus || ""); } else { valA = String(a.v.estatus || ""); valB = String(b.v.estatus || ""); } return sortState.direction === 'asc' ? valA.localeCompare(valB) : -valA.localeCompare(valB); });
+
+            tree[cId][sId].forEach(({vId, v}) => {
+                try {
+                    let nombreCamion = limpiarStr(v.unidadN || v.unidadFallback); let safeCamionName = escapeSafe(nombreCamion); let isExternal = v.wialonId === "EXTERNO"; let colEstatus = window.estatusData[v.estatus]?.col || '#0f172a';
+                    let logsObj = v.log || {}; let logsArr = Object.values(logsObj).sort((a,b)=>b.t - a.t);
+                    let lastLog = logsArr.length > 0 ? `<div class="text-start w-100 d-flex flex-column h-100 justify-content-center"><div style="font-size:0.6rem; color:#64748b; font-weight:800; margin-bottom:2px;"><i class="fa-regular fa-calendar text-primary"></i> ${formatearFechaElegante(logsArr[0].t)} <i class="fa-solid fa-magnifying-glass-plus ms-1 text-primary cp" title="Ver Historial Completo" onclick="abrirModalLog('${vId}', '${safeCamionName}')"></i></div><div class="bg-white border rounded shadow-sm p-1" style="border-left: 3px solid var(--accent) !important; font-size:0.65rem; line-height:1.2;"><b class="text-primary">${escapeSafe(String(logsArr[0].usr))}:</b> <span class="text-dark fw-bold">${escapeSafe(String(logsArr[0].act))}</span><div class="text-muted text-truncate mt-1" style="max-width:100%;" title="${escapeSafe(String(logsArr[0].det||''))}">${escapeSafe(String(logsArr[0].det||''))}</div></div></div>` : `<div style="font-size:0.65rem; color:#94a3b8;">Sin eventos</div>`;
+                    let curEst = window.estatusData[v.estatus] || window.estatusData["s1"];
+                    let optionsHtml = `<div class="dropdown w-100"><button class="btn btn-sm w-100 fw-bold dropdown-toggle shadow-sm" style="background:white; color:${curEst.col}; border:1.5px solid ${curEst.col}; font-size:0.65rem; border-radius:12px; padding:2px 6px;" type="button" data-bs-toggle="dropdown" data-bs-boundary="window">${curEst.nombre}</button><ul class="dropdown-menu shadow-lg border-0 rounded-3 dropdown-menu-custom" style="font-size:0.75rem; max-height:250px; overflow-y:auto;">${Object.keys(window.estatusData).map(k=>`<li><a class="dropdown-item dropdown-item-custom cp py-1" style="color:${window.estatusData[k].col};" onclick="cambiarEstatus('${k}', '${vId}')">${window.estatusData[k].nombre}</a></li>`).join('')}</ul></div>`;
+
+                    let arrDests = Array.isArray(v.destinos) ? v.destinos : (v.destino ? String(v.destino).split(/,|\n/).map(d => limpiarStr(d)) : []); let totDests = arrDests.length || 1; let cIdx = v.destino_idx || 0; let isLastDest = (cIdx >= totDests - 1); let isTripFullyFinished = (isLastDest && v.t_fin);
+                    let cOrigen = v.origen_actual || v.origen || ""; let cDestino = arrDests[cIdx] || v.destino || ""; if (isTripFullyFinished) { cOrigen = v.origen || ""; cDestino = arrDests[totDests - 1] || v.destino || ""; }
+
+                    let semaforoHtml = '';
+                    if(v.t_programada) {
+                        let pNum = getSafeNumber(v.t_programada);
+                        if(pNum) {
+                            let pTime = new Date(pNum); let timeStr = pTime.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}); let msRef = getSafeNumber(v.t_salida) || Date.now(); let diffMins = Math.floor((msRef - pNum) / 60000); let diffStr = formatTimeDiff(diffMins); let sClass = "verde"; let sText = ""; if (diffMins > 20) { sClass = "rojo"; sText = `Retraso: ${diffStr}`; } else if (diffMins > 0) { sClass = "amarillo"; sText = `Retraso: ${diffStr}`; } else { sText = (!v.t_salida) ? `Faltan: ${diffStr}` : `Adelanto: ${diffStr}`; }
+                            semaforoHtml = `<span class="semaforo-minimalista ${sClass}" title="Día Prog: ${pTime.toLocaleDateString('es-MX')}"><i class="fa-regular fa-clock me-1"></i>Prog: ${timeStr} (${sText})</span>`;
+                        }
+                    }
+
+                    let notaDests = totDests > 1 ? `<div style="font-size:0.65rem; color:#0284c7; font-weight:900; margin-top:4px;">Destino ${cIdx + 1} de ${totDests}</div>` : ''; if(isTripFullyFinished && totDests > 1) { notaDests = `<div style="font-size:0.65rem; color:#10b981; font-weight:900; margin-top:4px;"><i class="fa-solid fa-flag-checkered"></i> Ruta Completa</div>`; }
+                    let tramosHtml = '';
+                    if (totDests > 1) {
+                        tramosHtml = `<div id="exp_ruta_${vId}" class="d-none tramo-historial w-100 text-start mt-2 p-2 bg-light rounded border shadow-sm" style="font-size:0.65rem;"><div class="fw-bold text-primary mb-1 border-bottom border-secondary pb-1">HISTORIAL DE RUTA</div>`;
+                        arrDests.forEach((d, i) => { let hist = (v.historial_tramos && v.historial_tramos[i]) ? v.historial_tramos[i] : null; let arrTime = (i === cIdx && v.t_arribo) ? formatTimeFriendly(v.t_arribo) : (hist && hist.t_arribo ? formatTimeFriendly(hist.t_arribo) : '--:--'); let finTime = (i === cIdx && v.t_fin) ? formatTimeFriendly(v.t_fin) : (hist && hist.t_fin ? formatTimeFriendly(hist.t_fin) : '--:--'); let actClass = (i === cIdx) ? 'bg-white border-primary border text-primary fw-bold p-1 rounded my-1 shadow-sm' : 'text-muted mb-1'; let indicator = (i === cIdx) ? '<i class="fa-solid fa-truck-fast me-1"></i> ' : '<i class="fa-solid fa-check text-success me-1"></i> '; if(i > cIdx) { indicator = '<i class="fa-regular fa-clock me-1"></i> '; arrTime = 'Pendiente'; finTime = ''; } tramosHtml += `<div class="${actClass}">${indicator} ${i+1}. ${escapeSafe(d)} <br> <span style="font-size:0.6rem; color:#64748b;">Arr: ${arrTime} ${finTime ? '| Fin: '+finTime : ''}</span></div>`; }); tramosHtml += `</div>`;
+                    }
+
+                    let isTransit = v.is_transit && cIdx > 0; let timestampSalidaVisual = (isLastDest && v.t_salida_origen && cIdx > 0) ? v.t_salida_origen : v.t_salida;
+                    let btnSalida = construirBotonHorario(vId, timestampSalidaVisual, 't_salida', 'SALIDA', 'success'); let btnArribo = v.t_salida ? construirBotonHorario(vId, v.t_arribo, 't_arribo', 'ARRIBO', 'primary') : ''; let btnFin = v.t_arribo ? construirBotonHorario(vId, v.t_fin, 't_fin', 'FINALIZADO', 'dark') : '';
+                    let mapClick = `clickMapaUnidad('${vId}')`; let tds = {}; let contArr = Array.isArray(v.contenedores_arr) ? v.contenedores_arr : (v.contenedores ? [v.contenedores] : []); let htmlContenedores = contArr.map(c => `<div class="contenedor-capsula"><i class="fa-solid fa-trailer me-2 text-primary" style="font-size:0.9rem;"></i>${escapeSafe(c)}</div>`).join('');
+
+                    tds['col-unidad'] = `<td class="col-unidad align-middle ${hiddenCols['col-unidad'] ? 'd-none' : ''}"><div class="d-flex flex-column align-items-center justify-content-center w-100"><span class="unit-name" id="name_btn_${vId}" onclick="${mapClick}">${safeCamionName}</span><div class="w-100 d-flex flex-column align-items-center">${htmlContenedores}</div></div></td>`;
+                    tds['col-operador'] = `<td class="col-operador align-middle ${hiddenCols['col-operador'] ? 'd-none' : ''}"><div id="op_wialon_${vId}"><span class="badge bg-secondary w-100 mt-1" style="font-size:0.6rem;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</span></div></td>`;
+                    tds['col-ruta'] = `<td class="col-ruta align-middle ${hiddenCols['col-ruta'] ? 'd-none' : ''}"><div class="d-flex flex-column align-items-center justify-content-center w-100" title="Para editar ruta usa 'Editar Viaje'"><div class="route-text">${escapeSafe(cOrigen)}</div><i class="fa-solid fa-caret-down my-1 text-muted" style="font-size:0.8rem;"></i><div class="route-text">${escapeSafe(cDestino)}</div>${semaforoHtml}${notaDests}${totDests > 1 ? `<button class="btn btn-sm text-primary p-0 mt-2 shadow-sm rounded-circle bg-white" style="width:24px; height:24px; line-height:12px;" onclick="expandirRuta('${vId}')"><i class="fa-solid fa-list" style="font-size:0.7rem;"></i></button>` : ''}${tramosHtml}</div></td>`;
+                    tds['col-horarios'] = `<td class="col-horarios align-middle ${hiddenCols['col-horarios'] ? 'd-none' : ''}"><div class="d-flex flex-column justify-content-center h-100 px-1">${btnSalida}${btnArribo}${btnFin}</div></td>`;
+                    tds['col-estatus'] = `<td class="col-estatus align-middle ${hiddenCols['col-estatus'] ? 'd-none' : ''}" style="overflow: visible !important;">${optionsHtml}</td>`;
+                    tds['col-gps'] = `<td class="col-gps align-middle ${hiddenCols['col-gps'] ? 'd-none' : ''}" id="gps_cell_${vId}"><div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center border-bottom border-light pb-1 mb-1"><div class="d-flex align-items-center"><span id="icon_${vId}"><i class="fa-solid fa-spinner fa-spin text-muted me-1 fs-6"></i></span><span id="speed_${vId}"><span class="speed-badge bg-secondary m-0">-- km/h</span></span></div><div id="time_${vId}" style="font-size:0.65rem; color:#64748b; font-weight:800;">--</div></div><div class="w-100 text-center" id="addr_control_${vId}"><div style="font-size:0.75rem; color:#64748b; font-weight:800;">Sincronizando...</div></div></div></td>`;
+                    tds['col-alertas'] = `<td class="col-alertas align-middle ${hiddenCols['col-alertas'] ? 'd-none' : ''}" id="alertas_${vId}">${v.alerta?'<span class="text-danger fw-bold" style="font-size:0.85rem;">'+escapeSafe(v.alerta.txt)+'</span>':'<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>'}</td>`;
+                    tds['col-historial'] = `<td class="col-historial align-middle ${hiddenCols['col-historial'] ? 'd-none' : ''}">${lastLog}</td>`;
+                    tds['col-accion'] = `<td class="col-accion align-middle ${hiddenCols['col-accion'] ? 'd-none' : ''}" style="overflow: visible !important;"><div class="d-flex align-items-center justify-content-center h-100"><div class="dropdown"><button class="btn-dots cp bg-transparent border-0" type="button" data-bs-toggle="dropdown" data-bs-boundary="window" title="Más Opciones"><i class="fa-solid fa-ellipsis-vertical fs-5 text-muted"></i></button><ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 dropdown-menu-custom"><li><a class="dropdown-item dropdown-item-custom text-success cp" onclick="enviarWA('${vId}')"><i class="fa-brands fa-whatsapp me-2 fs-5 align-middle"></i> Enviar WhatsApp</a></li><li><a class="dropdown-item dropdown-item-custom text-primary cp" onclick="abrirEdicionViaje('${vId}', '${safeCamionName}')"><i class="fa-solid fa-pencil me-2 fs-5 align-middle"></i> Editar Viaje</a></li><li><hr class="dropdown-divider"></li><li><a class="dropdown-item dropdown-item-custom text-danger cp" onclick="finalizarViaje('${vId}', '${safeCamionName}')"><i class="fa-solid fa-trash me-2 fs-5 align-middle"></i> Archivar Viaje</a></li></ul></div></div></td>`;
+
+                    let savedWidths = JSON.parse(localStorage.getItem('tms_colWidths')) || {};
+                    let trInner = colOrder.map(c => { let ancho = savedWidths[c] || columnasDef[c].ancho; return tds[c].replace('class="', `style="width:${ancho}px; min-width:${ancho}px; max-width:${ancho}px;" class="`); }).join('');
+                    let searchData = `${nombreCamion} ${v.origen||''} ${v.destino||''} ${contArr.join(' ')} ${v.operador||''} ${cliName} ${subName} ${window.estatusData[v.estatus]?.nombre||''}`.toLowerCase();
+                    let classAlerts = isExternal ? 'external-connection-row ' : 'needs-gps-update ';
+                    html += `<tr class="data-row client-group-${cId} ${classAlerts}" id="row_${vId}" data-search="${escapeSafe(searchData)}" style="--row-bg: ${hexToRgba(colEstatus, 0.08)};">${trInner}</tr>`;
+
+                } catch(err) { console.error("Fila omitida por error:", vId, err); }
+            });
+        }
+    }
+    tbody.innerHTML = html || `<tr><td colspan="${colOrder.length}" class="p-5 text-muted fs-6 text-center"><i class="fa-solid fa-folder-open mb-2 fs-3 text-primary"></i><br>Aún no hay viajes activos en la bitácora.</td></tr>`;
+    filtrarTablaInteligente(); 
+}
+
+function filtrarTablaInteligente() {
+    let t = document.getElementById("buscador").value.toLowerCase(); let rows = Array.from(document.querySelectorAll("#units-body tr"));
+    rows.forEach(r => { if(r.classList.contains("data-row")) r.style.display = (r.getAttribute("data-search") || "").includes(t) ? "" : "none"; });
+    let currentSubclientVisible = false; let currentClientVisible = false;
+    for (let i = rows.length - 1; i >= 0; i--) {
+        let r = rows[i];
+        if (r.classList.contains("data-row")) { if (r.style.display !== "none") { currentSubclientVisible = true; currentClientVisible = true; } } 
+        else if (r.classList.contains("header-columnas")) { r.style.display = currentSubclientVisible ? "" : "none"; } 
+        else if (r.classList.contains("header-subcliente")) { r.style.display = currentSubclientVisible ? "" : "none"; currentSubclientVisible = false; } 
+        else if (r.classList.contains("header-cliente")) { r.style.display = currentClientVisible ? "" : "none"; currentClientVisible = false; currentSubclientVisible = false; }
+    }
+}
+
+// --- GPS Y WIALON CORE ---
+function inyectarGPSenTabla() { 
+    Object.keys(viajesActivos).forEach(vId => { 
+        try { 
+            let v = viajesActivos[vId]; if(typeof v !== 'object' || !v) return; 
+            let uData = encontrarUnidad(v, vId); let isExternal = v.wialonId === "EXTERNO"; 
+            let pos = uData ? uData.pos : null; let speed = pos ? pos.s : 0; let isLost = !uData || (uData && !pos && !isExternal); 
+            
+            let ageSecs = pos ? Math.floor(Date.now()/1000) - pos.t : 0; 
+            let isStale = ageSecs > 7200; // ⚠️ AQUI ESTÁ EL AJUSTE: 7200 SEGUNDOS (2 HORAS) PARA MODO OFFLINE
+            
+            let safeName = uData ? escapeSafe(uData.name) : "Desconocida";
+            
+            let row = document.getElementById("row_" + vId); 
+            if(row) { row.classList.remove("lost-connection-row", "stale-row"); if(isLost && !isExternal) row.classList.add("lost-connection-row"); else if (isStale && !isExternal) row.classList.add("lost-connection-row"); } 
+            
+            if (isStale && !isExternal && !v.alerta_desconexion) { db.ref('viajes_activos/'+vId+'/alerta_desconexion').set(true); enviarNotificacionPersistente(vId, safeName, 'DESCONEXION', 'Perdió señal por más de 2 horas'); } 
+            else if (!isStale && !isLost && v.alerta_desconexion) { db.ref('viajes_activos/'+vId+'/alerta_desconexion').set(null); enviarNotificacionPersistente(vId, safeName, 'REANUDACION', 'Recuperó conexión GPS'); }
+
+            if(!isExternal && !isLost && !isStale) {
+                if(v.t_salida && !v.t_arribo) {
+                    if (speed < 4) { 
+                        if (!v.t_parada_inicio) { db.ref('viajes_activos/'+vId+'/t_parada_inicio').set(Date.now()); } 
+                        else { let minsDetenido = (Date.now() - v.t_parada_inicio) / 60000; if (minsDetenido >= 5 && !v.alerta_detenida_activa_gps) { db.ref('viajes_activos/'+vId).update({ alerta_detenida_activa_gps: true, alerta_detenida: true }); enviarNotificacionPersistente(vId, safeName, 'PARADA', 'Detenida por más de 5 minutos'); } }
+                    } else if (speed >= 4) { 
+                        if (v.t_parada_inicio) db.ref('viajes_activos/'+vId+'/t_parada_inicio').set(null);
+                        if (v.alerta_detenida_activa_gps) { db.ref('viajes_activos/'+vId+'/alerta_detenida_activa_gps').set(null); enviarNotificacionPersistente(vId, safeName, 'REANUDACION', 'Retomó movimiento tras parada'); }
+                    }
+                }
+                if (!v.t_salida && !v.salida_notificada && speed >= 4) { let cOrigen = limpiarStr(v.origen); let zonaActual = limpiarStr(uData.zonaOficial || resolverGeocerca(pos.y, pos.x)); if ((zonaActual && !zonaActual.includes(cOrigen)) || speed > 10) { db.ref('viajes_activos/'+vId+'/salida_notificada').set(true); enviarNotificacionPersistente(vId, safeName, 'SALIDA', `Salió de Origen: ${cOrigen||'Base'}`); } }
+                if (v.t_arribo && !v.t_fin && !v.fin_notificado && speed >= 10) { let arrDests = Array.isArray(v.destinos) ? v.destinos : (v.destino ? String(v.destino).split(/,|\n/).map(d => limpiarStr(d)) : []); let targetDest = arrDests[v.destino_idx || 0] || v.destino; let zonaActual = limpiarStr(uData.zonaOficial || resolverGeocerca(pos.y, pos.x)); if (!zonaActual || !zonaActual.includes(targetDest)) { db.ref('viajes_activos/'+vId+'/fin_notificado').set(true); enviarNotificacionPersistente(vId, safeName, 'FINALIZACION', `Se alejó del destino: ${targetDest}`); } }
+            }
+            
+            let elGpsCell = document.getElementById("gps_cell_" + vId); 
+            if(elGpsCell) { 
+                if (isExternal) { 
+                    let timeExtHover = v.t_ubicacion_manual ? formatTimeFriendly(v.t_ubicacion_manual) : '--:--'; let timeExtAgo = v.t_ubicacion_manual ? timeAgo(Math.floor(v.t_ubicacion_manual/1000)) : '--';
+                    elGpsCell.innerHTML = `<div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center border-bottom border-light pb-1 mb-1"><div class="d-flex align-items-center"><i class="fa-solid fa-globe text-info me-1 fs-6"></i> <span class="speed-badge bg-secondary m-0">-- km/h</span></div><div style="font-size:0.75rem; font-weight:900; cursor:help;" title="${timeExtHover}"><span class="text-info">Act: hace ${timeExtAgo}</span></div></div><div class="d-flex align-items-center gap-2 text-start"><span class="text-info fw-bold" style="font-size:0.65rem;">GPS EXTERNO</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar" onclick="editarUbicacionManual('${vId}')"></i><div class="addr-container flex-grow-1">${escapeSafe(v.ubicacion_manual||'--')}</div></div></div>`; 
+                } else if (isLost || isStale) { 
+                    let txtAge = isLost ? 'Sin posición' : `Hace ${timeAgo(pos.t)}`;
+                    elGpsCell.innerHTML = `<div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center border-bottom border-danger pb-1 mb-1"><div class="d-flex align-items-center"><i class="fa-solid fa-triangle-exclamation text-danger me-1 fs-6"></i> <span class="speed-badge bg-secondary m-0">${speed} km/h</span></div><div style="font-size:0.65rem; color:#ef4444; font-weight:800;">Modo Offline</div></div><div class="d-flex align-items-center gap-2 text-start"><span class="text-danger fw-bold" style="font-size:0.65rem;">SIN SEÑAL</span><i class="fa-solid fa-pencil ms-2 text-primary cp" title="Editar" onclick="editarUbicacionManual('${vId}')"></i><div class="addr-container flex-grow-1">${escapeSafe(v.ubicacion_manual||'--')} <span class="text-danger" style="font-size:0.65rem;">(${txtAge})</span></div></div></div>`; 
+                } 
+                else { 
+                    let speedBg = "#64748b"; if(speed > 0 && speed < 100) speedBg = "#10b981"; if(speed >= 100) speedBg = "#ef4444"; 
+                    let icon = speed > 0 ? `<i class="fa-solid fa-truck-fast text-success me-1 fs-6"></i>` : `<i class="fa-solid fa-truck text-secondary me-1 fs-6"></i>`; let timeColor = 'text-primary'; let geoKey = `${pos.y.toFixed(4)}_${pos.x.toFixed(4)}`; let zonaGeo = limpiarStr(uData.zonaOficial || resolverGeocerca(pos.y, pos.x)); 
+                    let elOldAddr = document.getElementById("addr_" + vId); let addrText = (elOldAddr && !elOldAddr.innerText.includes("Buscando...")) ? elOldAddr.innerHTML : `<i class="fa-solid fa-spinner fa-spin text-muted"></i> Buscando...`; 
+                    if(geocodeCache[geoKey]) { addrText = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${escapeSafe(geocodeCache[geoKey])}`; }
+                    let geoHtml = zonaGeo ? `<span class="badge-geo text-truncate ms-2" style="max-width:150px;" title="${zonaGeo}"><i class="fa-solid fa-draw-polygon me-1"></i>${zonaGeo}</span>` : ''; let timeHover = formatTimeFriendly(pos.t); 
+                    elGpsCell.innerHTML = `<div class="d-flex flex-column px-1 w-100"><div class="d-flex justify-content-between align-items-center border-bottom border-light pb-1 mb-1"><div class="d-flex align-items-center">${icon} <span class="speed-badge m-0" style="background-color:${speedBg}; padding:2px 6px;">${speed} km/h</span> ${geoHtml}</div><div style="font-size:0.75rem; font-weight:900; cursor:help;" title="${timeHover}"><span class="${timeColor}">(${timeAgo(pos.t)})</span></div></div><div class="d-flex align-items-center w-100"><a href="https://www.google.com/maps?q=lat,lng${pos.y},${pos.x}" target="_blank" class="addr-link text-start flex-grow-1" title="Abrir en Maps"><div class="addr-container addr-span-${geoKey}" id="addr_${vId}">${addrText}</div></a></div></div>`; 
+                } 
+            } 
+            
+            let btnName = document.getElementById("name_btn_" + vId); if (btnName && pos && pos.y && pos.x) { btnName.setAttribute("onclick", `centrarUnidadMapa(${pos.y}, ${pos.x}, '${vId}')`); } else if (btnName) { btnName.setAttribute("onclick", `centrarUnidadMapa(null, null)`); } 
+            
+            let wialonDriverObj = uData ? uData.choferObj : null; let elOpWialon = document.getElementById("op_wialon_" + vId); 
+            if (elOpWialon) { if (wialonDriverObj && wialonDriverObj.nombre !== "Sin asignar") { let telRaw = wialonDriverObj.tel || ""; let cleanTel = String(telRaw).replace(/\D/g,''); elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${escapeSafe(wialonDriverObj.nombre)}</div><div class="fw-bold text-muted user-select-all mt-1" style="font-size:0.7rem;">${escapeSafe(telRaw)}</div>`; } else if (v.operador) { elOpWialon.innerHTML = `<div class="fw-bold text-truncate text-uppercase" style="font-size:0.75rem; color:#0f172a;"><i class="fa-solid fa-id-card text-muted me-1"></i>${escapeSafe(v.operador)}</div><div style="font-size:0.6rem; color:#64748b;">(Manual)</div>`; } else { elOpWialon.innerHTML = '<span class="badge bg-secondary w-100 mt-1" style="font-size:0.65rem;">Sin asignar</span>'; } } 
+            
+            let elAlertas = document.getElementById("alertas_" + vId); if (elAlertas) { elAlertas.innerHTML = v.alerta ? `<span class="text-danger fw-bold" style="font-size:0.85rem;">${escapeSafe(v.alerta.txt)}</span>` : `<span class="text-success fw-bold" style="font-size:0.85rem;">OK</span>`; } 
+        } catch(e) { console.error("Error GPS:", vId, e); } 
+    }); 
+    desencadenarGeocoding(); 
+}
+
+function desencadenarGeocoding() {
+    Object.keys(viajesActivos).forEach(vId => {
+        let v = viajesActivos[vId]; if(typeof v !== 'object' || !v) return; 
+        let uData = encontrarUnidad(v, vId); 
+        let arrDests = Array.isArray(v.destinos) ? v.destinos : (v.destino ? String(v.destino).split(/,|\n/).map(d => limpiarStr(d)) : []); let targetDest = arrDests[v.destino_idx || 0] || v.destino;
+
+        if(uData && uData.pos) {
+            let zonaGeo = limpiarStr(uData.zonaOficial || resolverGeocerca(uData.pos.y, uData.pos.x));
+            if(zonaGeo && targetDest && !v.t_arribo && !v.arribo_notificado && zonaGeo.includes(targetDest)) { db.ref('viajes_activos/'+vId+'/arribo_notificado').set(true); enviarNotificacionPersistente(vId, uData.name, 'ARRIBO', `Llegó a Geocerca: ${zonaGeo}`); }
+            
+            let geoKey = `${uData.pos.y.toFixed(4)}_${uData.pos.x.toFixed(4)}`;
+            if(!geocodeCache[geoKey] && !geoQueue.find(i => i.key === geoKey)) { geoQueue.push({ key: geoKey, y: uData.pos.y, x: uData.pos.x, vId: vId, dest: targetDest }); } 
+            else if(geocodeCache[geoKey] && targetDest && !v.t_arribo && !v.arribo_notificado && limpiarStr(geocodeCache[geoKey]).includes(targetDest)) { db.ref('viajes_activos/'+vId+'/arribo_notificado').set(true); enviarNotificacionPersistente(vId, uData.name, 'ARRIBO', `Llegó a Calle: ${targetDest}`); }
+        }
+    });
+}
+
+function procesarFilaDirecciones() {
+    if(isGeocoding || geoQueue.length === 0) return; 
+    isGeocoding = true; let item = geoQueue.shift();
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.y}&lon=${item.x}&zoom=16`).then(r => r.json()).then(d => { let a = d.display_name || "Sin dirección"; geocodeCache[item.key] = a; localStorage.setItem('tms_geoCache', JSON.stringify(geocodeCache)); document.querySelectorAll(`.addr-span-${item.key}`).forEach(span => span.innerHTML = `<i class="fa-solid fa-map-location-dot text-primary me-1"></i>${a}`); if(item.dest && limpiarStr(a).includes(item.dest)) { let v = viajesActivos[item.vId]; if(v && !v.t_arribo && !v.arribo_notificado) { db.ref('viajes_activos/'+item.vId+'/arribo_notificado').set(true); enviarNotificacionPersistente(item.vId, unidadesGlobales[item.vId]?.name || 'Unidad', 'ARRIBO', `Llegó a Calle: ${item.dest}`); } } }).catch(e => console.log("Geo Err")).finally(() => { isGeocoding = false; });
+}
+
+window.vincularOperador = function() { let u = limpiarStr(document.getElementById("op_unidad").value); let n = limpiarStr(document.getElementById("op_nombre").value); if(u && n) { db.ref(`operadores/${u}`).set(n); document.getElementById("op_unidad").value = ""; document.getElementById("op_nombre").value = ""; mostrarNotificacion("Operador vinculado."); } };
+window.crearCliente = function() { let nom = limpiarStr(document.getElementById("cli_nombre").value); let fileInput = document.getElementById("cli_logo_file"); if(!nom) return; if (fileInput && fileInput.files && fileInput.files[0]) { let reader = new FileReader(); reader.onload = function(e) { db.ref('clientes').push({nombre: nom, logo: e.target.result}); document.getElementById("cli_nombre").value = ""; fileInput.value = ""; mostrarNotificacion("Cliente creado."); }; reader.readAsDataURL(fileInput.files[0]); } else { db.ref('clientes').push({nombre: nom, logo: ""}); document.getElementById("cli_nombre").value = ""; if(fileInput) fileInput.value = ""; mostrarNotificacion("Cliente creado."); } };
+window.crearSubcliente = function() { db.ref(`clientes/${document.getElementById("sub_clientePadre").value}/subclientes`).push({nombre: limpiarStr(document.getElementById("sub_nombre").value)}); document.getElementById("sub_nombre").value = ""; mostrarNotificacion("Subcliente creado."); };
+window.crearUsuario = function() { let id = document.getElementById("usr_id").value.trim().toLowerCase(); let nom = document.getElementById("usr_nom").value.trim(); let pass = document.getElementById("usr_pass").value.trim(); if(id && nom && pass) { db.ref(`sistema/usuarios/${id}`).set({nom: nom, pass: pass, rol: "monitor"}); document.getElementById("usr_id").value=""; document.getElementById("usr_nom").value=""; document.getElementById("usr_pass").value=""; mostrarNotificacion("Usuario creado."); } };
+
+function actualizarListasAdmin() { 
+    let s = document.getElementById("sub_clientePadre"); s.innerHTML = Object.keys(dataClientes).map(k => `<option value="${k}">${dataClientes[k].nombre}</option>`).join(''); 
+    document.getElementById("listaClientesAdmin").innerHTML = Object.keys(dataClientes).map(k => { let c = dataClientes[k]; let logoText = c.logo ? `<i class="fa-solid fa-image text-success ms-1" title="Logo"></i>` : ''; let safeNom = (c.nombre || '').replace(/'/g, "\\'"); return `<li class="list-group-item d-flex justify-content-between align-items-center p-1 fs-8"><span class="text-truncate" style="max-width:60%;">${c.nombre} ${logoText}</span><div class="text-nowrap"><i class="fa-solid fa-pencil text-primary cp me-2" onclick="let n=prompt('Editar:', '${safeNom}'); if(n){ db.ref('clientes/${k}').update({nombre: limpiarStr(n)}); }"></i><i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Cliente?')) db.ref('clientes/${k}').remove()"></i></div></li>`; }).join(''); 
+    let subHtml = ""; Object.keys(dataClientes).forEach(cId => { if(dataClientes[cId].subclientes) { Object.keys(dataClientes[cId].subclientes).forEach(sId => { subHtml += `<li class="list-group-item d-flex justify-content-between p-1 fs-8"><b>${dataClientes[cId].nombre}</b> - ${dataClientes[cId].subclientes[sId].nombre} <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar?')) db.ref('clientes/${cId}/subclientes/${sId}').remove()"></i></li>`; }); } }); document.getElementById("listaSubclientesAdmin").innerHTML = subHtml; 
+    db.ref('sistema/usuarios').once('value', snap => { let usrs = snap.val() || {}; document.getElementById("listaUsuariosAdmin").innerHTML = Object.keys(usrs).map(k => k === 'admin' ? `<li class="list-group-item p-1 fs-8"><b>admin</b> (Maestro)</li>` : `<li class="list-group-item d-flex justify-content-between p-1 fs-8"><b>${k}</b> <span class="ps-1">${usrs[k].nom}</span> <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar?')) db.ref('sistema/usuarios/${k}').remove()"></i></li>`).join(''); }); 
+}
+window.agregarToken = function() { db.ref('sistema/tokens').push({ nombre: limpiarStr(document.getElementById("tk_nom").value), token: document.getElementById("tk_val").value, url: document.getElementById("tk_url").value }); document.getElementById("tk_nom").value=""; document.getElementById("tk_val").value=""; mostrarNotificacion("Nuevo Token."); };
+function actualizarListaTokensAdmin(tks) { const lista = document.getElementById("listaStatusTokens"); if(lista) { lista.innerHTML = Object.keys(tks || {}).map(id => `<li class="list-group-item d-flex justify-content-between p-1 fs-8"><b>${tks[id].nombre}</b> <i class="fa-solid fa-trash text-danger cp" onclick="if(confirm('¿Borrar Token?')) { db.ref('sistema/tokens/${id}').remove().then(()=>location.reload()); }"></i></li>`).join(''); } }
+
+function peticionWialon(url, svc, params, sid=null) { 
+    return new Promise(resolve => { 
+        let script = document.createElement("script"); let cb = "wialon_cb_" + Date.now() + Math.floor(Math.random()*1000); 
+        let timeout = setTimeout(() => { delete window[cb]; script.remove(); resolve(null); }, 8000); 
+        window[cb] = d => { clearTimeout(timeout); delete window[cb]; script.remove(); resolve(d); }; 
+        script.onerror = () => { clearTimeout(timeout); delete window[cb]; script.remove(); resolve(null); }; 
+        script.src = `${url.replace(/\/$/, '')}/wialon/ajax.html?svc=${svc}&params=${encodeURIComponent(JSON.stringify(params))}&callback=${cb}${sid?'&sid='+sid:''}`; 
+        document.head.appendChild(script); 
+    }); 
+}
+
+async function arranqueMotor() { if(pollingInterval) clearInterval(pollingInterval); motorArrancado = true; await sincronizarFlotas(); pollingInterval = setInterval(sincronizarFlotas, 20000); }
+function renderStatusTokens() { const lista = document.getElementById("listaStatusTokens"); let html = ""; for(let tk in estadoTokens) { let stat = estadoTokens[tk]; let badge = stat.status === 'OK' ? '<span class="badge bg-success shadow-sm">ONLINE</span>' : '<span class="badge bg-danger shadow-sm">OFFLINE</span>'; html += `<li class="list-group-item d-flex justify-content-between align-items-center p-2"><div class="fw-bold" style="font-size:0.8rem;">${tk}</div> <div><span class="badge bg-secondary me-2 shadow-sm">${stat.count} Unidades</span> ${badge}</div></li>`; } lista.innerHTML = html || '<li class="list-group-item text-center">No hay tokens</li>'; }
+
+async function sincronizarFlotas() {
+    if(isSyncingFlotas) return; isSyncingFlotas = true;
+    try { 
+        let indMenu = document.getElementById("menuSyncIndicator"); if(indMenu) indMenu.innerHTML = `<i class="fa-solid fa-satellite-dish text-warning"></i> Sincronizando...`; 
+        estadoTokens = {}; let tempUnits = {}; let tempGeo = []; let tempChoferes = {}; let listUni = new Set(); let conexionesExitosas = 0; 
+        
+        let promesas = configSistema.tokens.map(async (tk) => { 
+            try { 
+                if(!tk.url || !tk.token) return; 
+                if(!activeSIDs[tk.token]) { let l = await peticionWialon(tk.url, "token/login", {token: tk.token}); if(l && l.eid) activeSIDs[tk.token] = { sid: l.eid }; } 
+                let auth = activeSIDs[tk.token]; if(!auth || !auth.sid) { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; return; } 
+                let autoLoginUrl = `${tk.url.includes("hst-api") ? "https://hosting.wialon.com" : tk.url}/login.html?token=${tk.token}`; 
+                
+                let reqR = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_resource", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1 + 256 + 4096, from: 0, to: 4294967295 }, auth.sid); 
+                let diccChoferes = {}; let diccZonasReq = {}; let diccZonasNombres = {}; 
+                
+                if(reqR && reqR.items) { 
+                    reqR.items.forEach(r => { 
+                        let rId = r.id; diccZonasReq[rId] = []; diccZonasNombres[rId] = {}; 
+                        if(r.zl) { Object.values(r.zl).forEach(z => { diccZonasReq[rId].push(z.id); diccZonasNombres[rId][z.id] = z.n; tempGeo.push(z); }); } 
+                        if(r.drvrs || r.drv) { 
+                            let drivers = r.drvrs || r.drv; 
+                            Object.values(drivers).forEach(d => { 
+                                let telStr = d.p ? String(d.p) : ""; let objC = { nombre: limpiarStr(d.n), tel: telStr, cod: d.c || "---", rid: rId, id: d.id };
+                                if(d.bu && d.bu > 0) { diccChoferes[d.bu] = objC; } 
+                                tempChoferes[objC.nombre] = objC;
+                            }); 
+                        } 
+                    }); 
+                } 
+                
+                let reqU = await peticionWialon(tk.url, "core/search_items", { spec: {itemsType: "avl_unit", propName: "sys_name", propValueMask: "*", sortType: "sys_name"}, force: 1, flags: 1 + 1024, from: 0, to: 4294967295 }, auth.sid); 
+                
+                if(reqU && reqU.items) { 
+                    conexionesExitosas++; estadoTokens[tk.nombre] = { status: 'OK', count: reqU.items.length }; 
+                    let uIds = reqU.items.map(u => u.id); let checkGeo = {}; 
+                    if(uIds.length > 0) { checkGeo = await peticionWialon(tk.url, "resource/get_zones_by_unit", { spec: { zoneId: diccZonasReq, units: uIds, time: 0 } }, auth.sid); }
+                    
+                    reqU.items.forEach(u => { 
+                        let n = limpiarStr(u.nm || "Desconocida"); let chofer = diccChoferes[u.id] || { nombre: "Sin asignar", tel: "", cod: "---", rid: null }; 
+                        let miZona = null; let recursoDueño = chofer.rid ? chofer.rid : u.bact; 
+                        
+                        if (recursoDueño && checkGeo && checkGeo[recursoDueño]) { 
+                            for (let zId in checkGeo[recursoDueño]) { if (checkGeo[recursoDueño][zId].includes(u.id)) { miZona = diccZonasNombres[recursoDueño][zId]; break; } } 
+                        } else if (checkGeo) { 
+                            for (let rId in checkGeo) { for (let zId in checkGeo[rId]) { if (checkGeo[rId][zId].includes(u.id)) { miZona = diccZonasNombres[rId][zId]; break; } } if (miZona) break; } 
+                        } 
+                        tempUnits[u.id] = { id: u.id, name: n, pos: u.pos, loginUrl: autoLoginUrl, choferObj: chofer, zonaOficial: miZona, tkNombre: tk.nombre }; 
+                        listUni.add(n); 
+                    }); 
+                } else { estadoTokens[tk.nombre] = { status: 'ERR', count: 0 }; } 
+            } catch(errTk) { console.error("Token Falló:", tk.nombre); } 
+        }); 
+        
+        await Promise.all(promesas); 
+        unidadesGlobales = tempUnits; geocercasNativas = tempGeo; diccChoferesGlobal = tempChoferes; 
+        document.getElementById("listaUnidadesTotales").innerHTML = Array.from(listUni).map(n => `<option value="${n}">`).join(''); 
+        document.getElementById("listaGeocercas").innerHTML = tempGeo.map(z => `<option value="${limpiarStr(z.n)}">`).join(''); 
+        
+        if(indMenu) { 
+            if(conexionesExitosas > 0) indMenu.innerHTML = `<span class="badge bg-success shadow-sm rounded-pill py-1 px-2">${Object.keys(unidadesGlobales).length} Camiones Live</span>`; 
+            else indMenu.innerHTML = `<span class="badge bg-danger shadow-sm rounded-pill py-1 px-2">Error GPS - Offline</span>`; 
+        } 
+        
+        renderStatusTokens(); inyectarGPSenTabla(); solicitarRenderizado();
+    } catch(errSync) { console.error("Error Global:", errSync); } finally { isSyncingFlotas = false; }
+}
