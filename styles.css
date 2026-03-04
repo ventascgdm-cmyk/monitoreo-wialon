@@ -45,9 +45,12 @@ body { background: var(--bg-main); color: var(--text-main); font-family: 'Inter'
 .data-row td:last-child { border-right: 1px solid var(--border-col); border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
 .data-row:hover td { filter: brightness(0.96); }
 
-/* FIX PARA EVITAR QUE LOS MENÚS SE ENCIMEN CON OTRAS FILAS */
-tr.dropdown-active { position: relative !important; z-index: 99999 !important; }
-tr.dropdown-active td { position: relative !important; z-index: 99999 !important; }
+/* FIX SUPREMO PARA MENÚS ENCIMADOS (Z-INDEX) */
+.data-row { position: relative; z-index: 10; }
+.data-row.dropdown-active { z-index: 999999 !important; }
+.data-row.dropdown-active td { z-index: 999999 !important; position: relative; }
+.header-cliente td, .header-subcliente td { position: relative; z-index: 1 !important; }
+.dropdown-menu { z-index: 999999 !important; }
 
 /* ALERTA ROJA (MÁS DE 10 MINUTOS SIN CONEXIÓN) */
 .lost-connection-row td { background-color: #fee2e2 !important; border-bottom: 2px dashed #ef4444 !important; }
@@ -67,19 +70,43 @@ tr.dropdown-active td { position: relative !important; z-index: 99999 !important
 .route-text:hover { border-color: var(--border-col); background: rgba(241, 245, 249, 0.8); cursor: text; }
 .route-text:focus { border-color: var(--accent); background: var(--bg-card); box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2); }
 
-/* SEMÁFORO MINIMALISTA (PUNTO 3) */
+/* SEMÁFORO MINIMALISTA */
 .semaforo-minimalista { font-size: 0.62rem; font-weight: 800; margin-top: 4px; text-align: center; display: block; width: 100%; letter-spacing: -0.2px; }
 .semaforo-minimalista.verde { color: #15803d; }
 .semaforo-minimalista.amarillo { color: #b45309; }
 .semaforo-minimalista.rojo { color: #b91c1c; }
 
-/* INPUT DE HORA DIRECTO (PUNTO 7) */
-.time-input-direct { background: transparent; border: 1px dashed transparent; border-radius: 4px; font-size: 0.65rem; font-weight: 900; width: 100%; text-align: center; cursor: pointer; padding: 2px 0; transition: all 0.2s; outline: none; margin-bottom: 2px; }
-.time-input-direct:hover { background: rgba(255,255,255,0.7); border-color: var(--accent); color: var(--accent) !important; }
-.time-input-direct:focus { background: #fff; border-style: solid; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2); cursor: text; color: #0f172a !important; }
-.time-input-direct::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; padding: 2px; }
-.time-input-direct::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+/* DISEÑO HÍBRIDO DE BOTONES DE TIEMPO (COMO LA REFERENCIA) */
+.time-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; margin-bottom: 6px; width: 100%; }
+.time-capsule { display: flex; align-items: center; border-radius: 4px; border: 1px solid var(--border-col); background: #fff; overflow: hidden; width: 100%; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.time-capsule:hover { filter: brightness(0.96); }
+.time-capsule-icon { font-weight: 900; color: #fff; width: 20px; height: 18px; font-size: 0.55rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.time-capsule-input { border: none; background: transparent; font-size: 0.6rem; font-weight: 800; text-align: center; width: 100%; cursor: pointer; outline: none; padding: 2px; color: var(--text-main); }
+.time-btn-dashed { border-radius: 4px; border: 1px dashed; font-size: 0.6rem; font-weight: 800; width: 100%; padding: 2px 0; background: #fff; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+.time-btn-dashed:hover { filter: brightness(0.95); }
 
+/* Colores para el Híbrido */
+.color-success .time-capsule-icon { background-color: #10b981; }
+.color-success .time-capsule { border-color: #10b981; }
+.color-success .time-capsule-input { color: #10b981; }
+.color-success .time-btn-dashed { border-color: #10b981; color: #10b981; }
+
+.color-primary .time-capsule-icon { background-color: #0284c7; }
+.color-primary .time-capsule { border-color: #0284c7; }
+.color-primary .time-capsule-input { color: #0284c7; }
+.color-primary .time-btn-dashed { border-color: #0284c7; color: #0284c7; }
+
+.color-dark .time-capsule-icon { background-color: #0f172a; }
+.color-dark .time-capsule { border-color: #0f172a; }
+.color-dark .time-capsule-input { color: #0f172a; }
+.color-dark .time-btn-dashed { border-color: #0f172a; color: #0f172a; }
+
+.color-warning .time-capsule-icon { background-color: #d97706; }
+.color-warning .time-capsule { border-color: #d97706; }
+.color-warning .time-capsule-input { color: #d97706; }
+.color-warning .time-btn-dashed { border-color: #d97706; color: #d97706; }
+
+/* OTROS ESTILOS BÁSICOS */
 .unit-name { cursor: pointer; color: var(--grudicom-blue); font-weight: 900; font-size: 1.2rem; letter-spacing: 0.5px; display: block; text-align: center; transition: 0.2s;}
 .unit-name:hover { color: #001a33; text-decoration: underline; }
 
@@ -94,8 +121,7 @@ tr.dropdown-active td { position: relative !important; z-index: 99999 !important
 
 .cp { cursor: pointer; }
 
-/* MENÚS FLOTANTES */
-.dropdown-menu { z-index: 1060 !important; }
+/* MENÚS FLOTANTES CUSTOM */
 .dropdown-menu-custom { border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid var(--border-col); padding: 8px; min-width: 200px; }
 .dropdown-item-custom { border-radius: 8px; padding: 8px 12px; font-weight: 700; transition: 0.2s; font-size: 0.75rem; margin-bottom: 4px;}
 .dropdown-item-custom:hover { background-color: #f1f5f9; transform: translateX(3px); }
@@ -124,52 +150,9 @@ tr.dropdown-active td { position: relative !important; z-index: 99999 !important
 .tramo-historial { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
 .tramo-historial.expanded { max-height: 300px; overflow-y: auto; }
 
-/* ANIMACIÓN HUBS CENTRALIZADOS (PUNTO 6) */
-@keyframes pulseRed {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-    70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-}
-@keyframes pulseBlue {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
-    70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(13, 110, 253, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
-}
-
-/* ANIMACIÓN DE HISTORIAL ROJO CON CAMPANA */
-@keyframes alertBlinkBorder {
-    0% { border-color: #fca5a5; box-shadow: 0 0 5px rgba(239,68,68,0.5); }
-    50% { border-color: #b91c1c; box-shadow: 0 0 15px rgba(239,68,68,1); }
-    100% { border-color: #fca5a5; box-shadow: 0 0 5px rgba(239,68,68,0.5); }
-}
-.log-alert-container {
-    animation: alertBlinkBorder 1.5s infinite;
-    background-color: #fef2f2 !important;
-    border: 2px solid #ef4444 !important;
-    border-radius: 8px;
-    padding: 10px;
-    text-align: center;
-    cursor: pointer;
-    transition: 0.2s;
-}
-.log-alert-container:hover { transform: scale(1.02); }
-.log-alert-text { color: #b91c1c; font-weight: 900; font-size: 0.75rem; margin-top: 4px; }
-.log-alert-icon { color: #ef4444; font-size: 1.5rem; animation: ringBell 1s infinite; }
-@keyframes ringBell {
-    0%, 100% { transform: rotate(0deg); }
-    20% { transform: rotate(15deg); }
-    40% { transform: rotate(-15deg); }
-    60% { transform: rotate(10deg); }
-    80% { transform: rotate(-10deg); }
-}
+/* ANIMACIÓN HUBS CENTRALIZADOS */
+@keyframes pulseRed { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
+@keyframes pulseBlue { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(13, 110, 253, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); } }
 
 /* CLASE DINÁMICA PARA OCULTAR ELEMENTOS DURANTE LA CAPTURA DE PANTALLA */
 .oculto-en-captura { display: none !important; }
-
-/* FIX SUPREMO PARA MENÚS ENCIMADOS (Z-INDEX) */
-.data-row { position: relative; z-index: 10; }
-.data-row.dropdown-active { z-index: 999999 !important; }
-.data-row.dropdown-active td { z-index: 999999 !important; position: relative; }
-
-.header-cliente td, .header-subcliente td { position: relative; z-index: 1 !important; }
-.dropdown-menu { z-index: 999999 !important; }
